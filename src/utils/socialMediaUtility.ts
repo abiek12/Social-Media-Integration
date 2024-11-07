@@ -1,0 +1,421 @@
+import crypto from 'crypto';
+import { adminSocialMedia } from '../socialMedia/dataModels/entities/adminSocialMedia.entity';
+import { subscriberSocialMedia } from '../socialMedia/dataModels/entities/subscriberSocialMedia.entity';
+import { AdminFacebookSettings } from '../socialMedia/dataModels/entities/adminFacebook.entity';
+import { admins } from '../users/admin/dataModels/entities/admin.entity';
+import { getDataSource } from './dataSource';
+import { FacebookWebhookRequest } from '../socialMedia/dataModels/types/meta.types';
+
+// Social Media Utility Constants
+export const CLIENT_URL = process.env.FRONTEND_URL as string;
+export const CLIENT_FAILED_URL = process.env.FRONTEND_FAILED_URL as string;
+
+export const facebookStrategyConfig = {
+  clientID: process.env.META_APP_ID as string,
+  clientSecret: process.env.META_APP_SECRET as string,
+  callbackURL: (process.env.BACKEND_URL as string) + '/facebook/callback',
+  profileFields: ['id', 'displayName', 'emails'],
+  state: true
+}
+
+// Social Media Utility Functions
+export const verifySignature = (signature: string | undefined, body: any, appSecret: string): boolean => {
+    if (!signature || !signature.startsWith('sha256=')) {
+      return false;
+    }
+    const elements = signature.split('=');  
+    const method = elements[0];
+    const signatureHash = elements[1];
+  
+    const expectedHash = crypto.createHmac('sha256', appSecret).update(body).digest('hex');
+  
+    return signatureHash === expectedHash;
+};
+
+export const fetchingLeadgenData = (body: FacebookWebhookRequest): any=>{
+    const { entry } = body;
+    entry.forEach(page => {
+        page.changes.forEach(change => {
+          if (change.field === 'leadgen') {
+            const leadgenId = change.value.leadgen_id;
+            const pageId = change.value.page_id;
+            
+            return {leadgenId, pageId};
+          }
+        });
+    });
+}
+
+export const fetchingLeadDetails = async (pageAccessToken: string, leadgenId: string) => {
+    const url = `https://graph.facebook.com/v20.0/${leadgenId}?access_token=${pageAccessToken}`;
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching lead data:', error);
+      return null;
+    }
+}
+
+// Get App Access Token
+export const getAppAccessToken = async () => {
+  try {
+    const appId = process.env.META_APP_ID;
+    const appSecret = process.env.META_APP_SECRET;
+
+    const url = `https://graph.facebook.com/v20.0/oauth/access_token?grant_type=client_credentials&client_id=${appId}&client_secret=${appSecret}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    const appDataSource = await getDataSource();
+    const adminSocialMediaRepository = appDataSource.getRepository(adminSocialMedia);
+    const adminFacebookRepository = appDataSource.getRepository(AdminFacebookSettings);
+    const adminRepository = appDataSource.getRepository(admins);
+
+    const adminSocialMediaData = await adminFacebookRepository.createQueryBuilder("adminFacebookSettings")
+      .leftJoinAndSelect("adminFacebookSettings.admin", "admin")
+      .leftJoinAndSelect("adminFacebookSettings.facebook", "facebook")
+      .getOne();
+    if (adminSocialMediaData) {
+      await adminFacebookRepository.delete({ adminFacebookSettingsId: adminSocialMediaData.adminFacebookSettingsId });
+      await adminSocialMediaRepository.delete({ adminSocialMediaId: adminSocialMediaData.adminFacebookSettingsId });
+    }
+
+    const admin = await adminRepository.createQueryBuilder("admin").getOne();
+
+    if(!admin) {
+      console.log("Admin not found");
+      return;
+    }
+
+    const adminFacebookSettingsEntity = new AdminFacebookSettings();
+    adminFacebookSettingsEntity.appAccessToken = data.access_token;
+    const facebookEntityData = await adminFacebookRepository.save(adminFacebookSettingsEntity);
+
+    const adminSocialMediaEntity = new adminSocialMedia();
+    adminSocialMediaEntity.admin = admin;
+    adminSocialMediaEntity.facebook = facebookEntityData;
+    await adminSocialMediaRepository.save(adminSocialMediaEntity);
+
+    return console.log('Admin app access token fetched successfully');
+
+  } catch (error) {
+    console.log('Error fetching app access token:', error);
+  }
+}
+
+// Subscribe & Configure Webhook
+export const subscribeWebhook = async () => {
+  try {
+    const appDataSource = await getDataSource();
+    const adminSocialMediaRepository = appDataSource.getRepository(adminSocialMedia);
+    const adminSocialMediaQuerybuilder = adminSocialMediaRepository.createQueryBuilder('adminSocialMedia');
+
+    const adminSocialMediaData = await adminSocialMediaQuerybuilder
+      .leftJoinAndSelect("adminSocialMedia.admin", "admin")
+      .leftJoinAndSelect("adminSocialMedia.facebook", "facebook")
+      .getOne();
+
+    if(adminSocialMediaData) {
+      const appId = process.env.META_APP_ID;
+      const verifyToken = process.env.META_APP_VERIFY_TOKEN;
+      const callbackUrl = process.env.BACKEND_URL +'/api/meta/webhook/facebook';
+      const appAccessToken = adminSocialMediaData.facebook.appAccessToken;
+
+      const url = `https://graph.facebook.com/v20.0/${appId}/subscriptions?access_token=${appAccessToken}`;
+      const data = {
+        object: 'page',
+        fields: [
+          'leadgen',
+        ],
+        access_token: appAccessToken,
+        callback_url: callbackUrl,
+        include_values: 'true',
+        verify_token: verifyToken,
+      };
+
+      const headers= {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      }
+
+      const bodyData = {
+          ...data,
+          fields: data.fields.join(','),
+      };
+      // Use URLSearchParams to serialize the data
+      const body = new URLSearchParams(bodyData as Record<string, string>);
+
+      const response = await fetch(url, { method: 'post', headers, body });
+
+      const responseData = await response.json();
+      console.log(responseData);
+      return console.log('Webhook subscribed successfully');
+    }
+
+  } catch (error) {
+    console.log('Error while subscribing webhook',error);
+  }
+}
+
+// Installing Meta App in Facebook Pages
+export const installMetaApp = async (subscriberId: number) => {
+  try {
+    const appDataSource = await getDataSource();
+    const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
+    const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
+
+    const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
+      .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+      .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
+      .where("subscriber.subscriberId = :subscriberId", { subscriberId })
+      .getOne();
+
+    if (subscriberSocialMediaData) {
+      const pageId = subscriberSocialMediaData.facebook.pageId;
+      const pageAccessToken = subscriberSocialMediaData.facebook.pageAccessToken;
+
+      const url = `https://graph.facebook.com/v20.0/${pageId}/subscribed_apps`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          subscribed_fields: 'leadgen',
+          access_token: pageAccessToken,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.log('Error subscribing to Meta App:', errorData);
+        return;
+      }
+
+      const responseData = await response.json();
+      return console.log('Successfully Installed Meta App:', responseData);
+    } else {
+      return console.log(`No social media data found for subscriber with ID ${subscriberId}`);
+    }
+  } catch (error) {
+    return console.log('Error while installing Meta App', error);
+  }
+};
+
+export const getMetaUserAccessTokenDb = async (subscriberId: number) => {
+  try {
+    const appDataSource = await getDataSource();
+    const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
+    const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
+
+    const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
+      .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+      .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
+      .where("subscriber.subscriberId = :subscriberId", { subscriberId })
+      .getOne();
+    
+    if (!subscriberSocialMediaData) {
+      console.log(`No facebook user access token found for subscriber with ID ${subscriberId}`);
+      return null;
+    }
+
+    return subscriberSocialMediaData.facebook.userAccessToken;
+  } catch (error) {
+    console.log('Error while fetching user access token from database', error);
+    throw error;
+  }
+}
+
+export const fetchFacebookPages = async (userAccessToken: string) => {
+  try {
+    const response = await fetch(`https://graph.facebook.com/me/accounts?access_token=${userAccessToken}`);
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+    return data.data;
+  } catch (error) {
+    console.log('Error while fetching page details', error);
+    throw error;
+  }
+}
+
+export const checkForAdminMetaConnection = async (): Promise<boolean> => {
+  try {
+    const appDataSource = await getDataSource();
+    const adminSocialMediaRepository = appDataSource.getRepository(adminSocialMedia);
+    const adminSocialMediaQuerybuilder = adminSocialMediaRepository.createQueryBuilder('adminSocialMedia');
+    const adminSocialMediaData = await adminSocialMediaQuerybuilder
+      .leftJoinAndSelect("adminSocialMedia.admin", "admin")
+      .leftJoinAndSelect("adminSocialMedia.facebook", "facebook")
+      .getOne();
+
+    if(adminSocialMediaData && adminSocialMediaData.facebook.appAccessToken) return true;
+    else return false;
+  } catch (error) {
+    console.log('Error while fetching admin social media details', error);
+    throw error;
+  }
+}
+
+const subscriberSocialMediaRepo = async (subscriberId: number) => {
+  try {
+    const appDataSource = await getDataSource();
+    const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
+    const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
+    const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
+      .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+      .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
+      .where("subscriber.subscriberId = :subscriberId", { subscriberId })
+      .getOne();
+    return subscriberSocialMediaData;
+  } catch (error) {
+    console.log("Error while fetching subscriber social media repo");
+    throw error;
+  }
+}
+
+export const checkForSubscribersMetaConnection = async (subscriberId: number): Promise<boolean> => {
+  try {
+    const subscriberSocialMediaData = await subscriberSocialMediaRepo(subscriberId);
+    if(subscriberSocialMediaData && subscriberSocialMediaData.facebook.userAccessToken) return true;
+    else return false;
+  } catch (error) {
+    console.log("Error while fetching subscriber social media details!");
+    throw error;
+  }
+}
+
+export const getSubscribersWithExpiringTokens = async (subscriberId: number) => {
+  try {
+    const subscriberSocialMediaData = await subscriberSocialMediaRepo(subscriberId);
+    if(!subscriberSocialMediaData) return null;
+    return subscriberSocialMediaData;
+  } catch (error) {
+    console.log('Error while fetching subscriber social media details', error);
+    throw error;
+  }
+}
+
+// Convert short-lived token to long-lived token
+export const getLongLivedUserToken = async (shortLivedToken: string) => {
+  try {
+    const appId = process.env.META_APP_ID;
+    const appSecret = process.env.META_APP_SECRET;
+    const url = `https://graph.facebook.com/v20.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${shortLivedToken}`;
+  
+    const response = await fetch(url);
+    const data = await response.json();
+  
+    if (data.access_token) {
+      return data.access_token;
+    } else {
+      throw new Error("Failed to obtain long-lived token");
+    }
+  } catch (error) {
+    console.log('Error while converting short-lived token to long-lived token', error);
+    throw error;
+  }
+}
+
+// Get page access token
+export const getPageAccessToken = async (pageId: string, userAccessToken: string) => {
+  try {
+    const url = `https://graph.facebook.com/v20.0/${pageId}/accounts?access_token=${userAccessToken}`;
+  
+    const response = await fetch(url);
+    const data = await response.json();
+  
+    if (data.data && data.data.length > 0) {
+      return data.data[0].access_token;
+    } else {
+      throw new Error("Failed to obtain page access token");
+    }
+  } catch (error) {
+    console.log('Error while getting page access token', error);
+    throw error;
+  }
+}
+
+// Updating user access token in database
+export const updateUserAccessTokenInDb = async (subscriberId: number, userAccessToken: string) => {
+  try {
+    const appDataSource = await getDataSource();
+    const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
+    const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
+    const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
+      .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+      .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
+      .where("subscriber.subscriberId = :subscriberId", { subscriberId })
+      .getOne();
+    
+    if (!subscriberSocialMediaData) {
+      console.log(`No social media data found for subscriber with ID ${subscriberId}`);
+      return null;
+    }
+
+    subscriberSocialMediaData.facebook.userAccessToken = userAccessToken;
+    subscriberSocialMediaData.facebook.userTokenExpiresAt = new Date(Date.now() + 3600000);
+    await subscriberSocialMediaRepository.save(subscriberSocialMediaData);
+  } catch (error) {
+    console.log('Error while updating user access token in database', error);
+    throw error;
+  }
+}
+
+// Updating page access token in database
+export const updatePagesInDb = async (subscriberId: number, pageAccessToken: string) => {
+  try {
+    const appDataSource = await getDataSource();
+    const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
+    const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
+    const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
+      .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+      .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
+      .where("subscriber.subscriberId = :subscriberId", { subscriberId })
+      .getOne();
+    
+    if (!subscriberSocialMediaData) {
+      console.log(`No social media data found for subscriber with ID ${subscriberId}`);
+      return null;
+    }
+
+    subscriberSocialMediaData.facebook.pageAccessToken = pageAccessToken;
+    subscriberSocialMediaData.facebook.pageTokenExpiresAt = new Date(Date.now() + 3600000);
+    await subscriberSocialMediaRepository.save(subscriberSocialMediaData);
+  } catch (error) {
+    console.log('Error while updating page access token in database', error);
+    throw error;
+  }
+}
+
+// Helper function to check if token needs refreshing
+const needsRefresh = (expiryDate: string | Date) => {
+  const refreshThreshold = 7 * 24 * 60 * 60 * 1000; // e.g., 7 days before expiry
+  const expiryTimestamp = new Date(expiryDate).getTime();
+  const currentTimestamp = Date.now();
+  
+  // Check if the time remaining before expiry is less than the threshold
+  return expiryTimestamp - currentTimestamp < refreshThreshold;
+};
+
+// Refreshing facebook user and page access token
+export const refreshAllTokens = async (subscriberId: number) => {
+  const subscriber = await getSubscribersWithExpiringTokens(subscriberId);
+  if (subscriber) {
+    try {
+      // Refresh user token if it's close to expiry
+      if (subscriber.facebook.userTokenExpiresAt && needsRefresh(subscriber.facebook.userTokenExpiresAt)) {
+        const newUserToken = await getLongLivedUserToken(subscriber.facebook.userAccessToken);
+        await updateUserAccessTokenInDb(subscriber.subscriber.subscriberId, newUserToken);
+      }
+  
+      // Refresh page tokens if the user token was updated or nearing expiry
+      if (subscriber.facebook.pageTokenExpiresAt && needsRefresh(subscriber.facebook.pageTokenExpiresAt)) {
+        const newPageTokens = await getPageAccessToken(subscriber.facebook.pageId, subscriber.facebook.userAccessToken);
+        await updatePagesInDb(subscriber.subscriber.subscriberId, newPageTokens);
+      }
+    } catch (error) {
+      console.error(`Error refreshing tokens for subscriber ${subscriber.subscriber.subscriberId}:`, error);
+    }
+  }
+};

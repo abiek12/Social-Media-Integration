@@ -13,6 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const app_1 = __importDefault(require("./app"));
+const common_1 = require("./utils/common");
 const start = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
@@ -21,6 +22,7 @@ const start = () => __awaiter(void 0, void 0, void 0, function* () {
             host: "0.0.0.0",
         });
         // app.cron.startAllJobs();
+        (0, common_1.createAdminUser)();
         console.log(`Server listening on ${PORT}`);
     }
     catch (error) {
