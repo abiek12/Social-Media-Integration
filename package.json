@@ -4,7 +4,17 @@
   "description": "Lead generation plugin through social media such facebook, whatsapp and intagram utilizing meta graph api.",
   "main": "dist/app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon src/index.ts",
+    "build": "rimraf ./dist && tsc",
+    "start:prod": "npm run build && node dist/index.js",
+    "start": "ts-node src/index.ts",
+    "copy-assets": "copyfiles --all --up 1 --exclude \"./**/*.{ts,tsx}\" \"./src/**/*\" ./dist",
+    "generate-migrations": "npx typeorm-ts-node-commonjs migration:generate ./src/migrations/test -d ./src/utils/dbConfig.ts",
+    "migrate": "npx typeorm-ts-node-commonjs migration:run -d ./dist/utils/dbConfig.js",
+    "revert": "npx typeorm-ts-node-commonjs migration:revert -d ./dist/utils/dbConfig.js",
+    "drop": "npx typeorm-ts-node-commonjs schema:drop -d ./dist/utils/dbConfig.js",
+    "prestart": "node sql.js"
   },
   "author": "Abhishek pp",
   "license": "ISC",
@@ -13,8 +23,11 @@
     "passport": "^0.7.0"
   },
   "devDependencies": {
+    "@types/dotenv": "^6.1.1",
     "@types/express": "^5.0.0",
+    "@types/express-session": "^1.18.0",
     "@types/node": "^22.9.0",
+    "@types/passport": "^1.0.17",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3"
   }
