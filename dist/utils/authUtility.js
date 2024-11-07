@@ -31,10 +31,55 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.authUtility = void 0;
 const bcrypt = __importStar(require("bcrypt"));
+const common_1 = require("./common");
+const response_1 = require("./response");
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const userRoles_enums_1 = require("../users/subscriber/dataModels/enums/userRoles.enums");
 class authUtility {
+    constructor() {
+        // Middleware to verify token
+        this.verifyToken = (req, res, next) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                let token = req.headers.authorization;
+                if (!token) {
+                    res.status(common_1.NOT_AUTHORIZED).send((0, response_1.CustomError)(common_1.NOT_AUTHORIZED, "Un-Authorized Access"));
+                    return;
+                }
+                if (token.startsWith("Bearer ")) {
+                    token = token.slice(7, token.length).trimLeft();
+                }
+                const decoded = jsonwebtoken_1.default.verify(token, process.env.jwtSecretKey);
+                req.user = decoded;
+                next(); // Move to the next middleware or route handler
+            }
+            catch (error) {
+                res.status(common_1.NOT_AUTHORIZED).send((0, response_1.CustomError)(common_1.NOT_AUTHORIZED, "Un-Authorized Token"));
+                return;
+            }
+        });
+        // Middleware to check if the user is a subscriber
+        this.isSubscriber = (req, res, next) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { userId, role } = req.user;
+                if (!userId || role !== userRoles_enums_1.userRoles.SUBSCRIBER) {
+                    res.status(common_1.FORBIDDEN).send((0, response_1.CustomError)(common_1.FORBIDDEN, "Forbidden"));
+                    return;
+                }
+                next(); // Move to the next middleware or route handler
+            }
+            catch (error) {
+                console.error(`Error in isSubscriber: ${error}`);
+                res.status(common_1.FORBIDDEN).send((0, response_1.CustomError)(common_1.FORBIDDEN, "Error in subscriber check"));
+                return;
+            }
+        });
+    }
     hashPassword(password) {
         return __awaiter(this, void 0, void 0, function* () {
             return new Promise((resolve, reject) => {

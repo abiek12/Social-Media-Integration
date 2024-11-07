@@ -115,4 +115,15 @@ export const getSubscriberSocialMediaData = async (subscriberId: number, profile
     return false;
   }
 }
+
+export const getAllSubscribers = async () => {
+  try {
+    const appDataSource = await getDataSource();
+    const subscriberRepository = appDataSource.getRepository(subscribers);
+    return await subscriberRepository.find();
+  } catch (error) {
+    console.error('Error while fetching subscribers', error);
+    return [];
+  }
+}
   

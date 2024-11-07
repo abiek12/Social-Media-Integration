@@ -7,17 +7,10 @@ const express_1 = __importDefault(require("express"));
 const passport_1 = __importDefault(require("passport"));
 const express_session_1 = __importDefault(require("express-session"));
 const dotenv_1 = __importDefault(require("dotenv"));
-const dbConfig_1 = require("./utils/dbConfig");
+const cronJob_1 = require("./utils/cronJob");
 // Load environment variables
 dotenv_1.default.config();
 const app = (0, express_1.default)();
-dbConfig_1.AppDataSource.initialize()
-    .then(() => {
-    console.log('Database connected successfully');
-})
-    .catch((error) => {
-    console.error('Error connecting to the database', error);
-});
 // Middleware
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
@@ -39,4 +32,5 @@ app.use((error, req, res, next) => {
     console.error(error.stack);
     res.status(500).send('Something went wrong!');
 });
+cronJob_1.cronJob.start();
 exports.default = app;

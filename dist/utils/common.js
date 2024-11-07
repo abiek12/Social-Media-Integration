@@ -9,11 +9,31 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createAdminUser = void 0;
+exports.getAllSubscribers = exports.getSubscriberSocialMediaData = exports.createAdminUser = exports.OTP_EXPIRY_TIME = exports.ACTIVATION_KEY_EXPIRY_DAYS = exports.REFRESH_TOKEN_EXPIRY = exports.TOKEN_EXPIRY = exports.lockoutTime = exports.lockoutCount = exports.ERROR_COMMON_MESSAGE = exports.REDIRECT = exports.NOT_ACCEPTABLE = exports.INTERNAL_ERROR = exports.NOT_AUTHORIZED = exports.FORBIDDEN = exports.NOT_FOUND = exports.SUCCESS_GET = exports.SUCCESS_CREATE = exports.CONFLICT = exports.BAD_REQUEST = void 0;
+exports.checkSubscriberExitenceUsingId = checkSubscriberExitenceUsingId;
+const subscriberSocialMedia_entity_1 = require("../socialMedia/dataModels/entities/subscriberSocialMedia.entity");
 const admin_entity_1 = require("../users/admin/dataModels/entities/admin.entity");
+const subscriber_entity_1 = require("../users/subscriber/dataModels/entities/subscriber.entity");
 const userRoles_enums_1 = require("../users/subscriber/dataModels/enums/userRoles.enums");
 const authUtility_1 = require("./authUtility");
 const dataSource_1 = require("./dataSource");
+exports.BAD_REQUEST = 400;
+exports.CONFLICT = 409;
+exports.SUCCESS_CREATE = 201;
+exports.SUCCESS_GET = 200;
+exports.NOT_FOUND = 404;
+exports.FORBIDDEN = 403;
+exports.NOT_AUTHORIZED = 401;
+exports.INTERNAL_ERROR = 500;
+exports.NOT_ACCEPTABLE = 406;
+exports.REDIRECT = 302;
+exports.ERROR_COMMON_MESSAGE = "Internal Server Error";
+exports.lockoutCount = 5;
+exports.lockoutTime = 120; // 7days
+exports.TOKEN_EXPIRY = 360000;
+exports.REFRESH_TOKEN_EXPIRY = 86400000;
+exports.ACTIVATION_KEY_EXPIRY_DAYS = 1;
+exports.OTP_EXPIRY_TIME = 10;
 const createAdminUser = (data) => __awaiter(void 0, void 0, void 0, function* () {
     const _authUtility = new authUtility_1.authUtility();
     console.log("createAdminUser");
@@ -48,3 +68,73 @@ const createAdminUser = (data) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.createAdminUser = createAdminUser;
+function checkSubscriberExitenceUsingId(subscriberId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const appDataSource = yield (0, dataSource_1.getDataSource)();
+            const subscriberRepository = appDataSource.getRepository(subscriber_entity_1.subscribers);
+            const subscriber = yield subscriberRepository
+                .createQueryBuilder("subscriber")
+                .where("subscriber.subscriberId = :subscriberId", {
+                subscriberId: subscriberId,
+            })
+                .andWhere("subscriber.isDeleted = :isDeleted", { isDeleted: false })
+                .andWhere("subscriber.emailVarified = :emailVarified", {
+                emailVarified: true,
+            })
+                .select([
+                "subscriber.subscriberId",
+                "subscriber.userName",
+                "subscriber.company",
+                "subscriber.email",
+                "subscriber.contactNumber",
+                "subscriber.country",
+                "subscriber.state",
+                "subscriber.city",
+                "subscriber.pincode",
+                "subscriber.gstNumber",
+                "subscriber.logo",
+                "subscriber.cdrAutoConvert",
+                "subscriber.emailOtp",
+                "subscriber.prefix",
+                "subscriber.currency",
+            ])
+                .getOne();
+            return subscriber;
+        }
+        catch (error) {
+            throw error;
+        }
+    });
+}
+const getSubscriberSocialMediaData = (subscriberId, profile) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const appDataSource = yield (0, dataSource_1.getDataSource)();
+        const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia_entity_1.subscriberSocialMedia);
+        const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
+        const subscriberSocialMediaData = yield subscriberSocialMediaQueryBuilder
+            .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+            .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
+            .where("facebook.profileId = :profileId", { profileId: profile.id })
+            .andWhere("subscriber.subscriberId = :subscriberId", { subscriberId: subscriberId })
+            .getOne();
+        return subscriberSocialMediaData;
+    }
+    catch (error) {
+        console.error('Error while fetching subscriber social media data', error);
+        return false;
+    }
+});
+exports.getSubscriberSocialMediaData = getSubscriberSocialMediaData;
+const getAllSubscribers = () => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const appDataSource = yield (0, dataSource_1.getDataSource)();
+        const subscriberRepository = appDataSource.getRepository(subscriber_entity_1.subscribers);
+        return yield subscriberRepository.find();
+    }
+    catch (error) {
+        console.error('Error while fetching subscribers', error);
+        return [];
+    }
+});
+exports.getAllSubscribers = getAllSubscribers;

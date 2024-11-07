@@ -20,16 +20,15 @@ export const facebookStrategyConfig = {
 
 // Social Media Utility Functions
 export const verifySignature = (signature: string | undefined, body: any, appSecret: string): boolean => {
-    if (!signature || !signature.startsWith('sha256=')) {
-      return false;
-    }
-    const elements = signature.split('=');  
-    const method = elements[0];
-    const signatureHash = elements[1];
-  
-    const expectedHash = crypto.createHmac('sha256', appSecret).update(body).digest('hex');
-  
-    return signatureHash === expectedHash;
+  if (!signature || !signature.startsWith('sha256=')) {
+    return false;
+  }
+  const elements = signature.split('=');  
+  const method = elements[0];
+  const signatureHash = elements[1];
+
+  const expectedHash = crypto.createHmac('sha256', appSecret).update(body).digest('hex');
+  return signatureHash === expectedHash;
 };
 
 export const fetchingLeadgenData = (body: FacebookWebhookRequest): any=>{
@@ -64,39 +63,62 @@ export const getAppAccessToken = async () => {
     const appId = process.env.META_APP_ID;
     const appSecret = process.env.META_APP_SECRET;
 
-    const url = `https://graph.facebook.com/v20.0/oauth/access_token?grant_type=client_credentials&client_id=${appId}&client_secret=${appSecret}`;
-    const response = await fetch(url);
-    const data = await response.json();
+    let graphApiResponse = null;
+    try {
+      const url = `https://graph.facebook.com/v20.0/oauth/access_token?grant_type=client_credentials&client_id=${appId}&client_secret=${appSecret}`;
+      const response = await fetch(url);
+      graphApiResponse = await response.json();
 
+      if(!graphApiResponse.access_token) {
+        console.error("GET_APP_ACCESS_TOKEN:: Failed to obtain app access token");
+        return;
+      }
+    } catch (error) {
+      console.error('GET_APP_ACCESS_TOKEN:: Error while getting app access token', error);
+      throw error;
+    }
+
+    console.log(graphApiResponse);
+
+    // Delete old entries
     const appDataSource = await getDataSource();
     const adminSocialMediaRepository = appDataSource.getRepository(adminSocialMedia);
     const adminFacebookRepository = appDataSource.getRepository(AdminFacebookSettings);
     const adminRepository = appDataSource.getRepository(admins);
 
-    const adminSocialMediaData = await adminFacebookRepository.createQueryBuilder("adminFacebookSettings")
-      .leftJoinAndSelect("adminFacebookSettings.admin", "admin")
-      .leftJoinAndSelect("adminFacebookSettings.facebook", "facebook")
-      .getOne();
-    if (adminSocialMediaData) {
-      await adminFacebookRepository.delete({ adminFacebookSettingsId: adminSocialMediaData.adminFacebookSettingsId });
-      await adminSocialMediaRepository.delete({ adminSocialMediaId: adminSocialMediaData.adminFacebookSettingsId });
+    try {
+      const adminSocialMediaData = await adminSocialMediaRepository.createQueryBuilder("adminSocialMedia")
+        .leftJoinAndSelect("adminSocialMedia.admin", "admin")
+        .leftJoinAndSelect("adminSocialMedia.facebook", "facebook")
+        .getOne();
+      if (adminSocialMediaData && adminSocialMediaData.adminSocialMediaId && adminSocialMediaData.facebook.adminFacebookSettingsId) {
+        await adminFacebookRepository.delete({ adminFacebookSettingsId: adminSocialMediaData.facebook.adminFacebookSettingsId });
+        await adminSocialMediaRepository.delete({ adminSocialMediaId: adminSocialMediaData.adminSocialMediaId });
+      }
+    } catch (error) {
+      console.error('GET_APP_ACCESS_TOKEN:: Error while deleting old entries', error);
+      throw error;
     }
 
-    const admin = await adminRepository.createQueryBuilder("admin").getOne();
+    try {
+      const admin = await adminRepository.createQueryBuilder("admin").getOne();
+      if(!admin) {
+        console.error("Admin not found");
+        return;
+      }
 
-    if(!admin) {
-      console.log("Admin not found");
-      return;
+      const adminFacebookSettingsEntity = new AdminFacebookSettings();
+      adminFacebookSettingsEntity.appAccessToken = graphApiResponse.access_token;
+      const facebookEntityData = await adminFacebookRepository.save(adminFacebookSettingsEntity);
+
+      const adminSocialMediaEntity = new adminSocialMedia();
+      adminSocialMediaEntity.admin = admin;
+      adminSocialMediaEntity.facebook = facebookEntityData;
+      await adminSocialMediaRepository.save(adminSocialMediaEntity);
+    } catch (error) {
+      console.error('GET_APP_ACCESS_TOKEN:: Error while saving admin social media details', error);
+      throw error;
     }
-
-    const adminFacebookSettingsEntity = new AdminFacebookSettings();
-    adminFacebookSettingsEntity.appAccessToken = data.access_token;
-    const facebookEntityData = await adminFacebookRepository.save(adminFacebookSettingsEntity);
-
-    const adminSocialMediaEntity = new adminSocialMedia();
-    adminSocialMediaEntity.admin = admin;
-    adminSocialMediaEntity.facebook = facebookEntityData;
-    await adminSocialMediaRepository.save(adminSocialMediaEntity);
 
     return console.log('Admin app access token fetched successfully');
 
