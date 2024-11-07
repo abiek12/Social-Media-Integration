@@ -4,6 +4,8 @@ import session from 'express-session';
 import dotenv from 'dotenv';
 import { cronJob } from './utils/cronJob';
 import { INTERNAL_ERROR } from './utils/common';
+import metaRoutes from './socialMedia/routes/meta.routes';
+import facebookAuthRoutes from './socialMedia/routes/auth.routes';
 
 // Load environment variables
 dotenv.config();
@@ -29,6 +31,9 @@ app.use(passport.session());
 app.get('/', (req: Request, res: Response) => {
   res.send('Express server is running!');
 });
+
+app.use('/api/v1/meta_auth', facebookAuthRoutes);
+app.use('/api/v1/meta', metaRoutes);
 
 // Error handling middleware
 app.use((error: any, req: Request, res: Response, next: any) => {
