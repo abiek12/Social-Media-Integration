@@ -3,6 +3,25 @@ import { userRoles } from "../users/subscriber/dataModels/enums/userRoles.enums"
 import { authUtility } from "./authUtility";
 import { getDataSource } from "./dataSource";
 
+export const BAD_REQUEST = 400;
+export const CONFLICT = 409;
+export const SUCCESS_CREATE = 201;
+export const SUCCESS_GET = 200;
+export const NOT_FOUND = 404;
+export const FORBIDDEN = 403;
+export const NOT_AUTHORIZED = 401;
+export const INTERNAL_ERROR = 500;
+export const NOT_ACCEPTABLE = 406;
+export const REDIRECT = 302;
+export const ERROR_COMMON_MESSAGE = "Internal Server Error";
+
+export const lockoutCount = 5;
+export const lockoutTime = 120; // 7days
+export const TOKEN_EXPIRY = 360000;
+export const REFRESH_TOKEN_EXPIRY = 86400000;
+export const ACTIVATION_KEY_EXPIRY_DAYS = 1;
+export const OTP_EXPIRY_TIME = 10;
+
 export const createAdminUser = async (data?: any) => {
     const _authUtility = new authUtility();
     console.log("createAdminUser");
