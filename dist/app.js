@@ -9,6 +9,8 @@ const express_session_1 = __importDefault(require("express-session"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const cronJob_1 = require("./utils/cronJob");
 const common_1 = require("./utils/common");
+const meta_routes_1 = __importDefault(require("./socialMedia/routes/meta.routes"));
+const auth_routes_1 = __importDefault(require("./socialMedia/routes/auth.routes"));
 // Load environment variables
 dotenv_1.default.config();
 const app = (0, express_1.default)();
@@ -28,6 +30,8 @@ app.use(passport_1.default.session());
 app.get('/', (req, res) => {
     res.send('Express server is running!');
 });
+app.use('/api/v1/meta_auth', auth_routes_1.default);
+app.use('/api/v1/meta', meta_routes_1.default);
 // Error handling middleware
 app.use((error, req, res, next) => {
     console.error(error.stack);

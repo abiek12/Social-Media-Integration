@@ -15,7 +15,7 @@ const metaRoutes = (app) => __awaiter(void 0, void 0, void 0, function* () {
     const metaRoutes = new meta_services_1.metaServices();
     const _authUtility = new authUtility_1.authUtility();
     app.get('/facebook', metaRoutes.verifyWebhook);
-    app.post('/facebook', metaRoutes.handleWebhook);
+    app.post('/webhook/facebook', metaRoutes.handleWebhook);
     // Fetch facebook pages of the user(subscriber) using meta graph api
     app.get('/facebook/fetchPages', _authUtility.verifyToken, _authUtility.isSubscriber, metaRoutes.fetchPages);
     app.post('facebook/selectPage', metaRoutes.choosePages);
