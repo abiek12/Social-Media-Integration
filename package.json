@@ -5,22 +5,24 @@
   "main": "dist/app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon src/index.ts",
+    "dev": "nodemon src/server.ts",
     "build": "rimraf ./dist && tsc",
-    "start:prod": "npm run build && node dist/index.js",
-    "start": "ts-node src/index.ts",
+    "start:prod": "npm run build && node dist/server.js",
+    "start": "ts-node src/server.ts",
     "copy-assets": "copyfiles --all --up 1 --exclude \"./**/*.{ts,tsx}\" \"./src/**/*\" ./dist",
     "generate-migrations": "npx typeorm-ts-node-commonjs migration:generate ./src/migrations/test -d ./src/utils/dbConfig.ts",
     "migrate": "npx typeorm-ts-node-commonjs migration:run -d ./dist/utils/dbConfig.js",
     "revert": "npx typeorm-ts-node-commonjs migration:revert -d ./dist/utils/dbConfig.js",
-    "drop": "npx typeorm-ts-node-commonjs schema:drop -d ./dist/utils/dbConfig.js",
-    "prestart": "node sql.js"
+    "drop": "npx typeorm-ts-node-commonjs schema:drop -d ./dist/utils/dbConfig.js"
   },
   "author": "Abhishek pp",
   "license": "ISC",
   "dependencies": {
+    "dotenv": "^16.4.5",
     "express": "^4.21.1",
-    "passport": "^0.7.0"
+    "express-session": "^1.18.1",
+    "passport": "^0.7.0",
+    "rimraf": "^6.0.1"
   },
   "devDependencies": {
     "@types/dotenv": "^6.1.1",
