@@ -7,9 +7,17 @@ const express_1 = __importDefault(require("express"));
 const passport_1 = __importDefault(require("passport"));
 const express_session_1 = __importDefault(require("express-session"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const dbConfig_1 = require("./utils/dbConfig");
 // Load environment variables
 dotenv_1.default.config();
 const app = (0, express_1.default)();
+dbConfig_1.AppDataSource.initialize()
+    .then(() => {
+    console.log('Database connected successfully');
+})
+    .catch((error) => {
+    console.error('Error connecting to the database', error);
+});
 // Middleware
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
@@ -24,7 +32,7 @@ app.use(passport_1.default.initialize());
 app.use(passport_1.default.session());
 // Routes
 app.get('/', (req, res) => {
-    res.send('Express TypeScript server is running!');
+    res.send('Express server is running!');
 });
 // Error handling middleware
 app.use((error, req, res, next) => {

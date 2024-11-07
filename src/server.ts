@@ -8,7 +8,7 @@ const start = async (): Promise<void> => {
       host: "0.0.0.0",
     });
     // app.cron.startAllJobs();
-    console.log(`Server listening on ${address}`); 
+    console.log(`Server listening on ${PORT}`); 
   } catch (error) {
     console.log(`Error starting server: ${error}`);
     process.exit(1);
