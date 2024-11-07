@@ -22,7 +22,9 @@
     "express": "^4.21.1",
     "express-session": "^1.18.1",
     "passport": "^0.7.0",
-    "rimraf": "^6.0.1"
+    "pg": "^8.13.1",
+    "rimraf": "^6.0.1",
+    "typeorm": "^0.3.20"
   },
   "devDependencies": {
     "@types/dotenv": "^6.1.1",
