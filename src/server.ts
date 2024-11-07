@@ -1,4 +1,5 @@
 import app from './app';
+import { createAdminUser } from './utils/common';
 
 const start = async (): Promise<void> => {
   try {
@@ -8,6 +9,7 @@ const start = async (): Promise<void> => {
       host: "0.0.0.0",
     });
     // app.cron.startAllJobs();
+    createAdminUser();
     console.log(`Server listening on ${PORT}`); 
   } catch (error) {
     console.log(`Error starting server: ${error}`);
