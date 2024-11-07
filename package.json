@@ -1,0 +1,21 @@
+{
+  "name": "social-media-integration",
+  "version": "1.0.0",
+  "description": "Lead generation plugin through social media such facebook, whatsapp and intagram utilizing meta graph api.",
+  "main": "dist/app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Abhishek pp",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.1",
+    "passport": "^0.7.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.9.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  }
+}
