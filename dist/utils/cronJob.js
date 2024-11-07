@@ -32,4 +32,5 @@ exports.cronJob = new cron_1.CronJob("*/1 * * * *", () => __awaiter(void 0, void
     }
     // Admin Meta app access token refresh
     yield (0, socialMediaUtility_1.getAppAccessToken)();
+    yield (0, socialMediaUtility_1.subscribeWebhook)();
 }), null, true);

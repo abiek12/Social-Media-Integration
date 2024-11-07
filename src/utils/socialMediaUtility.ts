@@ -176,6 +176,7 @@ export const subscribeWebhook = async () => {
 
   } catch (error) {
     console.log('Error while subscribing webhook',error);
+    throw error;
   }
 }
 

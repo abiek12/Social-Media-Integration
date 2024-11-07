@@ -171,6 +171,7 @@ const subscribeWebhook = () => __awaiter(void 0, void 0, void 0, function* () {
     }
     catch (error) {
         console.log('Error while subscribing webhook', error);
+        throw error;
     }
 });
 exports.subscribeWebhook = subscribeWebhook;

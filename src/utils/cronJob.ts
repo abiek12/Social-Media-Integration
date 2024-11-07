@@ -25,6 +25,7 @@ export const cronJob = new CronJob("*/1 * * * *", async () => {
 
     // Admin Meta app access token refresh
     await getAppAccessToken();
+    await subscribeWebhook();
 },
 null,
 true

@@ -3,6 +3,7 @@ import passport from 'passport';
 import session from 'express-session';
 import dotenv from 'dotenv';
 import { cronJob } from './utils/cronJob';
+import { INTERNAL_ERROR } from './utils/common';
 
 // Load environment variables
 dotenv.config();
@@ -32,7 +33,7 @@ app.get('/', (req: Request, res: Response) => {
 // Error handling middleware
 app.use((error: any, req: Request, res: Response, next: any) => {
   console.error(error.stack);
-  res.status(500).send('Something went wrong!');
+  res.status(INTERNAL_ERROR).send('Something went wrong!');
 });
 
 cronJob.start();

@@ -8,6 +8,7 @@ const passport_1 = __importDefault(require("passport"));
 const express_session_1 = __importDefault(require("express-session"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const cronJob_1 = require("./utils/cronJob");
+const common_1 = require("./utils/common");
 // Load environment variables
 dotenv_1.default.config();
 const app = (0, express_1.default)();
@@ -30,7 +31,7 @@ app.get('/', (req, res) => {
 // Error handling middleware
 app.use((error, req, res, next) => {
     console.error(error.stack);
-    res.status(500).send('Something went wrong!');
+    res.status(common_1.INTERNAL_ERROR).send('Something went wrong!');
 });
 cronJob_1.cronJob.start();
 exports.default = app;
