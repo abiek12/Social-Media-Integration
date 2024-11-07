@@ -24,8 +24,9 @@ exports.cronJob = new cron_1.CronJob("*/1 * * * *", () => __awaiter(void 0, void
             }
         }
     }
-    // Admin Meta webhook subscription and fetching app access token for the first time.
-    if (!(yield (0, socialMediaUtility_1.checkForAdminMetaConnection)())) {
+    const data = yield (0, socialMediaUtility_1.checkForAdminMetaConnection)();
+    // Admin Meta webhook subscription and fetching app access token for the first time. This conditon is for avoiding multiple webhook subscriptions.
+    if (!data) {
         yield (0, socialMediaUtility_1.getAppAccessToken)();
         yield (0, socialMediaUtility_1.subscribeWebhook)();
     }

@@ -15,8 +15,10 @@ export const cronJob = new CronJob("*/1 * * * *", async () => {
         }
     }
     
-    // Admin Meta webhook subscription and fetching app access token for the first time.
-    if(!await checkForAdminMetaConnection()) {
+    const data = await checkForAdminMetaConnection();
+    
+    // Admin Meta webhook subscription and fetching app access token for the first time. This conditon is for avoiding multiple webhook subscriptions.
+    if(!data) {
         await getAppAccessToken();
         await subscribeWebhook();
     }

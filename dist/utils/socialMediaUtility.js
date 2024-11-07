@@ -98,8 +98,8 @@ const getAppAccessToken = () => __awaiter(void 0, void 0, void 0, function* () {
                 .leftJoinAndSelect("adminSocialMedia.facebook", "facebook")
                 .getOne();
             if (adminSocialMediaData && adminSocialMediaData.adminSocialMediaId && adminSocialMediaData.facebook.adminFacebookSettingsId) {
-                yield adminFacebookRepository.delete({ adminFacebookSettingsId: adminSocialMediaData.facebook.adminFacebookSettingsId });
                 yield adminSocialMediaRepository.delete({ adminSocialMediaId: adminSocialMediaData.adminSocialMediaId });
+                yield adminFacebookRepository.delete({ adminFacebookSettingsId: adminSocialMediaData.facebook.adminFacebookSettingsId });
             }
         }
         catch (error) {

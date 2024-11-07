@@ -92,8 +92,8 @@ export const getAppAccessToken = async () => {
         .leftJoinAndSelect("adminSocialMedia.facebook", "facebook")
         .getOne();
       if (adminSocialMediaData && adminSocialMediaData.adminSocialMediaId && adminSocialMediaData.facebook.adminFacebookSettingsId) {
-        await adminFacebookRepository.delete({ adminFacebookSettingsId: adminSocialMediaData.facebook.adminFacebookSettingsId });
         await adminSocialMediaRepository.delete({ adminSocialMediaId: adminSocialMediaData.adminSocialMediaId });
+        await adminFacebookRepository.delete({ adminFacebookSettingsId: adminSocialMediaData.facebook.adminFacebookSettingsId });
       }
     } catch (error) {
       console.error('GET_APP_ACCESS_TOKEN:: Error while deleting old entries', error);
@@ -121,7 +121,6 @@ export const getAppAccessToken = async () => {
     }
 
     return console.log('Admin app access token fetched successfully');
-
   } catch (error) {
     console.log('Error fetching app access token:', error);
   }
@@ -270,7 +269,7 @@ export const checkForAdminMetaConnection = async (): Promise<boolean> => {
       .leftJoinAndSelect("adminSocialMedia.admin", "admin")
       .leftJoinAndSelect("adminSocialMedia.facebook", "facebook")
       .getOne();
-
+    
     if(adminSocialMediaData && adminSocialMediaData.facebook.appAccessToken) return true;
     else return false;
   } catch (error) {
