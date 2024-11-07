@@ -1,4 +1,6 @@
+import { subscriberSocialMedia } from "../socialMedia/dataModels/entities/subscriberSocialMedia.entity";
 import { admins } from "../users/admin/dataModels/entities/admin.entity";
+import { subscribers } from "../users/subscriber/dataModels/entities/subscriber.entity";
 import { userRoles } from "../users/subscriber/dataModels/enums/userRoles.enums";
 import { authUtility } from "./authUtility";
 import { getDataSource } from "./dataSource";
@@ -23,34 +25,94 @@ export const ACTIVATION_KEY_EXPIRY_DAYS = 1;
 export const OTP_EXPIRY_TIME = 10;
 
 export const createAdminUser = async (data?: any) => {
-    const _authUtility = new authUtility();
-    console.log("createAdminUser");
-    try {
-      if (!process.env.adminEmail || !process.env.adminPassword) {
-        console.log(`Admin email or password not found`);
-        return false;
-      }
-      const appDatasourse = await getDataSource();
-      const userRepository = appDatasourse.getRepository(admins);
-      const exitingUser = await userRepository.findOneBy({
-        email: process.env.adminEmail,
-      });
-      if (exitingUser) {
-        console.log(`Admin user already exists`);
-        return false;
-      }
-      const user = new admins();
-      user.email = process.env.adminEmail;
-      user.password = await _authUtility.hashPassword(process.env.adminPassword);
-      user.userName = process.env.adminUserName || "admin";
-      user.userRole = userRoles.SUPERADMIN;
-      user.emailVarified = true;
-      user.approved = true;
-      await userRepository.save(user);
-      console.log(`Admin user created successfully`);
-      return true;
-    } catch (error) {
-      console.log(`Failed to create admin user: ${error}`);
+  const _authUtility = new authUtility();
+  console.log("createAdminUser");
+  try {
+    if (!process.env.adminEmail || !process.env.adminPassword) {
+      console.log(`Admin email or password not found`);
       return false;
     }
-  };
+    const appDatasourse = await getDataSource();
+    const userRepository = appDatasourse.getRepository(admins);
+    const exitingUser = await userRepository.findOneBy({
+      email: process.env.adminEmail,
+    });
+    if (exitingUser) {
+      console.log(`Admin user already exists`);
+      return false;
+    }
+    const user = new admins();
+    user.email = process.env.adminEmail;
+    user.password = await _authUtility.hashPassword(process.env.adminPassword);
+    user.userName = process.env.adminUserName || "admin";
+    user.userRole = userRoles.SUPERADMIN;
+    user.emailVarified = true;
+    user.approved = true;
+    await userRepository.save(user);
+    console.log(`Admin user created successfully`);
+    return true;
+  } catch (error) {
+    console.log(`Failed to create admin user: ${error}`);
+    return false;
+  }
+};
+
+export async function checkSubscriberExitenceUsingId(subscriberId: number) {
+  try {
+    const appDataSource = await getDataSource();
+    const subscriberRepository = appDataSource.getRepository(subscribers);
+
+    const subscriber = await subscriberRepository
+      .createQueryBuilder("subscriber")
+      .where("subscriber.subscriberId = :subscriberId", {
+        subscriberId: subscriberId,
+      })
+      .andWhere("subscriber.isDeleted = :isDeleted", { isDeleted: false })
+      .andWhere("subscriber.emailVarified = :emailVarified", {
+        emailVarified: true,
+      })
+      .select([
+        "subscriber.subscriberId",
+        "subscriber.userName",
+        "subscriber.company",
+        "subscriber.email",
+        "subscriber.contactNumber",
+        "subscriber.country",
+        "subscriber.state",
+        "subscriber.city",
+        "subscriber.pincode",
+        "subscriber.gstNumber",
+        "subscriber.logo",
+        "subscriber.cdrAutoConvert",
+        "subscriber.emailOtp",
+        "subscriber.prefix",
+        "subscriber.currency",
+      ])
+      .getOne();
+
+    return subscriber;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export const getSubscriberSocialMediaData = async (subscriberId: number, profile: any) => {
+  try {
+    const appDataSource = await getDataSource();
+    const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
+    const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
+
+    const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
+      .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+      .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
+      .where("facebook.profileId = :profileId", { profileId: profile.id })
+      .andWhere("subscriber.subscriberId = :subscriberId", { subscriberId: subscriberId })
+      .getOne();
+
+    return subscriberSocialMediaData;
+  } catch (error) {
+    console.error('Error while fetching subscriber social media data', error);
+    return false;
+  }
+}
+  

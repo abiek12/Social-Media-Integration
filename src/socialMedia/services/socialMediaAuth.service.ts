@@ -10,6 +10,7 @@ export const facebookAuthHandler = async (request: Request, response: Response) 
     if(!subscriberId) {
       console.log("Subscriber id not found");
       response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "Subscriber id not found"));
+      return;
     }
     passport.authenticate('facebook', { 
       scope: [
