@@ -126,4 +126,18 @@ export const getAllSubscribers = async () => {
     return [];
   }
 }
-  
+
+
+export const validateEmail = async (email: String) => {
+  let re =
+    /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  if (email) return re.test(String(email).toLowerCase());
+  return false;
+}
+
+export const generateTokens = async (userRole: string, userId: number) => {
+  const _authUtility = new authUtility();
+  const accessToken = await _authUtility.generateAccessToken(userRole, userId);
+  const refreshToken = await _authUtility.generateRefreshToken(userRole, userId);
+  return { accessToken, refreshToken };
+};

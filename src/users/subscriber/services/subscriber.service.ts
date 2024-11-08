@@ -1,5 +1,6 @@
-import { BAD_REQUEST, CONFLICT, SUCCESS_GET } from "../../../utils/common";
+import { BAD_REQUEST, CONFLICT, SUCCESS_GET, validateEmail } from "../../../utils/common";
 import { getDataSource } from "../../../utils/dataSource";
+import { Success } from "../../../utils/response";
 import { subscribers } from "../dataModels/entities/subscriber.entity";
 import { SubscriberRegInputData } from "../dataModels/types/subscriber.type";
 import { Request, Response } from "express";
@@ -12,6 +13,13 @@ export class subscriberService {
                 response.status(BAD_REQUEST).send("Please provide email and password");
                 return;
             }
+
+            if (!(await validateEmail(email))) {
+              console.error(`Invalid email`);
+              response.status(BAD_REQUEST).send("Invalid email");
+              return;
+            }
+            
             const appDatasourse = await getDataSource();
             const subscriberRepository = appDatasourse.getRepository(subscribers);
             const existingSubscribersWithSameEmail =await subscriberRepository.findOneBy({ email: email, isDeleted: false });
@@ -25,7 +33,7 @@ export class subscriberService {
             subscriber.userName = userName;
             subscriber.password = password;
             await subscriberRepository.save(subscriber);
-            response.status(SUCCESS_GET).send("Subscriber registered successfully");
+            response.status(SUCCESS_GET).send(Success("Subscriber registered successfully"));
             return;
         } catch (error) {
             console.error("Error while subscriber registration", error);
