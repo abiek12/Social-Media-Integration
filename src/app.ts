@@ -6,6 +6,8 @@ import { cronJob } from './utils/cronJob';
 import { INTERNAL_ERROR } from './utils/common';
 import metaRoutes from './socialMedia/routes/meta.routes';
 import facebookAuthRoutes from './socialMedia/routes/auth.routes';
+import subscriberRoutes from './users/subscriber/routes/subscriber.route';
+import authRoutes from './users/auth/routes/auth.route';
 
 // Load environment variables
 dotenv.config();
@@ -34,6 +36,9 @@ app.get('/', (req: Request, res: Response) => {
 
 app.use('/api/v1/meta_auth', facebookAuthRoutes);
 app.use('/api/v1/meta', metaRoutes);
+app.use('/api/v1', subscriberRoutes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/subscriber', subscriberRoutes);
 
 // Error handling middleware
 app.use((error: any, req: Request, res: Response, next: any) => {
