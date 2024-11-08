@@ -13,13 +13,13 @@ export class AuthService {
         try {
             const { email, password, role } = request.body as { email: string, password: string, role: string };
             if (!email || !password) {
-                response.status(BAD_REQUEST).send("Please provide email and password");
+                response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "Please provide email and password"));
                 return;
             }
 
             if (!(await validateEmail(email))) {
               console.error(`Invalid email`);
-              response.status(BAD_REQUEST).send("Invalid email");
+              response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "Invalid email"));
               return;
             }
 
@@ -45,7 +45,7 @@ export class AuthService {
             const user = await userQueryBuilder.getOne();
             if (!user) {
               console.error(`User not found`);
-              response.status(BAD_REQUEST).send("User not found");
+              response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "User not found"));
               return;
             }
 

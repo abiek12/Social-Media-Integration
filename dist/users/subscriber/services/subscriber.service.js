@@ -31,7 +31,7 @@ class subscriberService {
                 }
                 const appDatasourse = yield (0, dataSource_1.getDataSource)();
                 const subscriberRepository = appDatasourse.getRepository(subscriber_entity_1.subscribers);
-                const existingSubscribersWithSameEmail = yield subscriberRepository.findOneBy({ email: email, isDeleted: false });
+                const existingSubscribersWithSameEmail = yield subscriberRepository.findOneBy({ email: email });
                 if (existingSubscribersWithSameEmail) {
                     response.status(common_1.CONFLICT).send("Email already exists");
                     return;
@@ -43,6 +43,7 @@ class subscriberService {
                 subscriber.password = password;
                 subscriber.userRole = userRoles_enums_1.userRoles.SUBSCRIBER;
                 yield subscriberRepository.save(subscriber);
+                console.log("Subscriber registered successfully");
                 response.status(common_1.SUCCESS_GET).send((0, response_1.Success)("Subscriber registered successfully"));
                 return;
             }

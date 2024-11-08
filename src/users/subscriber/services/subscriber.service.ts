@@ -1,6 +1,6 @@
 import { BAD_REQUEST, CONFLICT, SUCCESS_GET, validateEmail } from "../../../utils/common";
 import { getDataSource } from "../../../utils/dataSource";
-import { Success } from "../../../utils/response";
+import { CustomError, Success } from "../../../utils/response";
 import { subscribers } from "../dataModels/entities/subscriber.entity";
 import { userRoles } from "../dataModels/enums/userRoles.enums";
 import { SubscriberRegInputData } from "../dataModels/types/subscriber.type";
@@ -12,13 +12,13 @@ export class subscriberService {
             const { email, password, company, userName } = request.body as SubscriberRegInputData;
             
             if(!email || !password || !company || !userName) {
-                response.status(BAD_REQUEST).send("Please provide email and password");
+                response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "Please provide email and password"));
                 return;
             }
 
             if (!(await validateEmail(email))) {
               console.error(`Invalid email`);
-              response.status(BAD_REQUEST).send("Invalid email");
+              response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "Invalid email"));
               return;
             }
             
@@ -26,7 +26,7 @@ export class subscriberService {
             const subscriberRepository = appDatasourse.getRepository(subscribers);
             const existingSubscribersWithSameEmail =await subscriberRepository.findOneBy({ email: email });
             if(existingSubscribersWithSameEmail) {
-                response.status(CONFLICT).send("Email already exists");
+                response.status(CONFLICT).send(CustomError(CONFLICT, "Email already exists"));
                 return;
             }
             const subscriber = new subscribers();
@@ -36,6 +36,7 @@ export class subscriberService {
             subscriber.password = password;
             subscriber.userRole = userRoles.SUBSCRIBER;
             await subscriberRepository.save(subscriber);
+            console.log("Subscriber registered successfully");
             response.status(SUCCESS_GET).send(Success("Subscriber registered successfully"));
             return;
         } catch (error) {
