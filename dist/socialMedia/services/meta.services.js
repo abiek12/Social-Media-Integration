@@ -27,6 +27,7 @@ class metaServices {
     constructor() {
         // Meta Webhook Verification Endpoint
         this.verifyWebhook = (request, response) => __awaiter(this, void 0, void 0, function* () {
+            console.log("verifyWebhook called");
             const { 'hub.mode': mode, 'hub.verify_token': token, 'hub.challenge': challenge } = request.query;
             if (mode === 'subscribe' && token === process.env.META_APP_VERIFY_TOKEN) {
                 response.send(challenge);

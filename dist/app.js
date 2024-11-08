@@ -7,7 +7,6 @@ const express_1 = __importDefault(require("express"));
 const passport_1 = __importDefault(require("passport"));
 const express_session_1 = __importDefault(require("express-session"));
 const dotenv_1 = __importDefault(require("dotenv"));
-const cronJob_1 = require("./utils/cronJob");
 const common_1 = require("./utils/common");
 const meta_routes_1 = __importDefault(require("./socialMedia/routes/meta.routes"));
 const auth_routes_1 = __importDefault(require("./socialMedia/routes/auth.routes"));
@@ -41,5 +40,4 @@ app.use((error, req, res, next) => {
     console.error(error.stack);
     res.status(common_1.INTERNAL_ERROR).send('Something went wrong!');
 });
-cronJob_1.cronJob.start();
 exports.default = app;

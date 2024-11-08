@@ -143,7 +143,7 @@ const subscribeWebhook = () => __awaiter(void 0, void 0, void 0, function* () {
         if (adminSocialMediaData) {
             const appId = process.env.META_APP_ID;
             const verifyToken = process.env.META_APP_VERIFY_TOKEN;
-            const callbackUrl = process.env.BACKEND_URL + '/api/v1/meta/webhook/facebook';
+            const callbackUrl = process.env.NGROK_URL + '/api/v1/meta/facebook';
             const appAccessToken = adminSocialMediaData.facebook.appAccessToken;
             const url = `https://graph.facebook.com/v20.0/${appId}/subscriptions?access_token=${appAccessToken}`;
             const data = {

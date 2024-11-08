@@ -6,7 +6,7 @@ const router = express.Router();
 const _metaServices = new metaServices();
 const _authUtility = new authUtility();
 
-router.get('/facebook', _metaServices.verifyWebhook);
+router.get('/webhook/facebook', _metaServices.verifyWebhook);
 router.post('/webhook/facebook', _metaServices.handleWebhook);
 
 // Fetch facebook pages of the user(subscriber) using meta graph api
