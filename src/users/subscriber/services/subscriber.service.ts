@@ -1,3 +1,4 @@
+import { authUtility } from "../../../utils/authUtility";
 import { BAD_REQUEST, CONFLICT, SUCCESS_GET, validateEmail } from "../../../utils/common";
 import { getDataSource } from "../../../utils/dataSource";
 import { CustomError, Success } from "../../../utils/response";
@@ -7,6 +8,7 @@ import { SubscriberRegInputData } from "../dataModels/types/subscriber.type";
 import { Request, Response } from "express";
 
 export class subscriberService {
+    _authUtility = new authUtility();
     subscriberRegistration = async (request: Request, response: Response) => {
         try {
             const { email, password, company, userName } = request.body as SubscriberRegInputData;
@@ -33,7 +35,7 @@ export class subscriberService {
             subscriber.email = email;
             subscriber.company = company;
             subscriber.userName = userName;
-            subscriber.password = password;
+            subscriber.password = await this._authUtility.hashPassword(password);;
             subscriber.userRole = userRoles.SUBSCRIBER;
             await subscriberRepository.save(subscriber);
             console.log("Subscriber registered successfully");

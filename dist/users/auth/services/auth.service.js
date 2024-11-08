@@ -24,12 +24,12 @@ class AuthService {
             try {
                 const { email, password, role } = request.body;
                 if (!email || !password) {
-                    response.status(common_1.BAD_REQUEST).send("Please provide email and password");
+                    response.status(common_1.BAD_REQUEST).send((0, response_1.CustomError)(common_1.BAD_REQUEST, "Please provide email and password"));
                     return;
                 }
                 if (!(yield (0, common_1.validateEmail)(email))) {
                     console.error(`Invalid email`);
-                    response.status(common_1.BAD_REQUEST).send("Invalid email");
+                    response.status(common_1.BAD_REQUEST).send((0, response_1.CustomError)(common_1.BAD_REQUEST, "Invalid email"));
                     return;
                 }
                 let userRepository;
@@ -52,10 +52,12 @@ class AuthService {
                 const user = yield userQueryBuilder.getOne();
                 if (!user) {
                     console.error(`User not found`);
-                    response.status(common_1.BAD_REQUEST).send("User not found");
+                    response.status(common_1.BAD_REQUEST).send((0, response_1.CustomError)(common_1.BAD_REQUEST, "User not found"));
                     return;
                 }
+                console.log(user);
                 const passwordComparison = yield this._authUtility.comparePassword(password, user.password);
+                console.log("passwordComparison", passwordComparison);
                 if (!passwordComparison) {
                     console.error(`Invalid password`);
                     response.status(common_1.BAD_REQUEST).send((0, response_1.CustomError)(common_1.BAD_REQUEST, "Invalid password"));

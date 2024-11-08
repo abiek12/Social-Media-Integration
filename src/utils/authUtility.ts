@@ -68,6 +68,7 @@ export class authUtility {
 
     comparePassword = async ( rawPassword: string, hashedPassword: string ): Promise<boolean> => {
         try {
+          console.log(`rawPassword: ${rawPassword}, hashedPassword: ${hashedPassword}`);
           return await bcrypt.compare(rawPassword, hashedPassword);
         } catch (err) {
           console.error(`Error in comparePassword: ${err}`);

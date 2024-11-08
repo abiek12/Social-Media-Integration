@@ -21,19 +21,19 @@ class subscriberService {
             try {
                 const { email, password, company, userName } = request.body;
                 if (!email || !password || !company || !userName) {
-                    response.status(common_1.BAD_REQUEST).send("Please provide email and password");
+                    response.status(common_1.BAD_REQUEST).send((0, response_1.CustomError)(common_1.BAD_REQUEST, "Please provide email and password"));
                     return;
                 }
                 if (!(yield (0, common_1.validateEmail)(email))) {
                     console.error(`Invalid email`);
-                    response.status(common_1.BAD_REQUEST).send("Invalid email");
+                    response.status(common_1.BAD_REQUEST).send((0, response_1.CustomError)(common_1.BAD_REQUEST, "Invalid email"));
                     return;
                 }
                 const appDatasourse = yield (0, dataSource_1.getDataSource)();
                 const subscriberRepository = appDatasourse.getRepository(subscriber_entity_1.subscribers);
                 const existingSubscribersWithSameEmail = yield subscriberRepository.findOneBy({ email: email });
                 if (existingSubscribersWithSameEmail) {
-                    response.status(common_1.CONFLICT).send("Email already exists");
+                    response.status(common_1.CONFLICT).send((0, response_1.CustomError)(common_1.CONFLICT, "Email already exists"));
                     return;
                 }
                 const subscriber = new subscriber_entity_1.subscribers();
