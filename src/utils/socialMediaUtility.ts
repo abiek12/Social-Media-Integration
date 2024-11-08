@@ -79,47 +79,28 @@ export const getAppAccessToken = async () => {
       throw error;
     }
 
-    // Delete old entries
+    // Update app access token
     const appDataSource = await getDataSource();
     const adminSocialMediaRepository = appDataSource.getRepository(adminSocialMedia);
     const adminFacebookRepository = appDataSource.getRepository(AdminFacebookSettings);
-    const adminRepository = appDataSource.getRepository(admins);
-
     try {
       const adminSocialMediaData = await adminSocialMediaRepository.createQueryBuilder("adminSocialMedia")
         .leftJoinAndSelect("adminSocialMedia.admin", "admin")
         .leftJoinAndSelect("adminSocialMedia.facebook", "facebook")
         .getOne();
-      if (adminSocialMediaData && adminSocialMediaData.adminSocialMediaId && adminSocialMediaData.facebook.adminFacebookSettingsId) {
-        await adminSocialMediaRepository.delete({ adminSocialMediaId: adminSocialMediaData.adminSocialMediaId });
-        await adminFacebookRepository.delete({ adminFacebookSettingsId: adminSocialMediaData.facebook.adminFacebookSettingsId });
+      if (adminSocialMediaData) {
+        const adminFacebookData = await adminFacebookRepository.createQueryBuilder("adminFacebook").getOne();
+        if(adminFacebookData) {
+          adminFacebookData.appAccessToken = graphApiResponse.access_token;
+          await adminFacebookRepository.save(adminFacebookData);
+        }
       }
     } catch (error) {
       console.error('GET_APP_ACCESS_TOKEN:: Error while deleting old entries', error);
       throw error;
     }
 
-    try {
-      const admin = await adminRepository.createQueryBuilder("admin").getOne();
-      if(!admin) {
-        console.error("GET_APP_ACCESS_TOKEN:: Admin not found");
-        return;
-      }
-
-      const adminFacebookSettingsEntity = new AdminFacebookSettings();
-      adminFacebookSettingsEntity.appAccessToken = graphApiResponse.access_token;
-      const facebookEntityData = await adminFacebookRepository.save(adminFacebookSettingsEntity);
-
-      const adminSocialMediaEntity = new adminSocialMedia();
-      adminSocialMediaEntity.admin = admin;
-      adminSocialMediaEntity.facebook = facebookEntityData;
-      await adminSocialMediaRepository.save(adminSocialMediaEntity);
-    } catch (error) {
-      console.error('GET_APP_ACCESS_TOKEN:: Error while saving admin social media details', error);
-      throw error;
-    }
-
-    return console.log('GET_APP_ACCESS_TOKEN:: Admin app access token fetched successfully');
+    return console.log('GET_APP_ACCESS_TOKEN:: Admin app access token fetched and updated successfully');
   } catch (error) {
     console.log('GET_APP_ACCESS_TOKEN:: Error fetching app access token:', error);
   }
