@@ -103,7 +103,7 @@ export const getAppAccessToken = async () => {
     try {
       const admin = await adminRepository.createQueryBuilder("admin").getOne();
       if(!admin) {
-        console.error("Admin not found");
+        console.error("GET_APP_ACCESS_TOKEN:: Admin not found");
         return;
       }
 
@@ -120,9 +120,9 @@ export const getAppAccessToken = async () => {
       throw error;
     }
 
-    return console.log('Admin app access token fetched successfully');
+    return console.log('GET_APP_ACCESS_TOKEN:: Admin app access token fetched successfully');
   } catch (error) {
-    console.log('Error fetching app access token:', error);
+    console.log('GET_APP_ACCESS_TOKEN:: Error fetching app access token:', error);
   }
 }
 
@@ -170,7 +170,9 @@ export const subscribeWebhook = async () => {
       const response = await fetch(url, { method: 'post', headers, body });
       const finalRes = await response.json();
       if(finalRes.error) {
-        return console.log('WEBHOOK_SUBSCRIPTION:: Error while subscribing webhook', finalRes.error);
+        console.log('WEBHOOK_SUBSCRIPTION:: Error while subscribing webhook', finalRes.error);
+        console.log("WEBHOOK_SUBSCRIPTION:: Webhook not subscribed!");
+        return;
       }
 
       // Save webhook subscription status if it's successful

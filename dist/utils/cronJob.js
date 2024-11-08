@@ -24,13 +24,10 @@ exports.cronJob = new cron_1.CronJob("*/1 * * * *", () => __awaiter(void 0, void
             }
         }
     }
-    const data = yield (0, socialMediaUtility_1.checkForAdminMetaConnection)();
-    // Admin Meta webhook subscription and fetching app access token for the first time. This conditon is for avoiding multiple webhook subscriptions.
-    if (!data) {
-        yield (0, socialMediaUtility_1.getAppAccessToken)();
+    // Admin Meta app access token fetching.
+    yield (0, socialMediaUtility_1.getAppAccessToken)();
+    // Admin Meta webhook subscription if not subscribed.
+    if (!(yield (0, socialMediaUtility_1.checkWebhookSubscription)())) {
         yield (0, socialMediaUtility_1.subscribeWebhook)();
     }
-    // Admin Meta app access token refresh
-    yield (0, socialMediaUtility_1.getAppAccessToken)();
-    yield (0, socialMediaUtility_1.subscribeWebhook)();
 }), null, true);

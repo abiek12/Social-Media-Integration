@@ -1,6 +1,6 @@
 import { CronJob } from "cron";
 import { getAllSubscribers } from "./common";
-import { checkForAdminMetaConnection, checkForSubscribersMetaConnection, checkWebhookSubscription, getAppAccessToken, refreshAllTokens, subscribeWebhook } from "./socialMediaUtility";
+import { checkForSubscribersMetaConnection, checkWebhookSubscription, getAppAccessToken, refreshAllTokens, subscribeWebhook } from "./socialMediaUtility";
 
 export const cronJob = new CronJob("*/1 * * * *", async () => {
     console.log("Cron job running");

@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.refreshAllTokens = exports.updatePagesInDb = exports.updateUserAccessTokenInDb = exports.getPageAccessToken = exports.getLongLivedUserToken = exports.getSubscribersWithExpiringTokens = exports.checkForSubscribersMetaConnection = exports.checkForAdminMetaConnection = exports.fetchFacebookPages = exports.getMetaUserAccessTokenDb = exports.installMetaApp = exports.subscribeWebhook = exports.getAppAccessToken = exports.fetchingLeadDetails = exports.fetchingLeadgenData = exports.verifySignature = exports.facebookStrategyConfig = exports.CLIENT_FAILED_URL = exports.CLIENT_URL = void 0;
+exports.refreshAllTokens = exports.updatePagesInDb = exports.updateUserAccessTokenInDb = exports.getPageAccessToken = exports.getLongLivedUserToken = exports.getSubscribersWithExpiringTokens = exports.checkForSubscribersMetaConnection = exports.checkWebhookSubscription = exports.checkForAdminMetaConnection = exports.fetchFacebookPages = exports.getMetaUserAccessTokenDb = exports.installMetaApp = exports.subscribeWebhook = exports.getAppAccessToken = exports.fetchingLeadDetails = exports.fetchingLeadgenData = exports.verifySignature = exports.facebookStrategyConfig = exports.CLIENT_FAILED_URL = exports.CLIENT_URL = void 0;
 const crypto_1 = __importDefault(require("crypto"));
 const adminSocialMedia_entity_1 = require("../socialMedia/dataModels/entities/adminSocialMedia.entity");
 const subscriberSocialMedia_entity_1 = require("../socialMedia/dataModels/entities/subscriberSocialMedia.entity");
@@ -109,7 +109,7 @@ const getAppAccessToken = () => __awaiter(void 0, void 0, void 0, function* () {
         try {
             const admin = yield adminRepository.createQueryBuilder("admin").getOne();
             if (!admin) {
-                console.error("Admin not found");
+                console.error("GET_APP_ACCESS_TOKEN:: Admin not found");
                 return;
             }
             const adminFacebookSettingsEntity = new adminFacebook_entity_1.AdminFacebookSettings();
@@ -124,10 +124,10 @@ const getAppAccessToken = () => __awaiter(void 0, void 0, void 0, function* () {
             console.error('GET_APP_ACCESS_TOKEN:: Error while saving admin social media details', error);
             throw error;
         }
-        return console.log('Admin app access token fetched successfully');
+        return console.log('GET_APP_ACCESS_TOKEN:: Admin app access token fetched successfully');
     }
     catch (error) {
-        console.log('Error fetching app access token:', error);
+        console.log('GET_APP_ACCESS_TOKEN:: Error fetching app access token:', error);
     }
 });
 exports.getAppAccessToken = getAppAccessToken;
@@ -166,7 +166,9 @@ const subscribeWebhook = () => __awaiter(void 0, void 0, void 0, function* () {
             const response = yield fetch(url, { method: 'post', headers, body });
             const finalRes = yield response.json();
             if (finalRes.error) {
-                return console.log('WEBHOOK_SUBSCRIPTION:: Error while subscribing webhook', finalRes.error);
+                console.log('WEBHOOK_SUBSCRIPTION:: Error while subscribing webhook', finalRes.error);
+                console.log("WEBHOOK_SUBSCRIPTION:: Webhook failed to subscribe");
+                return;
             }
             // Save webhook subscription status if it's successful
             adminSocialMediaData.isWebhookSubscribed = true;
@@ -278,6 +280,26 @@ const checkForAdminMetaConnection = () => __awaiter(void 0, void 0, void 0, func
     }
 });
 exports.checkForAdminMetaConnection = checkForAdminMetaConnection;
+const checkWebhookSubscription = () => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const appDataSource = yield (0, dataSource_1.getDataSource)();
+        const adminSocialMediaRepository = appDataSource.getRepository(adminSocialMedia_entity_1.adminSocialMedia);
+        const adminSocialMediaQuerybuilder = adminSocialMediaRepository.createQueryBuilder('adminSocialMedia');
+        const adminSocialMediaData = yield adminSocialMediaQuerybuilder
+            .leftJoinAndSelect("adminSocialMedia.admin", "admin")
+            .leftJoinAndSelect("adminSocialMedia.facebook", "facebook")
+            .getOne();
+        if (adminSocialMediaData && adminSocialMediaData.isWebhookSubscribed)
+            return true;
+        else
+            return false;
+    }
+    catch (error) {
+        console.error('Error while checking webhook subscription', error);
+        throw error;
+    }
+});
+exports.checkWebhookSubscription = checkWebhookSubscription;
 const subscriberSocialMediaRepo = (subscriberId) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const appDataSource = yield (0, dataSource_1.getDataSource)();
