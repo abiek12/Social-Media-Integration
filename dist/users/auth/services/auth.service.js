@@ -55,9 +55,7 @@ class AuthService {
                     response.status(common_1.BAD_REQUEST).send((0, response_1.CustomError)(common_1.BAD_REQUEST, "User not found"));
                     return;
                 }
-                console.log(user);
                 const passwordComparison = yield this._authUtility.comparePassword(password, user.password);
-                console.log("passwordComparison", passwordComparison);
                 if (!passwordComparison) {
                     console.error(`Invalid password`);
                     response.status(common_1.BAD_REQUEST).send((0, response_1.CustomError)(common_1.BAD_REQUEST, "Invalid password"));

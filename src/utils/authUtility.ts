@@ -1,6 +1,6 @@
 import * as bcrypt from "bcrypt";
 import { NextFunction, Request, Response } from "express";
-import { FORBIDDEN, NOT_AUTHORIZED } from "./common";
+import { FORBIDDEN, INTERNAL_ERROR, NOT_AUTHORIZED } from "./common";
 import { CustomError } from "./response";
 import jwt from "jsonwebtoken";
 import { userRoles } from "../users/subscriber/dataModels/enums/userRoles.enums";
@@ -39,12 +39,13 @@ export class authUtility {
             token = token.slice(7, token.length).trimLeft();
           }
 
-          const decoded = jwt.verify(token, process.env.jwtSecretKey as string);
+          const decoded = jwt.verify(token, process.env.SECRET_KEY as string);
           (req as any).user = decoded;
 
           next(); // Move to the next middleware or route handler
         } catch (error) {
-            res.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "Un-Authorized Token"));
+            console.error(`Error in verifyToken: ${error}`);
+            res.status(INTERNAL_ERROR).send(CustomError(INTERNAL_ERROR, `Error in token verification.`,));
             return;
         }
     };

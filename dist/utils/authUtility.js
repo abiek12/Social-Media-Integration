@@ -54,12 +54,13 @@ class authUtility {
                 if (token.startsWith("Bearer ")) {
                     token = token.slice(7, token.length).trimLeft();
                 }
-                const decoded = jsonwebtoken_1.default.verify(token, process.env.jwtSecretKey);
+                const decoded = jsonwebtoken_1.default.verify(token, process.env.SECRET_KEY);
                 req.user = decoded;
                 next(); // Move to the next middleware or route handler
             }
             catch (error) {
-                res.status(common_1.NOT_AUTHORIZED).send((0, response_1.CustomError)(common_1.NOT_AUTHORIZED, "Un-Authorized Token"));
+                console.error(`Error in verifyToken: ${error}`);
+                res.status(common_1.INTERNAL_ERROR).send((0, response_1.CustomError)(common_1.INTERNAL_ERROR, `Error in token verification.`));
                 return;
             }
         });

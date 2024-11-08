@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.subscriberService = void 0;
+const authUtility_1 = require("../../../utils/authUtility");
 const common_1 = require("../../../utils/common");
 const dataSource_1 = require("../../../utils/dataSource");
 const response_1 = require("../../../utils/response");
@@ -17,6 +18,7 @@ const subscriber_entity_1 = require("../dataModels/entities/subscriber.entity");
 const userRoles_enums_1 = require("../dataModels/enums/userRoles.enums");
 class subscriberService {
     constructor() {
+        this._authUtility = new authUtility_1.authUtility();
         this.subscriberRegistration = (request, response) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const { email, password, company, userName } = request.body;
@@ -40,7 +42,8 @@ class subscriberService {
                 subscriber.email = email;
                 subscriber.company = company;
                 subscriber.userName = userName;
-                subscriber.password = password;
+                subscriber.password = yield this._authUtility.hashPassword(password);
+                ;
                 subscriber.userRole = userRoles_enums_1.userRoles.SUBSCRIBER;
                 yield subscriberRepository.save(subscriber);
                 console.log("Subscriber registered successfully");
