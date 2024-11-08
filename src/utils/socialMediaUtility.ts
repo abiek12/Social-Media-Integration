@@ -78,8 +78,6 @@ export const getAppAccessToken = async () => {
       throw error;
     }
 
-    console.log(graphApiResponse);
-
     // Delete old entries
     const appDataSource = await getDataSource();
     const adminSocialMediaRepository = appDataSource.getRepository(adminSocialMedia);

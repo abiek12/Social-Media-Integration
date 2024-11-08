@@ -86,7 +86,6 @@ const getAppAccessToken = () => __awaiter(void 0, void 0, void 0, function* () {
             console.error('GET_APP_ACCESS_TOKEN:: Error while getting app access token', error);
             throw error;
         }
-        console.log(graphApiResponse);
         // Delete old entries
         const appDataSource = yield (0, dataSource_1.getDataSource)();
         const adminSocialMediaRepository = appDataSource.getRepository(adminSocialMedia_entity_1.adminSocialMedia);
@@ -166,7 +165,7 @@ const subscribeWebhook = () => __awaiter(void 0, void 0, void 0, function* () {
             const response = yield fetch(url, { method: 'post', headers, body });
             const finalRes = yield response.json();
             if (finalRes.error) {
-                console.error("WEBHOOK_SUBSCRIPTION::", finalRes.error.error_user_title, finalRes.error.error_user_msg);
+                console.error('WEBHOOK_SUBSCRIPTION:: Error while subscribing webhook', finalRes.error);
                 console.log("WEBHOOK_SUBSCRIPTION:: Webhook not subscribed!");
                 return;
             }
