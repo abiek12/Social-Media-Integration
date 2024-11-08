@@ -67,29 +67,29 @@ export class authUtility {
 
 
     comparePassword = async ( rawPassword: string, hashedPassword: string ): Promise<boolean> => {
-      try {
-        return await bcrypt.compare(rawPassword, hashedPassword);
-      } catch (err) {
-        console.error(`Error in comparePassword: ${err}`);
-        throw err;
-      }
+        try {
+          return await bcrypt.compare(rawPassword, hashedPassword);
+        } catch (err) {
+          console.error(`Error in comparePassword: ${err}`);
+          throw err;
+        }
     };
 
     generateAccessToken = async (userRole: string, userId: number): Promise<string> => {
-      try {
-        return await jwt.sign({ userId, role: userRole }, process.env.SECRET_KEY as string, { expiresIn: "1h" });
-      } catch (err) {
-        console.error(`Error in generateAccessToken: ${err}`);
-        throw err;
-      }
+        try {
+          return await jwt.sign({ userId, role: userRole }, process.env.SECRET_KEY as string, { expiresIn: "1h" });
+        } catch (err) {
+          console.error(`Error in generateAccessToken: ${err}`);
+          throw err;
+        }
     };
 
     generateRefreshToken = async (userRole: string, userId: number): Promise<string> => {
-      try {
-        return await jwt.sign({ userId, role: userRole }, process.env.SECRET_KEY as string, { expiresIn: "7d" });
-      } catch (err) {
-        console.error(`Error in generateRefreshToken: ${err}`);
-        throw err;
-      }
+        try {
+          return await jwt.sign({ userId, role: userRole }, process.env.SECRET_KEY as string, { expiresIn: "7d" });
+        } catch (err) {
+          console.error(`Error in generateRefreshToken: ${err}`);
+          throw err;
+        }
     };
 }
