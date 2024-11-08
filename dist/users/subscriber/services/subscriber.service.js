@@ -14,12 +14,12 @@ const common_1 = require("../../../utils/common");
 const dataSource_1 = require("../../../utils/dataSource");
 const response_1 = require("../../../utils/response");
 const subscriber_entity_1 = require("../dataModels/entities/subscriber.entity");
+const userRoles_enums_1 = require("../dataModels/enums/userRoles.enums");
 class subscriberService {
     constructor() {
         this.subscriberRegistration = (request, response) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const { email, password, company, userName } = request.body;
-                console.log("email", email, "password", password, "company", company, "userName", userName);
                 if (!email || !password || !company || !userName) {
                     response.status(common_1.BAD_REQUEST).send("Please provide email and password");
                     return;
@@ -41,6 +41,7 @@ class subscriberService {
                 subscriber.company = company;
                 subscriber.userName = userName;
                 subscriber.password = password;
+                subscriber.userRole = userRoles_enums_1.userRoles.SUBSCRIBER;
                 yield subscriberRepository.save(subscriber);
                 response.status(common_1.SUCCESS_GET).send((0, response_1.Success)("Subscriber registered successfully"));
                 return;

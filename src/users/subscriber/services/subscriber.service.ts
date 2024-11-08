@@ -24,7 +24,7 @@ export class subscriberService {
             
             const appDatasourse = await getDataSource();
             const subscriberRepository = appDatasourse.getRepository(subscribers);
-            const existingSubscribersWithSameEmail =await subscriberRepository.findOneBy({ email: email, isDeleted: false });
+            const existingSubscribersWithSameEmail =await subscriberRepository.findOneBy({ email: email });
             if(existingSubscribersWithSameEmail) {
                 response.status(CONFLICT).send("Email already exists");
                 return;
