@@ -35,7 +35,6 @@ app.get('/', (req: Request, res: Response) => {
 });
 app.use('/api/v1/meta_auth', facebookAuthRoutes);
 app.use('/api/v1/meta', metaRoutes);
-app.use('/api/v1', subscriberRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/subscriber', subscriberRoutes);
 

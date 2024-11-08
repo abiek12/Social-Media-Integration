@@ -1,23 +1,17 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const meta_services_1 = require("../services/meta.services");
 const authUtility_1 = require("../../utils/authUtility");
-const metaRoutes = (app) => __awaiter(void 0, void 0, void 0, function* () {
-    const metaRoutes = new meta_services_1.metaServices();
-    const _authUtility = new authUtility_1.authUtility();
-    app.get('/facebook', metaRoutes.verifyWebhook);
-    app.post('/webhook/facebook', metaRoutes.handleWebhook);
-    // Fetch facebook pages of the user(subscriber) using meta graph api
-    app.get('/facebook/fetchPages', _authUtility.verifyToken, _authUtility.isSubscriber, metaRoutes.fetchPages);
-    app.post('facebook/selectPage', metaRoutes.choosePages);
-});
-exports.default = metaRoutes;
+const express_1 = __importDefault(require("express"));
+const router = express_1.default.Router();
+const _metaServices = new meta_services_1.metaServices();
+const _authUtility = new authUtility_1.authUtility();
+router.get('/facebook', _metaServices.verifyWebhook);
+router.post('/webhook/facebook', _metaServices.handleWebhook);
+// Fetch facebook pages of the user(subscriber) using meta graph api
+router.get('/facebook/fetchPages', _authUtility.verifyToken, _authUtility.isSubscriber, _metaServices.fetchPages);
+router.post('facebook/selectPage', _metaServices.choosePages);
+exports.default = router;

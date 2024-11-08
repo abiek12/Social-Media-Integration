@@ -34,7 +34,6 @@ app.get('/', (req, res) => {
 });
 app.use('/api/v1/meta_auth', auth_routes_1.default);
 app.use('/api/v1/meta', meta_routes_1.default);
-app.use('/api/v1', subscriber_route_1.default);
 app.use('/api/v1/auth', auth_route_1.default);
 app.use('/api/v1/subscriber', subscriber_route_1.default);
 // Error handling middleware

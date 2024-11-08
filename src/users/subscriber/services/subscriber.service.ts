@@ -2,13 +2,16 @@ import { BAD_REQUEST, CONFLICT, SUCCESS_GET, validateEmail } from "../../../util
 import { getDataSource } from "../../../utils/dataSource";
 import { Success } from "../../../utils/response";
 import { subscribers } from "../dataModels/entities/subscriber.entity";
+import { userRoles } from "../dataModels/enums/userRoles.enums";
 import { SubscriberRegInputData } from "../dataModels/types/subscriber.type";
 import { Request, Response } from "express";
 
 export class subscriberService {
-    subscriberRegistration = async (request: Request, response: Response): Promise<any> => {
+    subscriberRegistration = async (request: Request, response: Response) => {
         try {
             const { email, password, company, userName } = request.body as SubscriberRegInputData;
+            console.log("email", email, "password", password, "company", company, "userName", userName);
+            
             if(!email || !password || !company || !userName) {
                 response.status(BAD_REQUEST).send("Please provide email and password");
                 return;
@@ -32,6 +35,7 @@ export class subscriberService {
             subscriber.company = company;
             subscriber.userName = userName;
             subscriber.password = password;
+            subscriber.userRole = userRoles.SUBSCRIBER;
             await subscriberRepository.save(subscriber);
             response.status(SUCCESS_GET).send(Success("Subscriber registered successfully"));
             return;

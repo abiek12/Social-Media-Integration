@@ -19,6 +19,7 @@ class subscriberService {
         this.subscriberRegistration = (request, response) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const { email, password, company, userName } = request.body;
+                console.log("email", email, "password", password, "company", company, "userName", userName);
                 if (!email || !password || !company || !userName) {
                     response.status(common_1.BAD_REQUEST).send("Please provide email and password");
                     return;
