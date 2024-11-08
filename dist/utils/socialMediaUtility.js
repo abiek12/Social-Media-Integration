@@ -166,8 +166,8 @@ const subscribeWebhook = () => __awaiter(void 0, void 0, void 0, function* () {
             const response = yield fetch(url, { method: 'post', headers, body });
             const finalRes = yield response.json();
             if (finalRes.error) {
-                console.log('WEBHOOK_SUBSCRIPTION:: Error while subscribing webhook', finalRes.error);
-                console.log("WEBHOOK_SUBSCRIPTION:: Webhook failed to subscribe");
+                console.error("WEBHOOK_SUBSCRIPTION::", finalRes.error.error_user_title, finalRes.error.error_user_msg);
+                console.log("WEBHOOK_SUBSCRIPTION:: Webhook not subscribed!");
                 return;
             }
             // Save webhook subscription status if it's successful
