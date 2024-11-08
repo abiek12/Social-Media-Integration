@@ -1,6 +1,6 @@
 import { CronJob } from "cron";
 import { getAllSubscribers } from "./common";
-import { checkForAdminMetaConnection, checkForSubscribersMetaConnection, getAppAccessToken, refreshAllTokens, subscribeWebhook } from "./socialMediaUtility";
+import { checkForAdminMetaConnection, checkForSubscribersMetaConnection, checkWebhookSubscription, getAppAccessToken, refreshAllTokens, subscribeWebhook } from "./socialMediaUtility";
 
 export const cronJob = new CronJob("*/1 * * * *", async () => {
     console.log("Cron job running");
@@ -14,18 +14,14 @@ export const cronJob = new CronJob("*/1 * * * *", async () => {
               }
         }
     }
+
+    // Admin Meta app access token fetching.
+    await getAppAccessToken();
     
-    const data = await checkForAdminMetaConnection();
-    
-    // Admin Meta webhook subscription and fetching app access token for the first time. This conditon is for avoiding multiple webhook subscriptions.
-    if(!data) {
-        await getAppAccessToken();
+    // Admin Meta webhook subscription if not subscribed.
+    if(!await checkWebhookSubscription()) {
         await subscribeWebhook();
     }
-
-    // Admin Meta app access token refresh
-    await getAppAccessToken();
-    await subscribeWebhook();
 },
 null,
 true

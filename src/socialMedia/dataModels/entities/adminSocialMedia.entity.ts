@@ -17,6 +17,9 @@ export class adminSocialMedia {
     @JoinColumn({ name: "facebook_id" })
     facebook: AdminFacebookSettings;
 
+    @Column({ type: "boolean", name: "is_webhook_subscribed", nullable: false, default: false })
+    isWebhookSubscribed: boolean;
+
     @CreateDateColumn({name: "created_at"})
     createdAt: Date;
 

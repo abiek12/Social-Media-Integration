@@ -146,8 +146,6 @@ const subscribeWebhook = () => __awaiter(void 0, void 0, void 0, function* () {
             const verifyToken = process.env.META_APP_VERIFY_TOKEN;
             const callbackUrl = process.env.BACKEND_URL + '/api/v1/meta/webhook/facebook';
             const appAccessToken = adminSocialMediaData.facebook.appAccessToken;
-            console.log(callbackUrl);
-            console.log(appAccessToken);
             const url = `https://graph.facebook.com/v20.0/${appId}/subscriptions?access_token=${appAccessToken}`;
             const data = {
                 object: 'page',
@@ -166,13 +164,18 @@ const subscribeWebhook = () => __awaiter(void 0, void 0, void 0, function* () {
             // Use URLSearchParams to serialize the data
             const body = new URLSearchParams(bodyData);
             const response = yield fetch(url, { method: 'post', headers, body });
-            const responseData = yield response.json();
-            console.log(responseData);
-            return console.log('Webhook subscribed successfully');
+            const finalRes = yield response.json();
+            if (finalRes.error) {
+                return console.log('WEBHOOK_SUBSCRIPTION:: Error while subscribing webhook', finalRes.error);
+            }
+            // Save webhook subscription status if it's successful
+            adminSocialMediaData.isWebhookSubscribed = true;
+            yield adminSocialMediaRepository.save(adminSocialMediaData);
+            return console.log('WEBHOOK_SUBSCRIPTION:: Webhook subscribed successfully');
         }
     }
     catch (error) {
-        console.log('Error while subscribing webhook', error);
+        console.log('WEBHOOK_SUBSCRIPTION:: Error while subscribing webhook', error);
         throw error;
     }
 });

@@ -168,14 +168,19 @@ export const subscribeWebhook = async () => {
       const body = new URLSearchParams(bodyData as Record<string, string>);
 
       const response = await fetch(url, { method: 'post', headers, body });
+      const finalRes = await response.json();
+      if(finalRes.error) {
+        return console.log('WEBHOOK_SUBSCRIPTION:: Error while subscribing webhook', finalRes.error);
+      }
 
-      const responseData = await response.json();
-      console.log(responseData);
-      return console.log('Webhook subscribed successfully');
+      // Save webhook subscription status if it's successful
+      adminSocialMediaData.isWebhookSubscribed = true;
+      await adminSocialMediaRepository.save(adminSocialMediaData);
+      return console.log('WEBHOOK_SUBSCRIPTION:: Webhook subscribed successfully');
     }
 
   } catch (error) {
-    console.log('Error while subscribing webhook',error);
+    console.log('WEBHOOK_SUBSCRIPTION:: Error while subscribing webhook',error);
     throw error;
   }
 }
@@ -275,6 +280,24 @@ export const checkForAdminMetaConnection = async (): Promise<boolean> => {
     else return false;
   } catch (error) {
     console.log('Error while fetching admin social media details', error);
+    throw error;
+  }
+}
+
+export const checkWebhookSubscription = async (): Promise<boolean> => {
+  try {
+    const appDataSource = await getDataSource();
+    const adminSocialMediaRepository = appDataSource.getRepository(adminSocialMedia);
+    const adminSocialMediaQuerybuilder = adminSocialMediaRepository.createQueryBuilder('adminSocialMedia');
+    const adminSocialMediaData = await adminSocialMediaQuerybuilder
+      .leftJoinAndSelect("adminSocialMedia.admin", "admin")
+      .leftJoinAndSelect("adminSocialMedia.facebook", "facebook")
+      .getOne();
+
+    if(adminSocialMediaData && adminSocialMediaData.isWebhookSubscribed) return true;
+    else return false;
+  } catch (error) {
+    console.error('Error while checking webhook subscription', error);
     throw error;
   }
 }

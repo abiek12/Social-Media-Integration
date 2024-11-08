@@ -33,6 +33,10 @@ __decorate([
     __metadata("design:type", adminFacebook_entity_1.AdminFacebookSettings)
 ], adminSocialMedia.prototype, "facebook", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: "boolean", name: "is_webhook_subscribed", nullable: false, default: false }),
+    __metadata("design:type", Boolean)
+], adminSocialMedia.prototype, "isWebhookSubscribed", void 0);
+__decorate([
     (0, typeorm_1.CreateDateColumn)({ name: "created_at" }),
     __metadata("design:type", Date)
 ], adminSocialMedia.prototype, "createdAt", void 0);
