@@ -170,7 +170,7 @@ export const subscribeWebhook = async () => {
       const response = await fetch(url, { method: 'post', headers, body });
       const finalRes = await response.json();
       if(finalRes.error) {
-        console.error("WEBHOOK_SUBSCRIPTION::",finalRes.error.error_user_title, finalRes.error.error_user_msg);
+        console.error('WEBHOOK_SUBSCRIPTION:: Error while subscribing webhook', finalRes.error);
         console.log("WEBHOOK_SUBSCRIPTION:: Webhook not subscribed!");
         return;
       }
