@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
-import { BAD_REQUEST, generateTokens, validateEmail } from "../../../utils/common";
+import { BAD_REQUEST, generateTokens, SUCCESS_GET, validateEmail } from "../../../utils/common";
 import { getDataSource } from "../../../utils/dataSource";
 import { userRoles } from "../../subscriber/dataModels/enums/userRoles.enums";
 import { admins } from "../../admin/dataModels/entities/admin.entity";
 import { subscribers } from "../../subscriber/dataModels/entities/subscriber.entity";
-import { CustomError } from "../../../utils/response";
+import { CustomError, Success } from "../../../utils/response";
 import { authUtility } from "../../../utils/authUtility";
 
 export class AuthService {
@@ -66,6 +66,7 @@ export class AuthService {
             }
 
             let loginResponse = await generateTokens(user.userRole, user.subscriberId ? user.subscriberId : userid);
+            response.status(SUCCESS_GET).send(Success(loginResponse));
         } catch (error) {
             console.error("Error while user login", error);
             throw error;
