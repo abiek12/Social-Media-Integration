@@ -10,7 +10,6 @@ export class subscriberService {
     subscriberRegistration = async (request: Request, response: Response) => {
         try {
             const { email, password, company, userName } = request.body as SubscriberRegInputData;
-            console.log("email", email, "password", password, "company", company, "userName", userName);
             
             if(!email || !password || !company || !userName) {
                 response.status(BAD_REQUEST).send("Please provide email and password");
