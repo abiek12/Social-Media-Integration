@@ -5,6 +5,7 @@ import { AdminFacebookSettings } from '../socialMedia/dataModels/entities/adminF
 import { admins } from '../users/admin/dataModels/entities/admin.entity';
 import { getDataSource } from './dataSource';
 import { FacebookWebhookRequest } from '../socialMedia/dataModels/types/meta.types';
+import { ngrokUrl } from '../server';
 
 // Social Media Utility Constants
 export const CLIENT_URL = process.env.FRONTEND_URL as string;
@@ -139,7 +140,8 @@ export const subscribeWebhook = async () => {
     if(adminSocialMediaData) {
       const appId = process.env.META_APP_ID;
       const verifyToken = process.env.META_APP_VERIFY_TOKEN;
-      const callbackUrl = process.env.NGROK_URL +'/api/v1/meta/webhook/facebook';
+      // const callbackUrl = process.env.NGROK_URL +'/api/v1/meta/webhook';      
+      const callbackUrl = ngrokUrl + '/api/v1/meta/webhook';
       const appAccessToken = adminSocialMediaData.facebook.appAccessToken;
 
       const url = `https://graph.facebook.com/v20.0/${appId}/subscriptions?access_token=${appAccessToken}`;
@@ -293,7 +295,8 @@ export const checkWebhookSubscription = async (): Promise<boolean> => {
       .leftJoinAndSelect("adminSocialMedia.admin", "admin")
       .leftJoinAndSelect("adminSocialMedia.facebook", "facebook")
       .getOne();
-
+    console.log(adminSocialMediaData);
+    
     if(adminSocialMediaData && adminSocialMediaData.isWebhookSubscribed) return true;
     else return false;
   } catch (error) {

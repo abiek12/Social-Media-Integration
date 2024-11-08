@@ -13,8 +13,9 @@ export class metaServices {
         console.log("verifyWebhook called");
         const { 'hub.mode': mode, 'hub.verify_token': token, 'hub.challenge': challenge } = request.query as VerificationData;
         if (mode === 'subscribe' && token === process.env.META_APP_VERIFY_TOKEN) {
-            response.send(challenge);
-            return
+            response.status(SUCCESS_GET).send(challenge);
+            console.log('WEBHOOK:: Verified webhook');
+            return;
         }
         response.status(FORBIDDEN).send('Forbidden');
     }

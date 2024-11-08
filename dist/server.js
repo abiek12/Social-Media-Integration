@@ -12,10 +12,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ngrokUrl = void 0;
 const app_1 = __importDefault(require("./app"));
 const common_1 = require("./utils/common");
 const ngrok_1 = __importDefault(require("@ngrok/ngrok"));
 const cronJob_1 = require("./utils/cronJob");
+let ngrokUrl;
 const start = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
@@ -26,7 +28,10 @@ const start = () => __awaiter(void 0, void 0, void 0, function* () {
             console.log(`Server listening on ${PORT}`);
             // Start ngrok tunnel
             ngrok_1.default.connect({ addr: PORT, authtoken: process.env.NGROK_AUTHTOKEN })
-                .then(listener => console.log(`Ingress established at: ${listener.url()}`));
+                .then(listener => {
+                exports.ngrokUrl = ngrokUrl = listener.url();
+                console.log(`Ingress established at: ${listener.url()}`);
+            });
         }));
     }
     catch (error) {

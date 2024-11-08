@@ -19,6 +19,7 @@ const subscriberSocialMedia_entity_1 = require("../socialMedia/dataModels/entiti
 const adminFacebook_entity_1 = require("../socialMedia/dataModels/entities/adminFacebook.entity");
 const admin_entity_1 = require("../users/admin/dataModels/entities/admin.entity");
 const dataSource_1 = require("./dataSource");
+const server_1 = require("../server");
 // Social Media Utility Constants
 exports.CLIENT_URL = process.env.FRONTEND_URL;
 exports.CLIENT_FAILED_URL = process.env.FRONTEND_FAILED_URL;
@@ -143,7 +144,8 @@ const subscribeWebhook = () => __awaiter(void 0, void 0, void 0, function* () {
         if (adminSocialMediaData) {
             const appId = process.env.META_APP_ID;
             const verifyToken = process.env.META_APP_VERIFY_TOKEN;
-            const callbackUrl = process.env.NGROK_URL + '/api/v1/meta/facebook';
+            // const callbackUrl = process.env.NGROK_URL +'/api/v1/meta/webhook';      
+            const callbackUrl = server_1.ngrokUrl + '/api/v1/meta/webhook';
             const appAccessToken = adminSocialMediaData.facebook.appAccessToken;
             const url = `https://graph.facebook.com/v20.0/${appId}/subscriptions?access_token=${appAccessToken}`;
             const data = {
@@ -288,6 +290,7 @@ const checkWebhookSubscription = () => __awaiter(void 0, void 0, void 0, functio
             .leftJoinAndSelect("adminSocialMedia.admin", "admin")
             .leftJoinAndSelect("adminSocialMedia.facebook", "facebook")
             .getOne();
+        console.log(adminSocialMediaData);
         if (adminSocialMediaData && adminSocialMediaData.isWebhookSubscribed)
             return true;
         else
