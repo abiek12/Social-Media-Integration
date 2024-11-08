@@ -33,7 +33,6 @@ app.use(passport.session());
 app.get('/', (req: Request, res: Response) => {
   res.send('Express server is running!');
 });
-
 app.use('/api/v1/meta_auth', facebookAuthRoutes);
 app.use('/api/v1/meta', metaRoutes);
 app.use('/api/v1', subscriberRoutes);

@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllSubscribers = exports.getSubscriberSocialMediaData = exports.createAdminUser = exports.OTP_EXPIRY_TIME = exports.ACTIVATION_KEY_EXPIRY_DAYS = exports.REFRESH_TOKEN_EXPIRY = exports.TOKEN_EXPIRY = exports.lockoutTime = exports.lockoutCount = exports.ERROR_COMMON_MESSAGE = exports.REDIRECT = exports.NOT_ACCEPTABLE = exports.INTERNAL_ERROR = exports.NOT_AUTHORIZED = exports.FORBIDDEN = exports.NOT_FOUND = exports.SUCCESS_GET = exports.SUCCESS_CREATE = exports.CONFLICT = exports.BAD_REQUEST = void 0;
+exports.generateTokens = exports.validateEmail = exports.getAllSubscribers = exports.getSubscriberSocialMediaData = exports.createAdminUser = exports.OTP_EXPIRY_TIME = exports.ACTIVATION_KEY_EXPIRY_DAYS = exports.REFRESH_TOKEN_EXPIRY = exports.TOKEN_EXPIRY = exports.lockoutTime = exports.lockoutCount = exports.ERROR_COMMON_MESSAGE = exports.REDIRECT = exports.NOT_ACCEPTABLE = exports.INTERNAL_ERROR = exports.NOT_AUTHORIZED = exports.FORBIDDEN = exports.NOT_FOUND = exports.SUCCESS_GET = exports.SUCCESS_CREATE = exports.CONFLICT = exports.BAD_REQUEST = void 0;
 exports.checkSubscriberExitenceUsingId = checkSubscriberExitenceUsingId;
 const subscriberSocialMedia_entity_1 = require("../socialMedia/dataModels/entities/subscriberSocialMedia.entity");
 const admin_entity_1 = require("../users/admin/dataModels/entities/admin.entity");
@@ -138,3 +138,17 @@ const getAllSubscribers = () => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.getAllSubscribers = getAllSubscribers;
+const validateEmail = (email) => __awaiter(void 0, void 0, void 0, function* () {
+    let re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    if (email)
+        return re.test(String(email).toLowerCase());
+    return false;
+});
+exports.validateEmail = validateEmail;
+const generateTokens = (userRole, userId) => __awaiter(void 0, void 0, void 0, function* () {
+    const _authUtility = new authUtility_1.authUtility();
+    const accessToken = yield _authUtility.generateAccessToken(userRole, userId);
+    const refreshToken = yield _authUtility.generateRefreshToken(userRole, userId);
+    return { accessToken, refreshToken };
+});
+exports.generateTokens = generateTokens;

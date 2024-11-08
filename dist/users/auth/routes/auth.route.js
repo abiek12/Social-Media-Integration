@@ -9,9 +9,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const subscriber_service_1 = require("../services/subscriber.service");
-const subscriberRoutes = (app) => __awaiter(void 0, void 0, void 0, function* () {
-    const _subscriberService = new subscriber_service_1.subscriberService();
-    app.post('/register', _subscriberService.subscriberRegistration);
+const auth_service_1 = require("../services/auth.service");
+const authRoutes = (app) => __awaiter(void 0, void 0, void 0, function* () {
+    const _authService = new auth_service_1.AuthService();
+    app.post('/', _authService.userLogin);
 });
-exports.default = subscriberRoutes;
+exports.default = authRoutes;

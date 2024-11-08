@@ -21,6 +21,14 @@ __decorate([
     __metadata("design:type", Number)
 ], subscribers.prototype, "subscriberId", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'company_email', type: "varchar", length: 255, nullable: false }),
+    __metadata("design:type", String)
+], subscribers.prototype, "email", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'password', type: "varchar", length: 255, nullable: false }),
+    __metadata("design:type", String)
+], subscribers.prototype, "password", void 0);
+__decorate([
     (0, typeorm_1.Column)({ name: 'user_name', type: "varchar", length: 255, nullable: false }),
     __metadata("design:type", String)
 ], subscribers.prototype, "userName", void 0);
@@ -29,11 +37,11 @@ __decorate([
     __metadata("design:type", String)
 ], subscribers.prototype, "company", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'company_email', type: "varchar", length: 255, nullable: false }),
+    (0, typeorm_1.Column)({ name: 'user_role', type: "enum", nullable: false, enum: userRoles_enums_1.userRoles }),
     __metadata("design:type", String)
-], subscribers.prototype, "email", void 0);
+], subscribers.prototype, "userRole", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'company_contact_number', type: "varchar", length: 255, nullable: false }),
+    (0, typeorm_1.Column)({ name: 'company_contact_number', type: "varchar", length: 255, nullable: true }),
     __metadata("design:type", String)
 ], subscribers.prototype, "contactNumber", void 0);
 __decorate([
@@ -57,10 +65,6 @@ __decorate([
     __metadata("design:type", String)
 ], subscribers.prototype, "address", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'password', type: "varchar", length: 255, nullable: false }),
-    __metadata("design:type", String)
-], subscribers.prototype, "password", void 0);
-__decorate([
     (0, typeorm_1.Column)({ name: 'roc', type: "varchar", length: 255, nullable: true }),
     __metadata("design:type", String)
 ], subscribers.prototype, "roc", void 0);
@@ -80,10 +84,6 @@ __decorate([
     (0, typeorm_1.Column)({ name: 'logo', type: "varchar", length: 255, nullable: true }),
     __metadata("design:type", String)
 ], subscribers.prototype, "logo", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'user_role', type: "enum", nullable: false, enum: userRoles_enums_1.userRoles }),
-    __metadata("design:type", String)
-], subscribers.prototype, "userRole", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'is_paid', type: "boolean", default: false, nullable: false }),
     __metadata("design:type", Boolean)

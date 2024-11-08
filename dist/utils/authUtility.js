@@ -79,6 +79,33 @@ class authUtility {
                 return;
             }
         });
+        this.comparePassword = (rawPassword, hashedPassword) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                return yield bcrypt.compare(rawPassword, hashedPassword);
+            }
+            catch (err) {
+                console.error(`Error in comparePassword: ${err}`);
+                throw err;
+            }
+        });
+        this.generateAccessToken = (userRole, userId) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                return yield jsonwebtoken_1.default.sign({ userId, role: userRole }, process.env.SECRET_KEY, { expiresIn: "1h" });
+            }
+            catch (err) {
+                console.error(`Error in generateAccessToken: ${err}`);
+                throw err;
+            }
+        });
+        this.generateRefreshToken = (userRole, userId) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                return yield jsonwebtoken_1.default.sign({ userId, role: userRole }, process.env.SECRET_KEY, { expiresIn: "7d" });
+            }
+            catch (err) {
+                console.error(`Error in generateRefreshToken: ${err}`);
+                throw err;
+            }
+        });
     }
     hashPassword(password) {
         return __awaiter(this, void 0, void 0, function* () {
