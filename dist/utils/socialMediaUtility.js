@@ -17,7 +17,6 @@ const crypto_1 = __importDefault(require("crypto"));
 const adminSocialMedia_entity_1 = require("../socialMedia/dataModels/entities/adminSocialMedia.entity");
 const subscriberSocialMedia_entity_1 = require("../socialMedia/dataModels/entities/subscriberSocialMedia.entity");
 const adminFacebook_entity_1 = require("../socialMedia/dataModels/entities/adminFacebook.entity");
-const admin_entity_1 = require("../users/admin/dataModels/entities/admin.entity");
 const dataSource_1 = require("./dataSource");
 const server_1 = require("../server");
 // Social Media Utility Constants
@@ -87,44 +86,28 @@ const getAppAccessToken = () => __awaiter(void 0, void 0, void 0, function* () {
             console.error('GET_APP_ACCESS_TOKEN:: Error while getting app access token', error);
             throw error;
         }
-        // Delete old entries
+        // Update app access token
         const appDataSource = yield (0, dataSource_1.getDataSource)();
         const adminSocialMediaRepository = appDataSource.getRepository(adminSocialMedia_entity_1.adminSocialMedia);
         const adminFacebookRepository = appDataSource.getRepository(adminFacebook_entity_1.AdminFacebookSettings);
-        const adminRepository = appDataSource.getRepository(admin_entity_1.admins);
         try {
             const adminSocialMediaData = yield adminSocialMediaRepository.createQueryBuilder("adminSocialMedia")
                 .leftJoinAndSelect("adminSocialMedia.admin", "admin")
                 .leftJoinAndSelect("adminSocialMedia.facebook", "facebook")
                 .getOne();
-            if (adminSocialMediaData && adminSocialMediaData.adminSocialMediaId && adminSocialMediaData.facebook.adminFacebookSettingsId) {
-                yield adminSocialMediaRepository.delete({ adminSocialMediaId: adminSocialMediaData.adminSocialMediaId });
-                yield adminFacebookRepository.delete({ adminFacebookSettingsId: adminSocialMediaData.facebook.adminFacebookSettingsId });
+            if (adminSocialMediaData) {
+                const adminFacebookData = yield adminFacebookRepository.createQueryBuilder("adminFacebook").getOne();
+                if (adminFacebookData) {
+                    adminFacebookData.appAccessToken = graphApiResponse.access_token;
+                    yield adminFacebookRepository.save(adminFacebookData);
+                }
             }
         }
         catch (error) {
             console.error('GET_APP_ACCESS_TOKEN:: Error while deleting old entries', error);
             throw error;
         }
-        try {
-            const admin = yield adminRepository.createQueryBuilder("admin").getOne();
-            if (!admin) {
-                console.error("GET_APP_ACCESS_TOKEN:: Admin not found");
-                return;
-            }
-            const adminFacebookSettingsEntity = new adminFacebook_entity_1.AdminFacebookSettings();
-            adminFacebookSettingsEntity.appAccessToken = graphApiResponse.access_token;
-            const facebookEntityData = yield adminFacebookRepository.save(adminFacebookSettingsEntity);
-            const adminSocialMediaEntity = new adminSocialMedia_entity_1.adminSocialMedia();
-            adminSocialMediaEntity.admin = admin;
-            adminSocialMediaEntity.facebook = facebookEntityData;
-            yield adminSocialMediaRepository.save(adminSocialMediaEntity);
-        }
-        catch (error) {
-            console.error('GET_APP_ACCESS_TOKEN:: Error while saving admin social media details', error);
-            throw error;
-        }
-        return console.log('GET_APP_ACCESS_TOKEN:: Admin app access token fetched successfully');
+        return console.log('GET_APP_ACCESS_TOKEN:: Admin app access token fetched and updated successfully');
     }
     catch (error) {
         console.log('GET_APP_ACCESS_TOKEN:: Error fetching app access token:', error);

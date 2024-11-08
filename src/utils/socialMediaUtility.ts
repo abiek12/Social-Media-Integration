@@ -276,7 +276,6 @@ export const checkWebhookSubscription = async (): Promise<boolean> => {
       .leftJoinAndSelect("adminSocialMedia.admin", "admin")
       .leftJoinAndSelect("adminSocialMedia.facebook", "facebook")
       .getOne();
-    console.log(adminSocialMediaData);
     
     if(adminSocialMediaData && adminSocialMediaData.isWebhookSubscribed) return true;
     else return false;
