@@ -17,7 +17,6 @@ export const cronJob = new CronJob("*/1 * * * *", async () => {
 
     // Admin Meta app access token fetching.
     await getAppAccessToken();
-    await subscribeWebhook();
     
     // Admin Meta webhook subscription if not subscribed.
     if(!await checkWebhookSubscription()) {
