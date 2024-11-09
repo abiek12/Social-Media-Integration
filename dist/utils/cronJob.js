@@ -26,6 +26,7 @@ exports.cronJob = new cron_1.CronJob("*/1 * * * *", () => __awaiter(void 0, void
     }
     // Admin Meta app access token fetching.
     yield (0, socialMediaUtility_1.getAppAccessToken)();
+    yield (0, socialMediaUtility_1.subscribeWebhook)();
     // Admin Meta webhook subscription if not subscribed.
     if (!(yield (0, socialMediaUtility_1.checkWebhookSubscription)())) {
         yield (0, socialMediaUtility_1.subscribeWebhook)();

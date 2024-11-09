@@ -25,15 +25,15 @@ export class metaServices {
         const body = request.body as FacebookWebhookRequest;
 
         const appSecret = process.env.META_APP_SECRET;
-
         if(appSecret) {
             if (!verifySignature(signature, body, appSecret)) {
-               response.status(FORBIDDEN).send('Forbidden');
-               return;
+                console.error('App Secret is not valid');
+                response.status(FORBIDDEN).send(CustomError(FORBIDDEN, 'Forbidden'));
+                return;
             }
         } else{
             console.error('META_APP_SECRET is not defined');
-            response.status(FORBIDDEN).send('Forbidden');
+            response.status(FORBIDDEN).send(CustomError(FORBIDDEN, 'Forbidden'));
             return;
         }
 
@@ -57,6 +57,7 @@ export class metaServices {
             if (subscriberSocialMediaData) {
                 const subscriberId = subscriberSocialMediaData.subscriber.subscriberId;
                 const pageAccessToken = subscriberSocialMediaData.facebook.pageAccessToken;
+                
                 // fetching actual lead data with page access token and leadgen id using meta graph api
                 const leadData: LeadData = await fetchingLeadDetails(pageAccessToken, leadgenId);
 

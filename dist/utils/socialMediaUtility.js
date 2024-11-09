@@ -17,6 +17,7 @@ const crypto_1 = __importDefault(require("crypto"));
 const adminSocialMedia_entity_1 = require("../socialMedia/dataModels/entities/adminSocialMedia.entity");
 const subscriberSocialMedia_entity_1 = require("../socialMedia/dataModels/entities/subscriberSocialMedia.entity");
 const adminFacebook_entity_1 = require("../socialMedia/dataModels/entities/adminFacebook.entity");
+const admin_entity_1 = require("../users/admin/dataModels/entities/admin.entity");
 const dataSource_1 = require("./dataSource");
 const server_1 = require("../server");
 // Social Media Utility Constants
@@ -90,6 +91,7 @@ const getAppAccessToken = () => __awaiter(void 0, void 0, void 0, function* () {
         const appDataSource = yield (0, dataSource_1.getDataSource)();
         const adminSocialMediaRepository = appDataSource.getRepository(adminSocialMedia_entity_1.adminSocialMedia);
         const adminFacebookRepository = appDataSource.getRepository(adminFacebook_entity_1.AdminFacebookSettings);
+        const adminRepository = appDataSource.getRepository(admin_entity_1.admins);
         try {
             const adminSocialMediaData = yield adminSocialMediaRepository.createQueryBuilder("adminSocialMedia")
                 .leftJoinAndSelect("adminSocialMedia.admin", "admin")
@@ -99,8 +101,23 @@ const getAppAccessToken = () => __awaiter(void 0, void 0, void 0, function* () {
                 const adminFacebookData = yield adminFacebookRepository.createQueryBuilder("adminFacebook").getOne();
                 if (adminFacebookData) {
                     adminFacebookData.appAccessToken = graphApiResponse.access_token;
+                    adminFacebookData.updatedAt = new Date();
                     yield adminFacebookRepository.save(adminFacebookData);
                 }
+            }
+            else {
+                const AdminFacebookSettingsEntity = new adminFacebook_entity_1.AdminFacebookSettings();
+                AdminFacebookSettingsEntity.appAccessToken = graphApiResponse.access_token;
+                yield adminFacebookRepository.save(AdminFacebookSettingsEntity);
+                const adminData = yield adminRepository.createQueryBuilder("admin").getOne();
+                if (!adminData) {
+                    console.error('GET_APP_ACCESS_TOKEN:: Admin not found');
+                    return;
+                }
+                const adminSocialMediaEntity = new adminSocialMedia_entity_1.adminSocialMedia();
+                adminSocialMediaEntity.facebook = AdminFacebookSettingsEntity;
+                adminSocialMediaEntity.admin = adminData;
+                yield adminSocialMediaRepository.save(adminSocialMediaEntity);
             }
         }
         catch (error) {
