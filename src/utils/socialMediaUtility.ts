@@ -28,7 +28,10 @@ export const verifySignature = (signature: string | undefined, body: any, appSec
   const method = elements[0];
   const signatureHash = elements[1];
 
-  const expectedHash = crypto.createHmac('sha256', appSecret).update(body).digest('hex');
+  // Convert body to a JSON string for hashing
+  const bodyString = typeof body === 'string' ? body : JSON.stringify(body);
+  
+  const expectedHash = crypto.createHmac('sha256', appSecret).update(bodyString).digest('hex');
   return signatureHash === expectedHash;
 };
 

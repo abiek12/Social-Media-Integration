@@ -23,7 +23,8 @@ export class metaServices {
     handleWebhook = async (request: Request, response: Response) => {
         const signature = request.headers['x-hub-signature'] as string | undefined;
         const body = request.body as FacebookWebhookRequest;
-
+        console.log(body);
+        
         const appSecret = process.env.META_APP_SECRET;
         if(appSecret) {
             if (!verifySignature(signature, body, appSecret)) {
@@ -57,7 +58,7 @@ export class metaServices {
             if (subscriberSocialMediaData) {
                 const subscriberId = subscriberSocialMediaData.subscriber.subscriberId;
                 const pageAccessToken = subscriberSocialMediaData.facebook.pageAccessToken;
-                
+
                 // fetching actual lead data with page access token and leadgen id using meta graph api
                 const leadData: LeadData = await fetchingLeadDetails(pageAccessToken, leadgenId);
 
