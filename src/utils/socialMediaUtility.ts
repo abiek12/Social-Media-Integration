@@ -83,6 +83,7 @@ export const getAppAccessToken = async () => {
     const appDataSource = await getDataSource();
     const adminSocialMediaRepository = appDataSource.getRepository(adminSocialMedia);
     const adminFacebookRepository = appDataSource.getRepository(AdminFacebookSettings);
+    const adminRepository = appDataSource.getRepository(admins);
     try {
       const adminSocialMediaData = await adminSocialMediaRepository.createQueryBuilder("adminSocialMedia")
         .leftJoinAndSelect("adminSocialMedia.admin", "admin")
@@ -92,8 +93,24 @@ export const getAppAccessToken = async () => {
         const adminFacebookData = await adminFacebookRepository.createQueryBuilder("adminFacebook").getOne();
         if(adminFacebookData) {
           adminFacebookData.appAccessToken = graphApiResponse.access_token;
+          adminFacebookData.updatedAt = new Date();
           await adminFacebookRepository.save(adminFacebookData);
         }
+      } else {
+        const AdminFacebookSettingsEntity = new AdminFacebookSettings();
+        AdminFacebookSettingsEntity.appAccessToken = graphApiResponse.access_token;
+        await adminFacebookRepository.save(AdminFacebookSettingsEntity);
+
+        const adminData = await adminRepository.createQueryBuilder("admin").getOne();
+        if(!adminData) {
+          console.error('GET_APP_ACCESS_TOKEN:: Admin not found');
+          return;
+        }
+
+        const adminSocialMediaEntity = new adminSocialMedia();
+        adminSocialMediaEntity.facebook = AdminFacebookSettingsEntity;
+        adminSocialMediaEntity.admin = adminData
+        await adminSocialMediaRepository.save(adminSocialMediaEntity);
       }
     } catch (error) {
       console.error('GET_APP_ACCESS_TOKEN:: Error while deleting old entries', error);

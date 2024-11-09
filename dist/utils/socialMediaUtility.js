@@ -273,7 +273,6 @@ const checkWebhookSubscription = () => __awaiter(void 0, void 0, void 0, functio
             .leftJoinAndSelect("adminSocialMedia.admin", "admin")
             .leftJoinAndSelect("adminSocialMedia.facebook", "facebook")
             .getOne();
-        console.log(adminSocialMediaData);
         if (adminSocialMediaData && adminSocialMediaData.isWebhookSubscribed)
             return true;
         else

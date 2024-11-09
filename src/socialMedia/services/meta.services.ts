@@ -10,7 +10,6 @@ import { fetchFacebookPages, fetchingLeadDetails, fetchingLeadgenData, getMetaUs
 export class metaServices {
     // Meta Webhook Verification Endpoint
     verifyWebhook = async (request: Request, response: Response) => {
-        console.log("verifyWebhook called");
         const { 'hub.mode': mode, 'hub.verify_token': token, 'hub.challenge': challenge } = request.query as VerificationData;
         if (mode === 'subscribe' && token === process.env.META_APP_VERIFY_TOKEN) {
             response.status(SUCCESS_GET).send(challenge);
