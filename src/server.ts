@@ -28,5 +28,5 @@ const start = async (): Promise<void> => {
   }
 };
 
-// export { ngrokUrl };
+export { ngrokUrl };
 start();
