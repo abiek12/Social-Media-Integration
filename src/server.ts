@@ -3,7 +3,7 @@ import { createAdminUser } from './utils/common';
 import ngrok from '@ngrok/ngrok';
 import { cronJob } from './utils/cronJob';
 
-// let ngrokUrl: string | null;
+let ngrokUrl: string | null;
 const start = async (): Promise<void> => {
   try {
     const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
@@ -15,11 +15,11 @@ const start = async (): Promise<void> => {
       console.log(`Server listening on ${PORT}`);
             
       // Start ngrok tunnel
-      // ngrok.connect({ addr: PORT, authtoken: process.env.NGROK_AUTHTOKEN })
-      //   .then(listener => {
-      //     ngrokUrl = listener.url();
-      //     console.log(`Ingress established at: ${listener.url()}`)
-      //   });
+      ngrok.connect({ addr: PORT, authtoken: process.env.NGROK_AUTHTOKEN })
+        .then(listener => {
+          ngrokUrl = listener.url();
+          console.log(`Ingress established at: ${listener.url()}`)
+        });
     });
     
   } catch (error) {
