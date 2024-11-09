@@ -141,7 +141,7 @@ export const subscribeWebhook = async () => {
     if(adminSocialMediaData) {
       const appId = process.env.META_APP_ID;
       const verifyToken = process.env.META_APP_VERIFY_TOKEN;
-      const callbackUrl = process.env.NGROK_URL +'/api/v1/meta/webhook';      
+      const callbackUrl = process.env.BACKEND_URL +'/api/v1/meta/webhook';      
       // const callbackUrl = ngrokUrl + '/api/v1/meta/webhook';
       const appAccessToken = adminSocialMediaData.facebook.appAccessToken;
 
