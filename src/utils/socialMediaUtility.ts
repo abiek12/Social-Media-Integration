@@ -195,36 +195,38 @@ export const installMetaApp = async (subscriberId: number) => {
     const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
     const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
 
-    const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
+    const subscriberSocialMediaDatas = await subscriberSocialMediaQueryBuilder
       .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
       .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
       .where("subscriber.subscriberId = :subscriberId", { subscriberId })
-      .getOne();
+      .getMany();
 
-    if (subscriberSocialMediaData) {
-      const pageId = subscriberSocialMediaData.facebook.pageId;
-      const pageAccessToken = subscriberSocialMediaData.facebook.pageAccessToken;
+    if (subscriberSocialMediaDatas.length > 0) {
+      for (const invidualData of subscriberSocialMediaDatas) {
+        const pageId = invidualData.facebook.pageId;
+        const pageAccessToken = invidualData.facebook.pageAccessToken;
 
-      const url = `https://graph.facebook.com/v20.0/${pageId}/subscribed_apps`;
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          subscribed_fields: 'leadgen',
-          access_token: pageAccessToken,
-        }),
-      });
+        const url = `https://graph.facebook.com/v20.0/${pageId}/subscribed_apps`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            subscribed_fields: 'leadgen',
+            access_token: pageAccessToken,
+          }),
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.log('Error subscribing to Meta App:', errorData);
-        return;
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.log('Error subscribing to Meta App:', errorData);
+        }
+
+        const responseData = await response.json();
+        console.log(responseData);
       }
-
-      const responseData = await response.json();
-      return console.log('Successfully Installed Meta App:', responseData);
+      return console.log('Successfully Installed Meta App:');
     } else {
       return console.log(`No social media data found for subscriber with ID ${subscriberId}`);
     }
