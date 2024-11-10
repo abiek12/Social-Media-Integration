@@ -9,7 +9,7 @@ export const facebookAuthHandler = async (request: Request, response: Response) 
     const subscriberId = (request as any).query.userId;
     if(!subscriberId) {
       console.log("Subscriber is not logged in");
-      response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "Subscriber id not found"));
+      response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "Subscriber is not logged in"));
       return;
     }
     passport.authenticate('facebook', { 
