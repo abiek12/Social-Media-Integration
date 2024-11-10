@@ -8,6 +8,7 @@ import metaRoutes from './socialMedia/routes/meta.routes';
 import facebookAuthRoutes from './socialMedia/routes/auth.routes';
 import subscriberRoutes from './users/subscriber/routes/subscriber.route';
 import authRoutes from './users/auth/routes/auth.route';
+import cors from 'cors'
 
 // Load environment variables
 dotenv.config();
@@ -15,12 +16,14 @@ dotenv.config();
 const app: Application = express();
 
 // Enable CORS
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  next();
-});
+const corsOptions = {
+  origin: '*',
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+  credentials: true
+}
+app.use(cors(corsOptions));
 
 // Middleware
 app.use(cookieParser());
