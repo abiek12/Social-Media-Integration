@@ -117,7 +117,7 @@ export class metaServices {
     // Fetch facebook pages of the subscriber.
     fetchPages = async (request: Request, response: Response) => {
         try {
-            const subscriberId: number = (request as any).user.subscriberId;
+            const subscriberId: number = (request as any).user.userId;
             const userAceessToken: string | null = await getMetaUserAccessTokenDb(subscriberId);
             if(!userAceessToken) {
                 console.error("User not authenticated to fetch facebook pages!");
@@ -138,7 +138,7 @@ export class metaServices {
     // Handler for choosing facebook pages
     choosePages = async (request: Request, response: Response) => {
         try {
-            const subscriberId: number = (request as any).user.subscriberId;
+            const subscriberId: number = (request as any).user.userId;
             const pageDatas = request.body as pageMetaDataTypes[];
 
             if(!pageDatas) {
