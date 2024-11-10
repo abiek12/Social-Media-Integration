@@ -21,7 +21,7 @@ const admin_entity_1 = require("../users/admin/dataModels/entities/admin.entity"
 const dataSource_1 = require("./dataSource");
 const server_1 = require("../server");
 // Social Media Utility Constants
-exports.CLIENT_URL = process.env.FRONTEND_URL;
+exports.CLIENT_URL = process.env.FRONTEND_SUCCESS_URL;
 exports.CLIENT_FAILED_URL = process.env.FRONTEND_FAILED_URL;
 exports.facebookStrategyConfig = {
     clientID: process.env.META_APP_ID,

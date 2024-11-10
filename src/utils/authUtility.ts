@@ -29,8 +29,6 @@ export class authUtility {
     verifyToken = async (req: Request, res: Response, next: NextFunction) => {
         try {
           let token = req.cookies.accessToken;
-          console.log("token", req.cookies);
-
           if (!token) {
             res.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "Un-Authorized Access"));
             return;
