@@ -66,6 +66,13 @@ export class AuthService {
           }
 
           let loginResponse = await generateTokens(user.userRole, user.subscriberId ? user.subscriberId : userid);
+          
+          // Set the token in the cookie
+          response.cookie('accessToken', loginResponse.accessToken, {
+            httpOnly: true,  // Makes the cookie inaccessible via JavaScript
+            secure: process.env.NODE_ENV === 'production',  // Ensures cookie is only sent over HTTPS in production
+          });
+
           response.status(SUCCESS_GET).send(Success(loginResponse));
         } catch (error) {
             console.error("Error while user login", error);

@@ -19,10 +19,10 @@ const response_1 = require("../../utils/response");
 const socialMediaUtility_1 = require("../../utils/socialMediaUtility");
 const facebookAuthHandler = (request, response) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const subscriberId = request.query.subscriberId;
+        const subscriberId = request.query.userId;
         if (!subscriberId) {
-            console.log("Subscriber id not found");
-            response.status(common_1.BAD_REQUEST).send((0, response_1.CustomError)(common_1.BAD_REQUEST, "Subscriber id not found"));
+            console.log("Subscriber is not logged in");
+            response.status(common_1.BAD_REQUEST).send((0, response_1.CustomError)(common_1.BAD_REQUEST, "Subscriber is not logged in"));
             return;
         }
         passport_1.default.authenticate('facebook', {

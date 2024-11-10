@@ -13,16 +13,19 @@ const meta_routes_1 = __importDefault(require("./socialMedia/routes/meta.routes"
 const auth_routes_1 = __importDefault(require("./socialMedia/routes/auth.routes"));
 const subscriber_route_1 = __importDefault(require("./users/subscriber/routes/subscriber.route"));
 const auth_route_1 = __importDefault(require("./users/auth/routes/auth.route"));
+const cors_1 = __importDefault(require("cors"));
 // Load environment variables
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 // Enable CORS
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    next();
-});
+const corsOptions = {
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+    credentials: true
+};
+app.use((0, cors_1.default)(corsOptions));
 // Middleware
 app.use((0, cookie_parser_1.default)());
 app.use(express_1.default.json());

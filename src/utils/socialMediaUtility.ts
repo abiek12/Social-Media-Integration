@@ -8,7 +8,7 @@ import { FacebookWebhookRequest } from '../socialMedia/dataModels/types/meta.typ
 import { ngrokUrl } from '../server';
 
 // Social Media Utility Constants
-export const CLIENT_URL = process.env.FRONTEND_URL as string;
+export const CLIENT_URL = process.env.FRONTEND_SUCCESS_URL as string;
 export const CLIENT_FAILED_URL = process.env.FRONTEND_FAILED_URL as string;
 
 export const facebookStrategyConfig = {
