@@ -8,7 +8,7 @@ export const facebookAuthHandler = async (request: Request, response: Response) 
   try {
     const subscriberId = (request as any).query.userId;
     if(!subscriberId) {
-      console.log("Subscriber id not found");
+      console.log("Subscriber is not logged in");
       response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "Subscriber id not found"));
       return;
     }
