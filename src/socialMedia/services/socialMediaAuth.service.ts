@@ -12,6 +12,8 @@ export const facebookAuthHandler = async (request: Request, response: Response) 
       response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "Subscriber is not logged in"));
       return;
     }
+    console.log("subscriberId", subscriberId);
+    
     passport.authenticate('facebook', { 
       scope: [
         'public_profile',
