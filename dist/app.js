@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const passport_1 = __importDefault(require("passport"));
 const express_session_1 = __importDefault(require("express-session"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const common_1 = require("./utils/common");
 const meta_routes_1 = __importDefault(require("./socialMedia/routes/meta.routes"));
 const auth_routes_1 = __importDefault(require("./socialMedia/routes/auth.routes"));
@@ -15,7 +16,15 @@ const auth_route_1 = __importDefault(require("./users/auth/routes/auth.route"));
 // Load environment variables
 dotenv_1.default.config();
 const app = (0, express_1.default)();
+// Enable CORS
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    next();
+});
 // Middleware
+app.use((0, cookie_parser_1.default)());
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
 // Express-session setup (required for Passport)

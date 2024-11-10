@@ -10,9 +10,7 @@ import { authUtility } from "../../../utils/authUtility";
 export class AuthService {
     private _authUtility = new authUtility();
     userLogin = async (request: Request, response: Response) => {
-        try {
-          console.log(request.body);
-          
+        try {          
           const { email, password, role } = request.body as { email: string, password: string, role: string };
           if (!email || !password || !role) {
               response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "Please provide mandatory fields"));

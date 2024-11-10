@@ -40,16 +40,18 @@ class metaServices {
             var _a, e_1, _b, _c, _d, e_2, _e, _f;
             const signature = request.headers['x-hub-signature'];
             const body = request.body;
+            console.log(body);
             const appSecret = process.env.META_APP_SECRET;
             if (appSecret) {
                 if (!(0, socialMediaUtility_1.verifySignature)(signature, body, appSecret)) {
-                    response.status(common_1.FORBIDDEN).send('Forbidden');
+                    console.error('App Secret is not valid');
+                    response.status(common_1.FORBIDDEN).send((0, response_1.CustomError)(common_1.FORBIDDEN, 'Forbidden'));
                     return;
                 }
             }
             else {
                 console.error('META_APP_SECRET is not defined');
-                response.status(common_1.FORBIDDEN).send('Forbidden');
+                response.status(common_1.FORBIDDEN).send((0, response_1.CustomError)(common_1.FORBIDDEN, 'Forbidden'));
                 return;
             }
             console.info("request header X-Hub-Signature validated");

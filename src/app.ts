@@ -2,6 +2,7 @@ import express, { Application, Request, Response } from 'express';
 import passport from 'passport';
 import session from 'express-session';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
 import { INTERNAL_ERROR } from './utils/common';
 import metaRoutes from './socialMedia/routes/meta.routes';
 import facebookAuthRoutes from './socialMedia/routes/auth.routes';
@@ -22,6 +23,7 @@ app.use((req, res, next) => {
 });
 
 // Middleware
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

@@ -82,7 +82,6 @@ class authUtility {
         });
         this.comparePassword = (rawPassword, hashedPassword) => __awaiter(this, void 0, void 0, function* () {
             try {
-                console.log(`rawPassword: ${rawPassword}, hashedPassword: ${hashedPassword}`);
                 return yield bcrypt.compare(rawPassword, hashedPassword);
             }
             catch (err) {

@@ -26,7 +26,7 @@ exports.CLIENT_FAILED_URL = process.env.FRONTEND_FAILED_URL;
 exports.facebookStrategyConfig = {
     clientID: process.env.META_APP_ID,
     clientSecret: process.env.META_APP_SECRET,
-    callbackURL: process.env.BACKEND_URL + '/facebook/callback',
+    callbackURL: process.env.BACKEND_URL + '/callback',
     profileFields: ['id', 'displayName', 'emails'],
     state: true
 };
@@ -38,7 +38,9 @@ const verifySignature = (signature, body, appSecret) => {
     const elements = signature.split('=');
     const method = elements[0];
     const signatureHash = elements[1];
-    const expectedHash = crypto_1.default.createHmac('sha256', appSecret).update(body).digest('hex');
+    // Convert body to a JSON string for hashing
+    const bodyString = typeof body === 'string' ? body : JSON.stringify(body);
+    const expectedHash = crypto_1.default.createHmac('sha256', appSecret).update(bodyString).digest('hex');
     return signatureHash === expectedHash;
 };
 exports.verifySignature = verifySignature;
@@ -144,7 +146,7 @@ const subscribeWebhook = () => __awaiter(void 0, void 0, void 0, function* () {
         if (adminSocialMediaData) {
             const appId = process.env.META_APP_ID;
             const verifyToken = process.env.META_APP_VERIFY_TOKEN;
-            // const callbackUrl = process.env.NGROK_URL +'/api/v1/meta/webhook';      
+            // const callbackUrl = process.env.BACKEND_URL +'/api/v1/meta/webhook';      
             const callbackUrl = server_1.ngrokUrl + '/api/v1/meta/webhook';
             const appAccessToken = adminSocialMediaData.facebook.appAccessToken;
             const url = `https://graph.facebook.com/v20.0/${appId}/subscriptions?access_token=${appAccessToken}`;

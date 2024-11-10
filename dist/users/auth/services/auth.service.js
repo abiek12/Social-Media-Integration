@@ -23,8 +23,8 @@ class AuthService {
         this.userLogin = (request, response) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const { email, password, role } = request.body;
-                if (!email || !password) {
-                    response.status(common_1.BAD_REQUEST).send((0, response_1.CustomError)(common_1.BAD_REQUEST, "Please provide email and password"));
+                if (!email || !password || !role) {
+                    response.status(common_1.BAD_REQUEST).send((0, response_1.CustomError)(common_1.BAD_REQUEST, "Please provide mandatory fields"));
                     return;
                 }
                 if (!(yield (0, common_1.validateEmail)(email))) {
