@@ -7,11 +7,29 @@ const express_1 = __importDefault(require("express"));
 const router = express_1.default.Router();
 const socialMediaAuth_service_1 = require("../services/socialMediaAuth.service");
 const authUtility_1 = require("../../utils/authUtility");
+const passport_1 = __importDefault(require("passport"));
 const _authUtility = new authUtility_1.authUtility();
-/* This route will initially calls from the frontend by click on the facebook login button,
-passport.authenticate('facebook') is a middleware used to authenticate the user then it will call the facebook strategy */
-router.get('/facebook', _authUtility.verifyToken, _authUtility.isSubscriber, socialMediaAuth_service_1.facebookAuthHandler);
-/* Callback route for facebook to redirect to passport.authenticate('facebook')
-is a middleware which is used to exchange the code with user details then fire callback function */
+// This route will initially calls from the frontend by click on the facebook login button, 
+// passport.authenticate('facebook') is a middleware used to authenticate the user then it will call the facebook strategy
+router.get('/facebook', _authUtility.verifyToken, _authUtility.isSubscriber, (req, res, next) => {
+    passport_1.default.authenticate('facebook', {
+        scope: [
+            'public_profile',
+            'pages_manage_ads',
+            'pages_show_list',
+            'pages_read_engagement',
+            'leads_retrieval',
+            'pages_manage_metadata',
+            'instagram_basic',
+            'instagram_manage_insights',
+            'instagram_manage_comments',
+            'whatsapp_business_management',
+            'whatsapp_business_messaging',
+        ],
+        state: req.user.userId // dynamically pass `state`
+    })(req, res, next);
+});
+// Callback route for facebook to redirect to passport.authenticate('facebook')
+// is a middleware which is used to exchange the code with user details then fire callback function
 router.get('/facebook/callback', socialMediaAuth_service_1.facebookCallbackHandler);
 exports.default = router;

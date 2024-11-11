@@ -149,7 +149,7 @@ class metaServices {
         // Fetch facebook pages of the subscriber.
         this.fetchPages = (request, response) => __awaiter(this, void 0, void 0, function* () {
             try {
-                const subscriberId = request.user.subscriberId;
+                const subscriberId = request.user.userId;
                 const userAceessToken = yield (0, socialMediaUtility_1.getMetaUserAccessTokenDb)(subscriberId);
                 if (!userAceessToken) {
                     console.error("User not authenticated to fetch facebook pages!");
@@ -169,7 +169,7 @@ class metaServices {
         // Handler for choosing facebook pages
         this.choosePages = (request, response) => __awaiter(this, void 0, void 0, function* () {
             try {
-                const subscriberId = request.user.subscriberId;
+                const subscriberId = request.user.userId;
                 const pageDatas = request.body;
                 if (!pageDatas) {
                     console.error("Page data not found");

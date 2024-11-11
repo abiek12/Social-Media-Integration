@@ -22,6 +22,7 @@ const common_1 = require("../../utils/common");
 passport_1.default.use(new passport_facebook_1.Strategy(socialMediaUtility_1.facebookStrategyConfig, (accessToken, refreshToken, profile, done) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         let subscriberId = profile._json.state;
+        console.log("subscriberId", subscriberId);
         const existingSubscriber = yield (0, common_1.checkSubscriberExitenceUsingId)(subscriberId);
         if (!existingSubscriber) {
             return done(null, false);

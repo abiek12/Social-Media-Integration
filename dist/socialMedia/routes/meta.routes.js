@@ -13,5 +13,5 @@ router.get('/webhook', _metaServices.verifyWebhook);
 router.post('/webhook', _metaServices.handleWebhook);
 // Fetch facebook pages of the user(subscriber) using meta graph api
 router.get('/facebook/fetchPages', _authUtility.verifyToken, _authUtility.isSubscriber, _metaServices.fetchPages);
-router.post('facebook/selectPage', _metaServices.choosePages);
+router.post('facebook/selectPage', _authUtility.verifyToken, _authUtility.isSubscriber, _metaServices.choosePages);
 exports.default = router;

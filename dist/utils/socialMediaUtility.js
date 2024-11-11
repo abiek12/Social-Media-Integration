@@ -26,7 +26,7 @@ exports.CLIENT_FAILED_URL = process.env.FRONTEND_FAILED_URL;
 exports.facebookStrategyConfig = {
     clientID: process.env.META_APP_ID,
     clientSecret: process.env.META_APP_SECRET,
-    callbackURL: process.env.BACKEND_URL + '/callback',
+    callbackURL: `${process.env.BACKEND_URL}/auth/facebook/callback`,
     profileFields: ['id', 'displayName', 'emails'],
     state: true
 };
@@ -191,32 +191,34 @@ const installMetaApp = (subscriberId) => __awaiter(void 0, void 0, void 0, funct
         const appDataSource = yield (0, dataSource_1.getDataSource)();
         const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia_entity_1.subscriberSocialMedia);
         const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
-        const subscriberSocialMediaData = yield subscriberSocialMediaQueryBuilder
+        const subscriberSocialMediaDatas = yield subscriberSocialMediaQueryBuilder
             .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
             .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
             .where("subscriber.subscriberId = :subscriberId", { subscriberId })
-            .getOne();
-        if (subscriberSocialMediaData) {
-            const pageId = subscriberSocialMediaData.facebook.pageId;
-            const pageAccessToken = subscriberSocialMediaData.facebook.pageAccessToken;
-            const url = `https://graph.facebook.com/v20.0/${pageId}/subscribed_apps`;
-            const response = yield fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    subscribed_fields: 'leadgen',
-                    access_token: pageAccessToken,
-                }),
-            });
-            if (!response.ok) {
-                const errorData = yield response.json();
-                console.log('Error subscribing to Meta App:', errorData);
-                return;
+            .getMany();
+        if (subscriberSocialMediaDatas.length > 0) {
+            for (const invidualData of subscriberSocialMediaDatas) {
+                const pageId = invidualData.facebook.pageId;
+                const pageAccessToken = invidualData.facebook.pageAccessToken;
+                const url = `https://graph.facebook.com/v20.0/${pageId}/subscribed_apps`;
+                const response = yield fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        subscribed_fields: 'leadgen',
+                        access_token: pageAccessToken,
+                    }),
+                });
+                if (!response.ok) {
+                    const errorData = yield response.json();
+                    console.log('Error subscribing to Meta App:', errorData);
+                }
+                const responseData = yield response.json();
+                console.log(responseData);
             }
-            const responseData = yield response.json();
-            return console.log('Successfully Installed Meta App:', responseData);
+            return console.log('Successfully Installed Meta App:');
         }
         else {
             return console.log(`No social media data found for subscriber with ID ${subscriberId}`);
