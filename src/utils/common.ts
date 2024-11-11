@@ -81,12 +81,7 @@ export async function checkSubscriberExitenceUsingId(subscriberId: number) {
         "subscriber.state",
         "subscriber.city",
         "subscriber.pincode",
-        "subscriber.gstNumber",
-        "subscriber.logo",
-        "subscriber.cdrAutoConvert",
-        "subscriber.emailOtp",
-        "subscriber.prefix",
-        "subscriber.currency",
+        "subscriber.address"
       ])
       .getOne();
 
