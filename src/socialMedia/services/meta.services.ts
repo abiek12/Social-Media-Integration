@@ -4,7 +4,7 @@ import { SubscriberFacebookSettings } from "../dataModels/entities/subscriberFac
 import { getDataSource } from "../../utils/dataSource";
 import { FacebookWebhookRequest, LeadData, pageMetaDataTypes, VerificationData } from "../dataModels/types/meta.types";
 import { CustomError, Success } from "../../utils/response";
-import { BAD_REQUEST, checkSubscriberExitenceUsingId, ERROR_COMMON_MESSAGE, FORBIDDEN, INTERNAL_ERROR, NOT_AUTHORIZED, NOT_FOUND, SUCCESS_GET } from "../../utils/common";
+import { BAD_REQUEST, checkSubscriberExitenceUsingId, CONFLICT, ERROR_COMMON_MESSAGE, FORBIDDEN, INTERNAL_ERROR, NOT_AUTHORIZED, NOT_FOUND, SUCCESS_GET } from "../../utils/common";
 import { fetchFacebookPages, fetchingLeadDetails, fetchingLeadgenData, getMetaUserAccessTokenDb, installMetaApp, verifySignature } from "../../utils/socialMediaUtility";
 
 export class metaServices {
@@ -199,7 +199,7 @@ export class metaServices {
         }
     }
 
-    checkFacebookStatus = async (request: Request, response: Response):Promise<any> => {
+    checkFacebookStatus = async (request: Request, response: Response) => {
        try {
         const subscriberId: number = (request as any).user.userId;
 
@@ -210,7 +210,8 @@ export class metaServices {
 
         if(!existingSubscriber) {
             console.error("Subscriber not found");
-            return false;
+            response.status(CONFLICT).send(false);
+            return;
         }
 
         const existingSubscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
@@ -219,9 +220,11 @@ export class metaServices {
             .where("subscriber.subscriberId = :subscriberId", { subscriberId })
             .getOne();
         if(existingSubscriberSocialMediaData && existingSubscriberSocialMediaData.facebook.userAccessToken) {
-            return true;
+            response.status(SUCCESS_GET).send(true);
+            return;
         } else {
-            return false;
+            response.status(SUCCESS_GET).send(false);
+            return;
         }
        } catch (error) {
         console.error("Error while check if the user is connected with facebook.");

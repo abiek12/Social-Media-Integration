@@ -221,6 +221,37 @@ class metaServices {
                 return;
             }
         });
+        this.checkFacebookStatus = (request, response) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const subscriberId = request.user.userId;
+                const appDataSource = yield (0, dataSource_1.getDataSource)();
+                const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia_entity_1.subscriberSocialMedia);
+                const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
+                const existingSubscriber = yield (0, common_1.checkSubscriberExitenceUsingId)(subscriberId);
+                if (!existingSubscriber) {
+                    console.error("Subscriber not found");
+                    response.status(common_1.CONFLICT).send(false);
+                    return;
+                }
+                const existingSubscriberSocialMediaData = yield subscriberSocialMediaQueryBuilder
+                    .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+                    .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
+                    .where("subscriber.subscriberId = :subscriberId", { subscriberId })
+                    .getOne();
+                if (existingSubscriberSocialMediaData && existingSubscriberSocialMediaData.facebook.userAccessToken) {
+                    response.status(common_1.SUCCESS_GET).send(true);
+                    return;
+                }
+                else {
+                    response.status(common_1.SUCCESS_GET).send(false);
+                    return;
+                }
+            }
+            catch (error) {
+                console.error("Error while check if the user is connected with facebook.");
+                throw error;
+            }
+        });
     }
 }
 exports.metaServices = metaServices;

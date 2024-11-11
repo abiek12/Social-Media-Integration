@@ -5,9 +5,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const router = express_1.default.Router();
-const socialMediaAuth_service_1 = require("../services/socialMediaAuth.service");
 const authUtility_1 = require("../../utils/authUtility");
 const passport_1 = __importDefault(require("passport"));
+const socialMediaUtility_1 = require("../../utils/socialMediaUtility");
 const _authUtility = new authUtility_1.authUtility();
 // This route will initially calls from the frontend by click on the facebook login button, 
 // passport.authenticate('facebook') is a middleware used to authenticate the user then it will call the facebook strategy
@@ -31,5 +31,10 @@ router.get('/facebook', _authUtility.verifyToken, _authUtility.isSubscriber, (re
 });
 // Callback route for facebook to redirect to passport.authenticate('facebook')
 // is a middleware which is used to exchange the code with user details then fire callback function
-router.get('/facebook/callback', socialMediaAuth_service_1.facebookCallbackHandler);
+router.get('/facebook/callback', passport_1.default.authenticate('facebook', {
+    successRedirect: socialMediaUtility_1.CLIENT_SUCCESS_URL,
+    successMessage: "User authenticated facebook successfully",
+    failureRedirect: socialMediaUtility_1.CLIENT_FAILED_URL,
+    failureMessage: "User authentication failed!",
+}));
 exports.default = router;

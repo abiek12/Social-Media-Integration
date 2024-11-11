@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.refreshAllTokens = exports.updatePagesInDb = exports.updateUserAccessTokenInDb = exports.getPageAccessToken = exports.getLongLivedUserToken = exports.getSubscribersWithExpiringTokens = exports.checkForSubscribersMetaConnection = exports.checkWebhookSubscription = exports.checkForAdminMetaConnection = exports.fetchFacebookPages = exports.getMetaUserAccessTokenDb = exports.installMetaApp = exports.subscribeWebhook = exports.getAppAccessToken = exports.fetchingLeadDetails = exports.fetchingLeadgenData = exports.verifySignature = exports.facebookStrategyConfig = exports.CLIENT_FAILED_URL = exports.CLIENT_URL = void 0;
+exports.findUserByProfileId = exports.refreshAllTokens = exports.updatePagesInDb = exports.updateUserAccessTokenInDb = exports.getPageAccessToken = exports.getLongLivedUserToken = exports.getSubscribersWithExpiringTokens = exports.checkForSubscribersMetaConnection = exports.checkWebhookSubscription = exports.checkForAdminMetaConnection = exports.fetchFacebookPages = exports.getMetaUserAccessTokenDb = exports.installMetaApp = exports.subscribeWebhook = exports.getAppAccessToken = exports.fetchingLeadDetails = exports.fetchingLeadgenData = exports.verifySignature = exports.facebookStrategyConfig = exports.CLIENT_FAILED_URL = exports.CLIENT_SUCCESS_URL = void 0;
 const crypto_1 = __importDefault(require("crypto"));
 const adminSocialMedia_entity_1 = require("../socialMedia/dataModels/entities/adminSocialMedia.entity");
 const subscriberSocialMedia_entity_1 = require("../socialMedia/dataModels/entities/subscriberSocialMedia.entity");
@@ -21,7 +21,7 @@ const admin_entity_1 = require("../users/admin/dataModels/entities/admin.entity"
 const dataSource_1 = require("./dataSource");
 const server_1 = require("../server");
 // Social Media Utility Constants
-exports.CLIENT_URL = process.env.FRONTEND_SUCCESS_URL;
+exports.CLIENT_SUCCESS_URL = process.env.FRONTEND_SUCCESS_URL;
 exports.CLIENT_FAILED_URL = process.env.FRONTEND_FAILED_URL;
 exports.facebookStrategyConfig = {
     clientID: process.env.META_APP_ID,
@@ -469,3 +469,24 @@ const refreshAllTokens = (subscriberId) => __awaiter(void 0, void 0, void 0, fun
     }
 });
 exports.refreshAllTokens = refreshAllTokens;
+const findUserByProfileId = (profileId) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const appDataSource = yield (0, dataSource_1.getDataSource)();
+        const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia_entity_1.subscriberSocialMedia);
+        const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
+        const subscriberSocialMediaData = yield subscriberSocialMediaQueryBuilder
+            .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+            .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
+            .where("facebook.profileId = :profileId", { profileId })
+            .getOne();
+        if (!subscriberSocialMediaData) {
+            console.log(`No social media data found for the user with ID ${profileId}`);
+            return null;
+        }
+        return subscriberSocialMediaData;
+    }
+    catch (error) {
+        console.error("Error while fetching user by profile id");
+    }
+});
+exports.findUserByProfileId = findUserByProfileId;

@@ -11,7 +11,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SubscriberFacebookSettings = void 0;
 const typeorm_1 = require("typeorm");
-const subscriber_entity_1 = require("../../../users/subscriber/dataModels/entities/subscriber.entity");
 let SubscriberFacebookSettings = class SubscriberFacebookSettings {
 };
 exports.SubscriberFacebookSettings = SubscriberFacebookSettings;
@@ -28,7 +27,7 @@ __decorate([
     __metadata("design:type", String)
 ], SubscriberFacebookSettings.prototype, "pageName", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: "varchar", length: 255, nullable: true, name: "page_access_token" }),
+    (0, typeorm_1.Column)({ type: "text", nullable: true, name: "page_access_token" }),
     __metadata("design:type", String)
 ], SubscriberFacebookSettings.prototype, "pageAccessToken", void 0);
 __decorate([
@@ -36,7 +35,7 @@ __decorate([
     __metadata("design:type", String)
 ], SubscriberFacebookSettings.prototype, "profileId", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: "varchar", length: 255, nullable: true, name: "user_access_token" }),
+    (0, typeorm_1.Column)({ type: "text", nullable: true, name: "user_access_token" }),
     __metadata("design:type", String)
 ], SubscriberFacebookSettings.prototype, "userAccessToken", void 0);
 __decorate([
@@ -55,12 +54,6 @@ __decorate([
     (0, typeorm_1.UpdateDateColumn)({ name: "updated_at" }),
     __metadata("design:type", Date)
 ], SubscriberFacebookSettings.prototype, "updatedAt", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ type: "int", nullable: false, name: "subscriber_id" }),
-    (0, typeorm_1.ManyToOne)(() => subscriber_entity_1.subscribers),
-    (0, typeorm_1.JoinColumn)({ name: "subscriber_id" }),
-    __metadata("design:type", subscriber_entity_1.subscribers)
-], SubscriberFacebookSettings.prototype, "subscriber", void 0);
 exports.SubscriberFacebookSettings = SubscriberFacebookSettings = __decorate([
     (0, typeorm_1.Entity)("sub_facebook_settings")
 ], SubscriberFacebookSettings);
