@@ -23,6 +23,8 @@ const dataSource_1 = require("../../utils/dataSource");
 const response_1 = require("../../utils/response");
 const common_1 = require("../../utils/common");
 const socialMediaUtility_1 = require("../../utils/socialMediaUtility");
+const lead_enums_1 = require("../../leads/dataModels/enums/lead.enums");
+const lead_service_1 = require("../../leads/services/lead.service");
 class metaServices {
     constructor() {
         // Meta Webhook Verification Endpoint
@@ -72,6 +74,7 @@ class metaServices {
                     const pageAccessToken = subscriberSocialMediaData.facebook.pageAccessToken;
                     // fetching actual lead data with page access token and leadgen id using meta graph api
                     const leadData = yield (0, socialMediaUtility_1.fetchingLeadDetails)(pageAccessToken, leadgenId);
+                    console.log(leadData);
                     if (leadData) {
                         let email = null;
                         let fullName = null;
@@ -141,7 +144,24 @@ class metaServices {
                             }
                             finally { if (e_1) throw e_1.error; }
                         }
-                        console.log(leadData);
+                        if (email && fullName) {
+                            const data = {
+                                leadText: leadText ? leadText : `Enquiry from ${fullName}`,
+                                status: lead_enums_1.leadStatus.LEAD,
+                                contactEmail: email,
+                                contactName: fullName,
+                                companyName: companyName,
+                                designation: designation,
+                                subscriberId: subscriberId,
+                                contactPhone: phoneNumber ? phoneNumber : null,
+                                contactCountry: country ? country : null,
+                                contactState: state ? state : null,
+                                contactCity: city ? city : null,
+                            };
+                            // Creating Lead with the above data
+                            const subscriberLeadService = new lead_service_1.LeadsService();
+                            yield subscriberLeadService.createSubscribersLeads(data);
+                        }
                     }
                 }
             }

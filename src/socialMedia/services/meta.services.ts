@@ -6,6 +6,8 @@ import { FacebookWebhookRequest, LeadData, pageMetaDataTypes, VerificationData }
 import { CustomError, Success } from "../../utils/response";
 import { BAD_REQUEST, checkSubscriberExitenceUsingId, CONFLICT, ERROR_COMMON_MESSAGE, FORBIDDEN, INTERNAL_ERROR, NOT_AUTHORIZED, NOT_FOUND, SUCCESS_GET } from "../../utils/common";
 import { fetchFacebookPages, fetchingLeadDetails, fetchingLeadgenData, getMetaUserAccessTokenDb, installMetaApp, verifySignature } from "../../utils/socialMediaUtility";
+import { leadStatus } from "../../leads/dataModels/enums/lead.enums";
+import { LeadsService } from "../../leads/services/lead.service";
 
 export class metaServices {
     // Meta Webhook Verification Endpoint
@@ -61,7 +63,7 @@ export class metaServices {
 
                 // fetching actual lead data with page access token and leadgen id using meta graph api
                 const leadData: LeadData = await fetchingLeadDetails(pageAccessToken, leadgenId);
-
+                console.log(leadData);
                 if (leadData) {
                     let email = null;
                     let fullName = null;
@@ -108,7 +110,26 @@ export class metaServices {
                         }                        
                     }
 
-                    console.log(leadData);
+                    if(email && fullName) {
+                        const data = {
+                            leadText: leadText? leadText : `Enquiry from ${fullName}`,
+                            status: leadStatus.LEAD,
+                            contactEmail: email,
+                            contactName: fullName,
+                            companyName: companyName,
+                            designation: designation,
+                            subscriberId: subscriberId,
+                            contactPhone: phoneNumber ? phoneNumber : null,
+                            contactCountry: country ? country : null,
+                            contactState:state ? state : null,
+                            contactCity:city ? city : null,
+
+                        }
+                        
+                        // Creating Lead with the above data
+                        const subscriberLeadService = new LeadsService();
+                        await subscriberLeadService.createSubscribersLeads(data);
+                    }
                 }
             }
         }
