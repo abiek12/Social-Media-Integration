@@ -13,4 +13,7 @@ router.post('/webhook', _metaServices.handleWebhook);
 router.get('/facebook/fetchPages', _authUtility.verifyToken, _authUtility.isSubscriber, _metaServices.fetchPages);
 router.post('facebook/selectPage', _authUtility.verifyToken, _authUtility.isSubscriber, _metaServices.choosePages);
 
+// check is the user is authenticated with facebook
+router.get('/facebook-status', _authUtility.verifyToken, _authUtility.isSubscriber, _metaServices.checkFacebookStatus);
+
 export default router;

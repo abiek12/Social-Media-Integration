@@ -198,4 +198,34 @@ export class metaServices {
             return;
         }
     }
+
+    checkFacebookStatus = async (request: Request, response: Response):Promise<any> => {
+       try {
+        const subscriberId: number = (request as any).user.userId;
+
+        const appDataSource = await getDataSource();
+        const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
+        const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
+        const existingSubscriber = await checkSubscriberExitenceUsingId(subscriberId);
+
+        if(!existingSubscriber) {
+            console.error("Subscriber not found");
+            return false;
+        }
+
+        const existingSubscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
+            .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+            .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
+            .where("subscriber.subscriberId = :subscriberId", { subscriberId })
+            .getOne();
+        if(existingSubscriberSocialMediaData && existingSubscriberSocialMediaData.facebook.userAccessToken) {
+            return true;
+        } else {
+            return false;
+        }
+       } catch (error) {
+        console.error("Error while check if the user is connected with facebook.");
+        throw error;
+       }
+    }
 }
