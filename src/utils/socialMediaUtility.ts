@@ -469,3 +469,25 @@ export const refreshAllTokens = async (subscriberId: number) => {
     }
   }
 };
+
+export const findUserByProfileId = async (profileId: string) => {
+  try {
+    const appDataSource = await getDataSource();
+    const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
+    const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
+    const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
+      .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+      .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
+      .where("facebook.profileId = :profileId", { profileId })
+      .getOne();
+    
+    if (!subscriberSocialMediaData) {
+      console.log(`No social media data found for the user with ID ${profileId}`);
+      return null;
+    }
+
+    return subscriberSocialMediaData;
+  } catch (error) {
+    console.error("Error while fetching user by profile id");
+  }
+}
