@@ -170,8 +170,8 @@ class metaServices {
         this.choosePages = (request, response) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const subscriberId = request.user.userId;
-                const pageDatas = request.body;
-                if (!pageDatas) {
+                const { pages } = request.body;
+                if (pages.length === 0) {
                     console.error("Page data not found");
                     response.status(common_1.BAD_REQUEST).send((0, response_1.CustomError)(common_1.BAD_REQUEST, "Page data not found!"));
                     return;
@@ -179,25 +179,25 @@ class metaServices {
                 const appDataSource = yield (0, dataSource_1.getDataSource)();
                 const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia_entity_1.subscriberSocialMedia);
                 const subscriberFacebookRepository = appDataSource.getRepository(subscriberFacebook_entity_1.SubscriberFacebookSettings);
-                const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
+                // const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
                 const existingSubscriber = yield (0, common_1.checkSubscriberExitenceUsingId)(subscriberId);
                 if (!existingSubscriber) {
                     console.error("Subscriber not found");
                     response.status(common_1.NOT_FOUND).send((0, response_1.CustomError)(common_1.NOT_FOUND, "Subscriber not found!"));
                     return;
                 }
-                const existingSubscriberSocialMediaData = yield subscriberSocialMediaQueryBuilder
-                    .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-                    .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
-                    .where("subscriber.subscriberId = :subscriberId", { subscriberId })
-                    .getMany();
-                if (existingSubscriberSocialMediaData.length > 0) {
-                    for (const invidualData of existingSubscriberSocialMediaData) {
-                        yield subscriberFacebookRepository.delete(invidualData.facebook.subFacebookSettingsId);
-                        yield subscriberSocialMediaRepository.delete(invidualData.subscriberSocialMediaId);
-                    }
-                }
-                for (const pageData of pageDatas) {
+                // const existingSubscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
+                //     .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+                //     .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
+                //     .where("subscriber.subscriberId = :subscriberId", { subscriberId })
+                //     .getMany();
+                // if(existingSubscriberSocialMediaData.length > 0) {
+                //    for(const invidualData of existingSubscriberSocialMediaData) {
+                //         await subscriberSocialMediaRepository.delete(invidualData.subscriberSocialMediaId);
+                //         await subscriberFacebookRepository.delete(invidualData.facebook.subFacebookSettingsId);
+                //     }
+                // }
+                for (const pageData of pages) {
                     const subscriberFacebookEntity = new subscriberFacebook_entity_1.SubscriberFacebookSettings();
                     subscriberFacebookEntity.pageId = pageData.id;
                     subscriberFacebookEntity.pageAccessToken = pageData.access_token;

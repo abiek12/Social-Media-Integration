@@ -12,6 +12,9 @@ router.get('/facebook', _authUtility.verifyToken, _authUtility.isSubscriber, (re
     passport.authenticate('facebook', {
       scope: [
         'public_profile',
+        'pages_manage_posts',
+        'pages_manage_metadata',
+        'pages_read_engagement',
         'pages_manage_ads',
         'pages_show_list',
         'pages_read_engagement',

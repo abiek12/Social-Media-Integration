@@ -206,6 +206,12 @@ export const installMetaApp = async (subscriberId: number) => {
         const pageId = invidualData.facebook.pageId;
         const pageAccessToken = invidualData.facebook.pageAccessToken;
 
+        // Check for valid pageId and access token
+        if (!pageId || !pageAccessToken) {
+          console.log('Invalid pageId or pageAccessToken');
+          continue;
+        }
+
         const url = `https://graph.facebook.com/v20.0/${pageId}/subscribed_apps`;
         const response = await fetch(url, {
           method: 'POST',
@@ -213,18 +219,18 @@ export const installMetaApp = async (subscriberId: number) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            subscribed_fields: 'leadgen',
+            subscribed_fields: ['leadgen'],
             access_token: pageAccessToken,
           }),
         });
 
+        const responseData = await response.json();
         if (!response.ok) {
           const errorData = await response.json();
           console.log('Error subscribing to Meta App:', errorData);
+        } else {
+          console.log('Successfully subscribed:', responseData);
         }
-
-        const responseData = await response.json();
-        console.log(responseData);
       }
       return console.log('Successfully Installed Meta App:');
     } else {

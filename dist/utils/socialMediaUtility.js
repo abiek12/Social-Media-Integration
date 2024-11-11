@@ -200,6 +200,11 @@ const installMetaApp = (subscriberId) => __awaiter(void 0, void 0, void 0, funct
             for (const invidualData of subscriberSocialMediaDatas) {
                 const pageId = invidualData.facebook.pageId;
                 const pageAccessToken = invidualData.facebook.pageAccessToken;
+                // Check for valid pageId and access token
+                if (!pageId || !pageAccessToken) {
+                    console.log('Invalid pageId or pageAccessToken');
+                    continue;
+                }
                 const url = `https://graph.facebook.com/v20.0/${pageId}/subscribed_apps`;
                 const response = yield fetch(url, {
                     method: 'POST',
@@ -207,16 +212,18 @@ const installMetaApp = (subscriberId) => __awaiter(void 0, void 0, void 0, funct
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        subscribed_fields: 'leadgen',
+                        subscribed_fields: ['leadgen'],
                         access_token: pageAccessToken,
                     }),
                 });
+                const responseData = yield response.json();
                 if (!response.ok) {
                     const errorData = yield response.json();
                     console.log('Error subscribing to Meta App:', errorData);
                 }
-                const responseData = yield response.json();
-                console.log(responseData);
+                else {
+                    console.log('Successfully subscribed:', responseData);
+                }
             }
             return console.log('Successfully Installed Meta App:');
         }
