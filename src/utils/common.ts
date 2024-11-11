@@ -67,10 +67,6 @@ export async function checkSubscriberExitenceUsingId(subscriberId: number) {
       .where("subscriber.subscriberId = :subscriberId", {
         subscriberId: subscriberId,
       })
-      .andWhere("subscriber.isDeleted = :isDeleted", { isDeleted: false })
-      .andWhere("subscriber.emailVarified = :emailVarified", {
-        emailVarified: true,
-      })
       .select([
         "subscriber.subscriberId",
         "subscriber.userName",
