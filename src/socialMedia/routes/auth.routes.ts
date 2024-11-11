@@ -1,8 +1,8 @@
 import express from "express";
 const router = express.Router();
-import { facebookCallbackHandler } from "../services/socialMediaAuth.service";
 import { authUtility } from "../../utils/authUtility";
 import passport from "passport";
+import { CLIENT_FAILED_URL, CLIENT_URL } from "../../utils/socialMediaUtility";
 
 const _authUtility = new authUtility();
 
@@ -26,10 +26,15 @@ router.get('/facebook', _authUtility.verifyToken, _authUtility.isSubscriber, (re
       state: (req as any).user.userId // dynamically pass `state`
     })(req, res, next);
   });
-
   
+
 // Callback route for facebook to redirect to passport.authenticate('facebook')
 // is a middleware which is used to exchange the code with user details then fire callback function
-router.get('/facebook/callback', facebookCallbackHandler);
+router.get('/facebook/callback', passport.authenticate('facebook', {
+    successRedirect: CLIENT_URL,
+    successMessage: "User authenticated facebook successfully",
+    failureRedirect: CLIENT_FAILED_URL,
+    failureMessage: "User authentication failed!",
+  }));
 
 export default router;
