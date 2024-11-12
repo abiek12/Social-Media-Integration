@@ -75,7 +75,9 @@ class AuthService {
                     httpOnly: true, // Makes the cookie inaccessible via JavaScript
                     secure: process.env.NODE_ENV === 'production', // Ensures cookie is only sent over HTTPS in production
                 });
+                console.log("User Logged in");
                 response.status(common_1.SUCCESS_GET).send((0, response_1.Success)(loginResponse));
+                return;
             }
             catch (error) {
                 console.error("Error while user login", error);
