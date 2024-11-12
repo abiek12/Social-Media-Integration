@@ -8,7 +8,7 @@ const _authUtility = new authUtility();
 
 // This route will initially calls from the frontend by click on the facebook login button, 
 // passport.authenticate('facebook') is a middleware used to authenticate the user then it will call the facebook strategy
-router.get('/facebook', _authUtility.verifyToken, _authUtility.isSubscriber, (req, res, next) => {
+router.get('/facebook', (req, res, next) => {
     passport.authenticate('facebook', {
       scope: [
         'public_profile',
