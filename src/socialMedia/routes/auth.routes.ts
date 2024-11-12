@@ -26,8 +26,7 @@ router.get('/facebook', (req, res, next) => {
         'instagram_manage_comments',
         'whatsapp_business_management',
         'whatsapp_business_messaging',
-      ],
-      state: (req as any).user.userId // dynamically pass `state`
+      ]
     })(req, res, next);
   });
   
