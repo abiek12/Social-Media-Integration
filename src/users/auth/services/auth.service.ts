@@ -73,7 +73,9 @@ export class AuthService {
             secure: process.env.NODE_ENV === 'production',  // Ensures cookie is only sent over HTTPS in production
           });
 
+          console.log("User Logged in");
           response.status(SUCCESS_GET).send(Success(loginResponse));
+          return;
         } catch (error) {
             console.error("Error while user login", error);
             throw error;

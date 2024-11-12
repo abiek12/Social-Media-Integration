@@ -28,6 +28,7 @@ export class authUtility {
     // Middleware to verify token
     verifyToken = async (req: Request, res: Response, next: NextFunction) => {
         try {
+          console.log(req.cookies.accessToken);
           let token = req.cookies.accessToken;
           if (!token) {
             res.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "Un-Authorized Access"));
@@ -39,6 +40,7 @@ export class authUtility {
           }
 
           const decoded = jwt.verify(token, process.env.SECRET_KEY as string);
+          console.log(decoded);
           (req as any).user = decoded;
 
           next(); // Move to the next middleware or route handler
