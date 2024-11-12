@@ -69,8 +69,9 @@ export class AuthService {
           
           // Set the token in the cookie
           response.cookie('accessToken', loginResponse.accessToken, {
-            httpOnly: true,  // Makes the cookie inaccessible via JavaScript
-            secure: process.env.NODE_ENV === 'production',  // Ensures cookie is only sent over HTTPS in production
+            httpOnly: true,    // Ensures cookie can't be accessed by JavaScript
+            secure: true,      // Only send the cookie over HTTPS
+            domain: 'social-media-integration.onrender.com'  // Ensure the domain matches the backend
           });
 
           console.log("User Logged in");
