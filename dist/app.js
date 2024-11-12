@@ -14,6 +14,7 @@ const meta_routes_1 = __importDefault(require("./socialMedia/routes/meta.routes"
 const auth_routes_1 = __importDefault(require("./socialMedia/routes/auth.routes"));
 const subscriber_route_1 = __importDefault(require("./users/subscriber/routes/subscriber.route"));
 const auth_route_1 = __importDefault(require("./users/auth/routes/auth.route"));
+const lead_route_1 = __importDefault(require("./leads/routes/lead.route"));
 const cors_1 = __importDefault(require("cors"));
 // Load environment variables
 dotenv_1.default.config();
@@ -48,6 +49,7 @@ app.use('/auth', auth_routes_1.default);
 app.use('/api/v1/meta', meta_routes_1.default);
 app.use('/api/v1/auth', auth_route_1.default);
 app.use('/api/v1/subscriber', subscriber_route_1.default);
+app.use('/api/v1/lead', lead_route_1.default);
 // Error handling middleware
 app.use((error, req, res, next) => {
     console.error(error.stack);

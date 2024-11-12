@@ -35,7 +35,7 @@ passport_1.default.deserializeUser((id, done) => __awaiter(void 0, void 0, void 
 }));
 passport_1.default.use(new passport_facebook_1.Strategy(socialMediaUtility_1.facebookStrategyConfig, (accessToken, refreshToken, profile, done) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        let subscriberId = 3;
+        let subscriberId = 1;
         const existingSubscriber = yield (0, common_1.checkSubscriberExitenceUsingId)(subscriberId);
         if (!existingSubscriber) {
             return done(null, false);

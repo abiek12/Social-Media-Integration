@@ -1,7 +1,7 @@
 import { BAD_REQUEST, SUCCESS_GET } from "../../utils/common";
 import { getDataSource } from "../../utils/dataSource";
 import { CustomError, Success } from "../../utils/response";
-import { Leads } from "../dataModels/entities/lead.enitty";
+import { Leads } from "../dataModels/entities/lead.entity";
 import { LeadData } from "../dataModels/types/lead.type";
 import { Request, Response } from "express";
 
@@ -40,13 +40,13 @@ export class LeadsService {
 
             const appDataSource = await getDataSource();
             const leadRepository = appDataSource.getRepository(Leads);
+            const leadQueryBuilder = leadRepository.createQueryBuilder("lead");
 
-            const response = await leadRepository.find();
+            const response = await leadQueryBuilder.getMany();
             res.status(SUCCESS_GET).send(Success(response));
-            return;
-            
+            return;  
         } catch (error) {
-            console.error("Error while fetching lead")
+            console.error("Error while fetching lead", error);
         }
     }
 }
