@@ -28,8 +28,14 @@ export class authUtility {
     // Middleware to verify token
     verifyToken = async (req: Request, res: Response, next: NextFunction) => {
         try {
-          console.log(req.cookies);
-          let token = req.cookies.accessToken;
+          const authHeader = req.headers['authorization'];
+          if (!authHeader) {
+            res.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "No token is provided!"));
+            return
+          }
+        
+          // Extract the token from the Authorization header
+          let token = authHeader.split(' ')[1]; 
           if (!token) {
             res.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "Un-Authorized Access"));
             return;
