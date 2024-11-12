@@ -10,63 +10,70 @@ import { authUtility } from "../../../utils/authUtility";
 export class AuthService {
     private _authUtility = new authUtility();
     userLogin = async (request: Request, response: Response) => {
-        try {
-            const { email, password, role } = request.body as { email: string, password: string, role: string };
-            if (!email || !password) {
-                response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "Please provide email and password"));
-                return;
-            }
-
-            if (!(await validateEmail(email))) {
-              console.error(`Invalid email`);
-              response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "Invalid email"));
+        try {          
+          const { email, password, role } = request.body as { email: string, password: string, role: string };
+          if (!email || !password || !role) {
+              response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "Please provide mandatory fields"));
               return;
-            }
+          }
 
-            let userRepository: any;
-            let userQueryBuilder: any;
-            const appDatasourse = await getDataSource();
+          if (!(await validateEmail(email))) {
+            console.error(`Invalid email`);
+            response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "Invalid email"));
+            return;
+          }
 
-            switch (role) {
-              case userRoles.SUBSCRIBER:
-                userRepository = appDatasourse.getRepository(subscribers);
-                userQueryBuilder = userRepository.createQueryBuilder("user");
-                break;
-              case userRoles.ADMIN:
-              case userRoles.SUPERADMIN:
-                userRepository = appDatasourse.getRepository(admins);
-                userQueryBuilder = userRepository.createQueryBuilder("user");
-                break;
-              default:
-               response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "Invalid role"));
-               return;
-            }
+          let userRepository: any;
+          let userQueryBuilder: any;
+          const appDatasourse = await getDataSource();
 
-            const user = await userQueryBuilder.getOne();
-            if (!user) {
-              console.error(`User not found`);
-              response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "User not found"));
-              return;
-            }
+          switch (role) {
+            case userRoles.SUBSCRIBER:
+              userRepository = appDatasourse.getRepository(subscribers);
+              userQueryBuilder = userRepository.createQueryBuilder("user");
+              break;
+            case userRoles.ADMIN:
+            case userRoles.SUPERADMIN:
+              userRepository = appDatasourse.getRepository(admins);
+              userQueryBuilder = userRepository.createQueryBuilder("user");
+              break;
+            default:
+             response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "Invalid role"));
+             return;
+          }
 
-            const passwordComparison = await this._authUtility.comparePassword( password, user.password );
-            if (!passwordComparison) {
-              console.error(`Invalid password`);
-              response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "Invalid password"));
-              return;
-            }
+          const user = await userQueryBuilder.getOne();
+          if (!user) {
+            console.error(`User not found`);
+            response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "User not found"));
+            return;
+          }
 
-            let userid;
-            switch (role) {
-              case userRoles.SUBSCRIBER:
-                userid = user.subscriberId;
-              default:
-                userid = user.user_id;
-                break;
-            }
+          const passwordComparison = await this._authUtility.comparePassword( password, user.password );
+          if (!passwordComparison) {
+            console.error(`Invalid password`);
+            response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "Invalid password"));
+            return;
+          }
 
-            let loginResponse = await generateTokens(user.userRole, user.subscriberId ? user.subscriberId : userid);
-            response.status(SUCCESS_GET).send(Success(loginResponse));
+          let userid;
+          switch (role) {
+            case userRoles.SUBSCRIBER:
+              userid = user.subscriberId;
+            default:
+              userid = user.user_id;
+              break;
+          }
+
+          let loginResponse = await generateTokens(user.userRole, user.subscriberId ? user.subscriberId : userid);
+          
+          // Set the token in the cookie
+          response.cookie('accessToken', loginResponse.accessToken, {
+            httpOnly: true,  // Makes the cookie inaccessible via JavaScript
+            secure: process.env.NODE_ENV === 'production',  // Ensures cookie is only sent over HTTPS in production
+          });
+
+          response.status(SUCCESS_GET).send(Success(loginResponse));
         } catch (error) {
             console.error("Error while user login", error);
             throw error;

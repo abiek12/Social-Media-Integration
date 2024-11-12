@@ -8,13 +8,13 @@ import { FacebookWebhookRequest } from '../socialMedia/dataModels/types/meta.typ
 // import { ngrokUrl } from '../server';
 
 // Social Media Utility Constants
-export const CLIENT_URL = process.env.FRONTEND_URL as string;
+export const CLIENT_SUCCESS_URL = process.env.FRONTEND_SUCCESS_URL as string;
 export const CLIENT_FAILED_URL = process.env.FRONTEND_FAILED_URL as string;
 
 export const facebookStrategyConfig = {
   clientID: process.env.META_APP_ID as string,
   clientSecret: process.env.META_APP_SECRET as string,
-  callbackURL: (process.env.BACKEND_URL as string) + '/callback',
+  callbackURL: `${process.env.BACKEND_URL}/auth/facebook/callback`,
   profileFields: ['id', 'displayName', 'emails'],
   state: true
 }
@@ -141,7 +141,7 @@ export const subscribeWebhook = async () => {
     if(adminSocialMediaData) {
       const appId = process.env.META_APP_ID;
       const verifyToken = process.env.META_APP_VERIFY_TOKEN;
-      const callbackUrl = process.env.BACKEND_URL +'/api/v1/meta/webhook';      
+      const callbackUrl = process.env.BACKEND_URL +'/api/v1/meta/webhook';   
       // const callbackUrl = ngrokUrl + '/api/v1/meta/webhook';
       const appAccessToken = adminSocialMediaData.facebook.appAccessToken;
 
@@ -195,36 +195,44 @@ export const installMetaApp = async (subscriberId: number) => {
     const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
     const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
 
-    const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
+    const subscriberSocialMediaDatas = await subscriberSocialMediaQueryBuilder
       .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
       .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
       .where("subscriber.subscriberId = :subscriberId", { subscriberId })
-      .getOne();
+      .getMany();
 
-    if (subscriberSocialMediaData) {
-      const pageId = subscriberSocialMediaData.facebook.pageId;
-      const pageAccessToken = subscriberSocialMediaData.facebook.pageAccessToken;
+    if (subscriberSocialMediaDatas.length > 0) {
+      for (const invidualData of subscriberSocialMediaDatas) {
+        const pageId = invidualData.facebook.pageId;
+        const pageAccessToken = invidualData.facebook.pageAccessToken;
 
-      const url = `https://graph.facebook.com/v20.0/${pageId}/subscribed_apps`;
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          subscribed_fields: 'leadgen',
-          access_token: pageAccessToken,
-        }),
-      });
+        // Check for valid pageId and access token
+        if (!pageId || !pageAccessToken) {
+          console.log('Invalid pageId or pageAccessToken');
+          continue;
+        }
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.log('Error subscribing to Meta App:', errorData);
-        return;
+        const url = `https://graph.facebook.com/v20.0/${pageId}/subscribed_apps`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            subscribed_fields: ['leadgen'],
+            access_token: pageAccessToken,
+          }),
+        });
+
+        const responseData = await response.json();
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.log('Error subscribing to Meta App:', errorData);
+        } else {
+          console.log('Successfully subscribed:', responseData);
+        }
       }
-
-      const responseData = await response.json();
-      return console.log('Successfully Installed Meta App:', responseData);
+      return console.log('Successfully Installed Meta App:');
     } else {
       return console.log(`No social media data found for subscriber with ID ${subscriberId}`);
     }
@@ -467,3 +475,25 @@ export const refreshAllTokens = async (subscriberId: number) => {
     }
   }
 };
+
+export const findUserByProfileId = async (profileId: string) => {
+  try {
+    const appDataSource = await getDataSource();
+    const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
+    const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
+    const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
+      .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+      .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
+      .where("facebook.profileId = :profileId", { profileId })
+      .getOne();
+    
+    if (!subscriberSocialMediaData) {
+      console.log(`No social media data found for the user with ID ${profileId}`);
+      return null;
+    }
+
+    return subscriberSocialMediaData;
+  } catch (error) {
+    console.error("Error while fetching user by profile id");
+  }
+}

@@ -4,8 +4,10 @@ import { SubscriberFacebookSettings } from "../dataModels/entities/subscriberFac
 import { getDataSource } from "../../utils/dataSource";
 import { FacebookWebhookRequest, LeadData, pageMetaDataTypes, VerificationData } from "../dataModels/types/meta.types";
 import { CustomError, Success } from "../../utils/response";
-import { BAD_REQUEST, checkSubscriberExitenceUsingId, ERROR_COMMON_MESSAGE, FORBIDDEN, INTERNAL_ERROR, NOT_AUTHORIZED, NOT_FOUND, SUCCESS_GET } from "../../utils/common";
+import { BAD_REQUEST, checkSubscriberExitenceUsingId, CONFLICT, ERROR_COMMON_MESSAGE, FORBIDDEN, INTERNAL_ERROR, NOT_AUTHORIZED, NOT_FOUND, SUCCESS_GET } from "../../utils/common";
 import { fetchFacebookPages, fetchingLeadDetails, fetchingLeadgenData, getMetaUserAccessTokenDb, installMetaApp, verifySignature } from "../../utils/socialMediaUtility";
+import { leadStatus } from "../../leads/dataModels/enums/lead.enums";
+import { LeadsService } from "../../leads/services/lead.service";
 
 export class metaServices {
     // Meta Webhook Verification Endpoint
@@ -61,7 +63,7 @@ export class metaServices {
 
                 // fetching actual lead data with page access token and leadgen id using meta graph api
                 const leadData: LeadData = await fetchingLeadDetails(pageAccessToken, leadgenId);
-
+                console.log(leadData);
                 if (leadData) {
                     let email = null;
                     let fullName = null;
@@ -108,7 +110,26 @@ export class metaServices {
                         }                        
                     }
 
-                    console.log(leadData);
+                    if(email && fullName) {
+                        const data = {
+                            leadText: leadText? leadText : `Enquiry from ${fullName}`,
+                            status: leadStatus.LEAD,
+                            contactEmail: email,
+                            contactName: fullName,
+                            companyName: companyName,
+                            designation: designation,
+                            subscriberId: subscriberId,
+                            contactPhone: phoneNumber ? phoneNumber : null,
+                            contactCountry: country ? country : null,
+                            contactState:state ? state : null,
+                            contactCity:city ? city : null,
+
+                        }
+                        
+                        // Creating Lead with the above data
+                        const subscriberLeadService = new LeadsService();
+                        await subscriberLeadService.createSubscribersLeads(data);
+                    }
                 }
             }
         }
@@ -117,7 +138,7 @@ export class metaServices {
     // Fetch facebook pages of the subscriber.
     fetchPages = async (request: Request, response: Response) => {
         try {
-            const subscriberId: number = (request as any).user.subscriberId;
+            const subscriberId: number = (request as any).user.userId;
             const userAceessToken: string | null = await getMetaUserAccessTokenDb(subscriberId);
             if(!userAceessToken) {
                 console.error("User not authenticated to fetch facebook pages!");
@@ -137,11 +158,11 @@ export class metaServices {
 
     // Handler for choosing facebook pages
     choosePages = async (request: Request, response: Response) => {
-        try {
-            const subscriberId: number = (request as any).user.subscriberId;
-            const pageDatas = request.body as pageMetaDataTypes[];
-
-            if(!pageDatas) {
+        try {            
+            const subscriberId: number = (request as any).user.userId;
+            const {pages} = request.body as {pages: pageMetaDataTypes[]};
+            
+            if(pages.length === 0 ) {
                 console.error("Page data not found");
                 response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "Page data not found!"));
                 return;
@@ -150,7 +171,7 @@ export class metaServices {
             const appDataSource = await getDataSource();
             const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
             const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
-            const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
+            // const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
 
             const existingSubscriber = await checkSubscriberExitenceUsingId(subscriberId);
 
@@ -159,20 +180,20 @@ export class metaServices {
                 response.status(NOT_FOUND).send(CustomError(NOT_FOUND, "Subscriber not found!"));
                 return;
             }
-            const existingSubscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
-                .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-                .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
-                .where("subscriber.subscriberId = :subscriberId", { subscriberId })
-                .getMany();
+            // const existingSubscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
+            //     .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+            //     .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
+            //     .where("subscriber.subscriberId = :subscriberId", { subscriberId })
+            //     .getMany();
             
-            if(existingSubscriberSocialMediaData.length > 0) {
-               for(const invidualData of existingSubscriberSocialMediaData) {
-                await subscriberFacebookRepository.delete(invidualData.facebook.subFacebookSettingsId);
-                await subscriberSocialMediaRepository.delete(invidualData.subscriberSocialMediaId);
-               }
-            }
+            // if(existingSubscriberSocialMediaData.length > 0) {
+            //    for(const invidualData of existingSubscriberSocialMediaData) {
+            //         await subscriberSocialMediaRepository.delete(invidualData.subscriberSocialMediaId);
+            //         await subscriberFacebookRepository.delete(invidualData.facebook.subFacebookSettingsId);
+            //     }
+            // }
 
-            for (const pageData of pageDatas) {
+            for (const pageData of pages) {
                 const subscriberFacebookEntity = new SubscriberFacebookSettings();
                 subscriberFacebookEntity.pageId = pageData.id;
                 subscriberFacebookEntity.pageAccessToken = pageData.access_token;
@@ -197,5 +218,38 @@ export class metaServices {
             response.status(INTERNAL_ERROR).send(CustomError(INTERNAL_ERROR, ERROR_COMMON_MESSAGE));
             return;
         }
+    }
+
+    checkFacebookStatus = async (request: Request, response: Response) => {
+       try {
+        const subscriberId: number = (request as any).user.userId;
+
+        const appDataSource = await getDataSource();
+        const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
+        const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
+        const existingSubscriber = await checkSubscriberExitenceUsingId(subscriberId);
+
+        if(!existingSubscriber) {
+            console.error("Subscriber not found");
+            response.status(CONFLICT).send(false);
+            return;
+        }
+
+        const existingSubscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
+            .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+            .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
+            .where("subscriber.subscriberId = :subscriberId", { subscriberId })
+            .getOne();
+        if(existingSubscriberSocialMediaData && existingSubscriberSocialMediaData.facebook.userAccessToken) {
+            response.status(SUCCESS_GET).send(true);
+            return;
+        } else {
+            response.status(SUCCESS_GET).send(false);
+            return;
+        }
+       } catch (error) {
+        console.error("Error while check if the user is connected with facebook.");
+        throw error;
+       }
     }
 }

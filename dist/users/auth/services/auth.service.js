@@ -23,8 +23,8 @@ class AuthService {
         this.userLogin = (request, response) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const { email, password, role } = request.body;
-                if (!email || !password) {
-                    response.status(common_1.BAD_REQUEST).send((0, response_1.CustomError)(common_1.BAD_REQUEST, "Please provide email and password"));
+                if (!email || !password || !role) {
+                    response.status(common_1.BAD_REQUEST).send((0, response_1.CustomError)(common_1.BAD_REQUEST, "Please provide mandatory fields"));
                     return;
                 }
                 if (!(yield (0, common_1.validateEmail)(email))) {
@@ -70,6 +70,11 @@ class AuthService {
                         break;
                 }
                 let loginResponse = yield (0, common_1.generateTokens)(user.userRole, user.subscriberId ? user.subscriberId : userid);
+                // Set the token in the cookie
+                response.cookie('accessToken', loginResponse.accessToken, {
+                    httpOnly: true, // Makes the cookie inaccessible via JavaScript
+                    secure: process.env.NODE_ENV === 'production', // Ensures cookie is only sent over HTTPS in production
+                });
                 response.status(common_1.SUCCESS_GET).send((0, response_1.Success)(loginResponse));
             }
             catch (error) {

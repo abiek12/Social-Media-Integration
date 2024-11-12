@@ -1,19 +1,34 @@
 import express, { Application, Request, Response } from 'express';
 import passport from 'passport';
+import './socialMedia/services/passport.setup'
 import session from 'express-session';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
 import { INTERNAL_ERROR } from './utils/common';
 import metaRoutes from './socialMedia/routes/meta.routes';
 import facebookAuthRoutes from './socialMedia/routes/auth.routes';
 import subscriberRoutes from './users/subscriber/routes/subscriber.route';
 import authRoutes from './users/auth/routes/auth.route';
+import leadRoutes from './leads/routes/lead.route';
+import cors from 'cors'
 
 // Load environment variables
 dotenv.config();
 
 const app: Application = express();
 
+// Enable CORS
+const corsOptions = {
+  origin: process.env.FRONTEND_URL,
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+  credentials: true
+}
+app.use(cors(corsOptions));
+
 // Middleware
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -32,10 +47,11 @@ app.use(passport.session());
 app.get('/', (req: Request, res: Response) => {
   res.send('Express server is running!');
 });
-app.use('/api/v1/meta_auth', facebookAuthRoutes);
+app.use('/auth', facebookAuthRoutes);
 app.use('/api/v1/meta', metaRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/subscriber', subscriberRoutes);
+app.use('/api/v1/lead', leadRoutes);
 
 // Error handling middleware
 app.use((error: any, req: Request, res: Response, next: any) => {

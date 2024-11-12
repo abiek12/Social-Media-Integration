@@ -28,8 +28,7 @@ export class authUtility {
     // Middleware to verify token
     verifyToken = async (req: Request, res: Response, next: NextFunction) => {
         try {
-          let token = req.headers.authorization;
-
+          let token = req.cookies.accessToken;
           if (!token) {
             res.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "Un-Authorized Access"));
             return;
@@ -69,7 +68,6 @@ export class authUtility {
 
     comparePassword = async ( rawPassword: string, hashedPassword: string ): Promise<boolean> => {
         try {
-          console.log(`rawPassword: ${rawPassword}, hashedPassword: ${hashedPassword}`);
           return await bcrypt.compare(rawPassword, hashedPassword);
         } catch (err) {
           console.error(`Error in comparePassword: ${err}`);

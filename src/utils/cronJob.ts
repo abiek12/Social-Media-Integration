@@ -9,9 +9,9 @@ export const cronJob = new CronJob("*/1 * * * *", async () => {
     if(subscribers.length > 0) {
         for (const subscriber of subscribers) { 
             if(await checkForSubscribersMetaConnection(subscriber.subscriberId)) {
-                // Refresh user and page token if it's close to expiry
-                refreshAllTokens(subscriber.subscriberId);
-              }
+              // Refresh user and page token if it's close to expiry
+              refreshAllTokens(subscriber.subscriberId);
+            }
         }
     }
 

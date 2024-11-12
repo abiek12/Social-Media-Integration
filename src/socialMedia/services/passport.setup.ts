@@ -1,15 +1,31 @@
 import { Strategy as FacebookStrategy } from "passport-facebook";
 import { SubscriberFacebookSettings } from "../dataModels/entities/subscriberFacebook.entity";
-import { facebookStrategyConfig } from "../../utils/socialMediaUtility";
+import { facebookStrategyConfig, findUserByProfileId } from "../../utils/socialMediaUtility";
 import passport from "passport";
 import { subscriberSocialMedia } from "../dataModels/entities/subscriberSocialMedia.entity";
 import { getDataSource } from "../../utils/dataSource";
 import { checkSubscriberExitenceUsingId, getSubscriberSocialMediaData } from "../../utils/common";
 
+
+// Serialize user ID to store in the session
+passport.serializeUser((user: any, done) => {
+  done(null, user.id);  // Store user ID in session
+});
+
+// Deserialize user using the ID stored in the session
+passport.deserializeUser(async (id: string, done) => {
+  try {
+    const user = await findUserByProfileId(id);  // Fetch the user from the database
+    done(null, user);  // Pass the full user object back
+  } catch (err) {
+    done(err, null);
+  }
+});
+
 passport.use(new FacebookStrategy( facebookStrategyConfig, 
   async (accessToken: string, refreshToken: string, profile: any, done: any) /*callback function */ => {
   try {
-    let subscriberId = profile._json.state;
+    let subscriberId = 1;
     const existingSubscriber = await checkSubscriberExitenceUsingId(subscriberId);
 
     if(!existingSubscriber) {
@@ -37,12 +53,10 @@ passport.use(new FacebookStrategy( facebookStrategyConfig,
       subscriberFacebookEntity.profileId = profile.id;
       subscriberFacebookEntity.userAccessToken = accessToken;
       subscriberFacebookEntity.userTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
-
       const response = await subscriberFacebookRepository.save(subscriberFacebookEntity);
 
       const subscriberSocialMediaEntity = new subscriberSocialMedia();
       subscriberSocialMediaEntity.facebook = response;
-      subscriberSocialMediaEntity.subscriber = existingSubscriber;
       subscriberSocialMediaEntity.subscriber = existingSubscriber;
       await subscriberSocialMediaRepository.save(subscriberSocialMediaEntity);
 

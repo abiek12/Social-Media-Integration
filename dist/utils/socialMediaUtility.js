@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.refreshAllTokens = exports.updatePagesInDb = exports.updateUserAccessTokenInDb = exports.getPageAccessToken = exports.getLongLivedUserToken = exports.getSubscribersWithExpiringTokens = exports.checkForSubscribersMetaConnection = exports.checkWebhookSubscription = exports.checkForAdminMetaConnection = exports.fetchFacebookPages = exports.getMetaUserAccessTokenDb = exports.installMetaApp = exports.subscribeWebhook = exports.getAppAccessToken = exports.fetchingLeadDetails = exports.fetchingLeadgenData = exports.verifySignature = exports.facebookStrategyConfig = exports.CLIENT_FAILED_URL = exports.CLIENT_URL = void 0;
+exports.findUserByProfileId = exports.refreshAllTokens = exports.updatePagesInDb = exports.updateUserAccessTokenInDb = exports.getPageAccessToken = exports.getLongLivedUserToken = exports.getSubscribersWithExpiringTokens = exports.checkForSubscribersMetaConnection = exports.checkWebhookSubscription = exports.checkForAdminMetaConnection = exports.fetchFacebookPages = exports.getMetaUserAccessTokenDb = exports.installMetaApp = exports.subscribeWebhook = exports.getAppAccessToken = exports.fetchingLeadDetails = exports.fetchingLeadgenData = exports.verifySignature = exports.facebookStrategyConfig = exports.CLIENT_FAILED_URL = exports.CLIENT_SUCCESS_URL = void 0;
 const crypto_1 = __importDefault(require("crypto"));
 const adminSocialMedia_entity_1 = require("../socialMedia/dataModels/entities/adminSocialMedia.entity");
 const subscriberSocialMedia_entity_1 = require("../socialMedia/dataModels/entities/subscriberSocialMedia.entity");
@@ -21,12 +21,12 @@ const admin_entity_1 = require("../users/admin/dataModels/entities/admin.entity"
 const dataSource_1 = require("./dataSource");
 const server_1 = require("../server");
 // Social Media Utility Constants
-exports.CLIENT_URL = process.env.FRONTEND_URL;
+exports.CLIENT_SUCCESS_URL = process.env.FRONTEND_SUCCESS_URL;
 exports.CLIENT_FAILED_URL = process.env.FRONTEND_FAILED_URL;
 exports.facebookStrategyConfig = {
     clientID: process.env.META_APP_ID,
     clientSecret: process.env.META_APP_SECRET,
-    callbackURL: process.env.BACKEND_URL + '/facebook/callback',
+    callbackURL: `${process.env.BACKEND_URL}/auth/facebook/callback`,
     profileFields: ['id', 'displayName', 'emails'],
     state: true
 };
@@ -38,7 +38,9 @@ const verifySignature = (signature, body, appSecret) => {
     const elements = signature.split('=');
     const method = elements[0];
     const signatureHash = elements[1];
-    const expectedHash = crypto_1.default.createHmac('sha256', appSecret).update(body).digest('hex');
+    // Convert body to a JSON string for hashing
+    const bodyString = typeof body === 'string' ? body : JSON.stringify(body);
+    const expectedHash = crypto_1.default.createHmac('sha256', appSecret).update(bodyString).digest('hex');
     return signatureHash === expectedHash;
 };
 exports.verifySignature = verifySignature;
@@ -144,7 +146,7 @@ const subscribeWebhook = () => __awaiter(void 0, void 0, void 0, function* () {
         if (adminSocialMediaData) {
             const appId = process.env.META_APP_ID;
             const verifyToken = process.env.META_APP_VERIFY_TOKEN;
-            // const callbackUrl = process.env.NGROK_URL +'/api/v1/meta/webhook';      
+            // const callbackUrl = process.env.BACKEND_URL +'/api/v1/meta/webhook';      
             const callbackUrl = server_1.ngrokUrl + '/api/v1/meta/webhook';
             const appAccessToken = adminSocialMediaData.facebook.appAccessToken;
             const url = `https://graph.facebook.com/v20.0/${appId}/subscriptions?access_token=${appAccessToken}`;
@@ -189,32 +191,41 @@ const installMetaApp = (subscriberId) => __awaiter(void 0, void 0, void 0, funct
         const appDataSource = yield (0, dataSource_1.getDataSource)();
         const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia_entity_1.subscriberSocialMedia);
         const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
-        const subscriberSocialMediaData = yield subscriberSocialMediaQueryBuilder
+        const subscriberSocialMediaDatas = yield subscriberSocialMediaQueryBuilder
             .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
             .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
             .where("subscriber.subscriberId = :subscriberId", { subscriberId })
-            .getOne();
-        if (subscriberSocialMediaData) {
-            const pageId = subscriberSocialMediaData.facebook.pageId;
-            const pageAccessToken = subscriberSocialMediaData.facebook.pageAccessToken;
-            const url = `https://graph.facebook.com/v20.0/${pageId}/subscribed_apps`;
-            const response = yield fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    subscribed_fields: 'leadgen',
-                    access_token: pageAccessToken,
-                }),
-            });
-            if (!response.ok) {
-                const errorData = yield response.json();
-                console.log('Error subscribing to Meta App:', errorData);
-                return;
+            .getMany();
+        if (subscriberSocialMediaDatas.length > 0) {
+            for (const invidualData of subscriberSocialMediaDatas) {
+                const pageId = invidualData.facebook.pageId;
+                const pageAccessToken = invidualData.facebook.pageAccessToken;
+                // Check for valid pageId and access token
+                if (!pageId || !pageAccessToken) {
+                    console.log('Invalid pageId or pageAccessToken');
+                    continue;
+                }
+                const url = `https://graph.facebook.com/v20.0/${pageId}/subscribed_apps`;
+                const response = yield fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        subscribed_fields: ['leadgen'],
+                        access_token: pageAccessToken,
+                    }),
+                });
+                const responseData = yield response.json();
+                if (!response.ok) {
+                    const errorData = yield response.json();
+                    console.log('Error subscribing to Meta App:', errorData);
+                }
+                else {
+                    console.log('Successfully subscribed:', responseData);
+                }
             }
-            const responseData = yield response.json();
-            return console.log('Successfully Installed Meta App:', responseData);
+            return console.log('Successfully Installed Meta App:');
         }
         else {
             return console.log(`No social media data found for subscriber with ID ${subscriberId}`);
@@ -465,3 +476,24 @@ const refreshAllTokens = (subscriberId) => __awaiter(void 0, void 0, void 0, fun
     }
 });
 exports.refreshAllTokens = refreshAllTokens;
+const findUserByProfileId = (profileId) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const appDataSource = yield (0, dataSource_1.getDataSource)();
+        const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia_entity_1.subscriberSocialMedia);
+        const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
+        const subscriberSocialMediaData = yield subscriberSocialMediaQueryBuilder
+            .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+            .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
+            .where("facebook.profileId = :profileId", { profileId })
+            .getOne();
+        if (!subscriberSocialMediaData) {
+            console.log(`No social media data found for the user with ID ${profileId}`);
+            return null;
+        }
+        return subscriberSocialMediaData;
+    }
+    catch (error) {
+        console.error("Error while fetching user by profile id");
+    }
+});
+exports.findUserByProfileId = findUserByProfileId;

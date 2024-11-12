@@ -1,6 +1,6 @@
 import app from './app';
 import { createAdminUser } from './utils/common';
-import ngrok from '@ngrok/ngrok';
+// import ngrok from '@ngrok/ngrok';
 import { cronJob } from './utils/cronJob';
 
 // let ngrokUrl: string | null;

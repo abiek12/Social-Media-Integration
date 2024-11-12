@@ -46,7 +46,7 @@ class authUtility {
         // Middleware to verify token
         this.verifyToken = (req, res, next) => __awaiter(this, void 0, void 0, function* () {
             try {
-                let token = req.headers.authorization;
+                let token = req.cookies.accessToken;
                 if (!token) {
                     res.status(common_1.NOT_AUTHORIZED).send((0, response_1.CustomError)(common_1.NOT_AUTHORIZED, "Un-Authorized Access"));
                     return;
@@ -82,7 +82,6 @@ class authUtility {
         });
         this.comparePassword = (rawPassword, hashedPassword) => __awaiter(this, void 0, void 0, function* () {
             try {
-                console.log(`rawPassword: ${rawPassword}, hashedPassword: ${hashedPassword}`);
                 return yield bcrypt.compare(rawPassword, hashedPassword);
             }
             catch (err) {

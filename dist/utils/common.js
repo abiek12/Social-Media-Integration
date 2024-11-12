@@ -78,10 +78,6 @@ function checkSubscriberExitenceUsingId(subscriberId) {
                 .where("subscriber.subscriberId = :subscriberId", {
                 subscriberId: subscriberId,
             })
-                .andWhere("subscriber.isDeleted = :isDeleted", { isDeleted: false })
-                .andWhere("subscriber.emailVarified = :emailVarified", {
-                emailVarified: true,
-            })
                 .select([
                 "subscriber.subscriberId",
                 "subscriber.userName",
@@ -92,12 +88,7 @@ function checkSubscriberExitenceUsingId(subscriberId) {
                 "subscriber.state",
                 "subscriber.city",
                 "subscriber.pincode",
-                "subscriber.gstNumber",
-                "subscriber.logo",
-                "subscriber.cdrAutoConvert",
-                "subscriber.emailOtp",
-                "subscriber.prefix",
-                "subscriber.currency",
+                "subscriber.address"
             ])
                 .getOne();
             return subscriber;

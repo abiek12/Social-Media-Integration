@@ -19,9 +19,23 @@ const passport_1 = __importDefault(require("passport"));
 const subscriberSocialMedia_entity_1 = require("../dataModels/entities/subscriberSocialMedia.entity");
 const dataSource_1 = require("../../utils/dataSource");
 const common_1 = require("../../utils/common");
+// Serialize user ID to store in the session
+passport_1.default.serializeUser((user, done) => {
+    done(null, user.id); // Store user ID in session
+});
+// Deserialize user using the ID stored in the session
+passport_1.default.deserializeUser((id, done) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const user = yield (0, socialMediaUtility_1.findUserByProfileId)(id); // Fetch the user from the database
+        done(null, user); // Pass the full user object back
+    }
+    catch (err) {
+        done(err, null);
+    }
+}));
 passport_1.default.use(new passport_facebook_1.Strategy(socialMediaUtility_1.facebookStrategyConfig, (accessToken, refreshToken, profile, done) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        let subscriberId = profile._json.state;
+        let subscriberId = 1;
         const existingSubscriber = yield (0, common_1.checkSubscriberExitenceUsingId)(subscriberId);
         if (!existingSubscriber) {
             return done(null, false);
@@ -49,7 +63,6 @@ passport_1.default.use(new passport_facebook_1.Strategy(socialMediaUtility_1.fac
             const response = yield subscriberFacebookRepository.save(subscriberFacebookEntity);
             const subscriberSocialMediaEntity = new subscriberSocialMedia_entity_1.subscriberSocialMedia();
             subscriberSocialMediaEntity.facebook = response;
-            subscriberSocialMediaEntity.subscriber = existingSubscriber;
             subscriberSocialMediaEntity.subscriber = existingSubscriber;
             yield subscriberSocialMediaRepository.save(subscriberSocialMediaEntity);
             return done(null, profile);

@@ -12,13 +12,13 @@ export class SubscriberFacebookSettings {
     @Column({ type: "varchar", length: 255, nullable: true, name: "page_name" })
     pageName: string;
 
-    @Column({ type: "varchar", length: 255, nullable: true, name: "page_access_token" })
+    @Column({ type: "text", nullable: true, name: "page_access_token" })
     pageAccessToken: string;
 
     @Column({ type: "varchar", length: 255, nullable: true, name: "profle_id" })
     profileId: string;
 
-    @Column({ type: "varchar", length: 255, nullable: true, name: "user_access_token" })
+    @Column({ type: "text", nullable: true, name: "user_access_token" })
     userAccessToken: string;
 
     @Column({ type: "date", nullable: true, name: "user_token_expires_at" })
@@ -32,9 +32,4 @@ export class SubscriberFacebookSettings {
 
     @UpdateDateColumn({name: "updated_at"})
     updatedAt: Date;
-
-    @Column({ type: "int", nullable: false, name: "subscriber_id" })
-    @ManyToOne(() => subscribers)
-    @JoinColumn({ name: "subscriber_id" })
-    subscriber: subscribers;
 }
