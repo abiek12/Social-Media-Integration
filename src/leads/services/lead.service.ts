@@ -26,7 +26,7 @@ export class LeadsService {
                 return response;
             }
         } catch (error) {
-            console.error("Error while adding lead data from soical medias");
+            console.error("Error while adding lead data from soical medias", error);
         }
     }
 
