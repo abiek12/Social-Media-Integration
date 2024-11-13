@@ -41,19 +41,24 @@ export const verifySignature = (signature: string | undefined, body: FacebookWeb
   return signatureHash === expectedHash;
 };
 
-export const fetchingLeadgenData = (body: FacebookWebhookRequest): any=>{
+export const fetchingLeadgenData = (body: FacebookWebhookRequest): { leadgenId: string, pageId: string } | undefined => {
     const { entry } = body;
-    entry.forEach(page => {
-        page.changes.forEach(change => {
-          if (change.field === 'leadgen') {
-            const leadgenId = change.value.leadgen_id;
-            const pageId = change.value.page_id;
-            
-            return {leadgenId, pageId};
-          }
-        });
-    });
-}
+
+    for (const page of entry) {
+        for (const change of page.changes) {
+            if (change.field === 'leadgen') {
+                const leadgenId = change.value.leadgen_id;
+                const pageId = change.value.page_id;
+
+                // Return as soon as the leadgen data is found
+                return { leadgenId, pageId };
+            }
+        }
+    }
+
+    // Return undefined if no leadgen data is found
+    return undefined;
+};
 
 export const fetchingLeadDetails = async (pageAccessToken: string, leadgenId: string) => {
     const url = `https://graph.facebook.com/v20.0/${leadgenId}?access_token=${pageAccessToken}`;
