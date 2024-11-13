@@ -23,8 +23,6 @@ const app = (0, express_1.default)();
 const corsOptions = {
     origin: process.env.FRONTEND_URL,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
     credentials: true
 };
 app.use((0, cors_1.default)(corsOptions));

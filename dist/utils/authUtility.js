@@ -46,8 +46,8 @@ class authUtility {
         // Middleware to verify token
         this.verifyToken = (req, res, next) => __awaiter(this, void 0, void 0, function* () {
             try {
-                console.log(req.cookies.accessToken);
                 let token = req.cookies.accessToken;
+                console.dir(req.cookies);
                 if (!token) {
                     res.status(common_1.NOT_AUTHORIZED).send((0, response_1.CustomError)(common_1.NOT_AUTHORIZED, "Un-Authorized Access"));
                     return;
