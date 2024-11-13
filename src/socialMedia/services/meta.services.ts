@@ -25,7 +25,7 @@ export class metaServices {
     handleWebhook = async (request: Request, response: Response) => {
         const signature = request.headers['x-hub-signature'] as string | undefined;
         const body = request.body as FacebookWebhookRequest;
-        console.dir(body);
+        console.log(body);
         
         const appSecret = process.env.META_APP_SECRET;
         if(!appSecret) {
@@ -44,9 +44,17 @@ export class metaServices {
        response.status(SUCCESS_GET).send('EVENT_RECEIVED');
 
        // fetching leadgen id and page id from webhook data
-       const {leadgenId, pageId}  = fetchingLeadgenData(body);
+        const leadgenData = fetchingLeadgenData(body);
 
-       if (leadgenId && pageId) {
+        if (!leadgenData) {
+            console.error('No leadgen data found in the payload');
+            response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, 'No leadgen data found'));
+            return;
+        }
+
+        const { leadgenId, pageId } = leadgenData;
+
+        if (leadgenId && pageId) {
            const appDataSource = await getDataSource();
            const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
            const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
