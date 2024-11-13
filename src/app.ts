@@ -41,7 +41,8 @@ app.use(session({
   cookie: {
     sameSite: 'none',
     secure: true,
-    domain: 'social-media-integration.onrender.com'
+    domain: 'social-media-integration.onrender.com',
+    path: '/'
   }
 }));
 
