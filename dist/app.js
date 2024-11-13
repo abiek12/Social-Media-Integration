@@ -23,8 +23,6 @@ const app = (0, express_1.default)();
 const corsOptions = {
     origin: process.env.FRONTEND_URL,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
     credentials: true
 };
 app.use((0, cors_1.default)(corsOptions));
@@ -36,7 +34,11 @@ app.use(express_1.default.urlencoded({ extended: true }));
 app.use((0, express_session_1.default)({
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
-    saveUninitialized: true
+    saveUninitialized: true,
+    cookie: {
+        sameSite: 'none',
+        secure: true
+    }
 }));
 // Initialize Passport
 app.use(passport_1.default.initialize());

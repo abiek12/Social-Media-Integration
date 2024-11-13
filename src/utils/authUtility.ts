@@ -28,8 +28,8 @@ export class authUtility {
     // Middleware to verify token
     verifyToken = async (req: Request, res: Response, next: NextFunction) => {
         try {
-          console.log(req.cookies);
           let token = req.cookies.accessToken;
+          console.dir(req.cookies);
           if (!token) {
             res.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "Un-Authorized Access"));
             return;
