@@ -20,18 +20,24 @@ export const facebookStrategyConfig = {
 }
 
 // Social Media Utility Functions
-export const verifySignature = (signature: string | undefined, body: any, appSecret: string): boolean => {
+export const verifySignature = (signature: string | undefined, body: FacebookWebhookRequest, appSecret: string): boolean => {
   if (!signature || !signature.startsWith('sha256=')) {
     return false;
   }
+  console.log(appSecret);
+  console.log("signature:",signature);
+  
   const elements = signature.split('=');  
   const method = elements[0];
   const signatureHash = elements[1];
 
   // Convert body to a JSON string for hashing
-  // const bodyString = typeof body === 'string' ? body : JSON.stringify(body);
+  const bodyString = typeof body === 'string' ? body : JSON.stringify(body);
 
-  const expectedHash = crypto.createHmac('sha256', appSecret).update(body).digest('hex');
+  const expectedHash = crypto.createHmac('sha256', appSecret).update(bodyString).digest('hex');
+  console.log("signaturehash:", signatureHash);
+  console.log("expectedHash:", expectedHash);
+  
   return signatureHash === expectedHash;
 };
 
