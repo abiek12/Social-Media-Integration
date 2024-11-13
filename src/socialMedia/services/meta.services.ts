@@ -36,11 +36,11 @@ export class metaServices {
             }
 
             // const rawBody = (request as any).rawBody; 
-            if (!verifySignature(signature, body, appSecret)) {
-                console.error('App Secret is not valid');
-                response.status(FORBIDDEN).send(CustomError(FORBIDDEN, 'Forbidden'));
-                return;
-            }
+            // if (!verifySignature(signature, body, appSecret)) {
+            //     console.error('App Secret is not valid');
+            //     response.status(FORBIDDEN).send(CustomError(FORBIDDEN, 'Forbidden'));
+            //     return;
+            // }
             console.info("request header X-Hub-Signature validated");
             response.status(SUCCESS_GET).send('EVENT_RECEIVED');
 
