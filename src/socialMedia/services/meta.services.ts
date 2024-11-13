@@ -8,6 +8,7 @@ import { BAD_REQUEST, checkSubscriberExitenceUsingId, CONFLICT, ERROR_COMMON_MES
 import { fetchFacebookPages, fetchingLeadDetails, fetchingLeadgenData, getMetaUserAccessTokenDb, installMetaApp, verifySignature } from "../../utils/socialMediaUtility";
 import { leadStatus } from "../../leads/dataModels/enums/lead.enums";
 import { LeadsService } from "../../leads/services/lead.service";
+import crypto from 'crypto';
 
 export class metaServices {
     // Meta Webhook Verification Endpoint
@@ -33,6 +34,23 @@ export class metaServices {
             response.status(FORBIDDEN).send(CustomError(FORBIDDEN, 'Forbidden'));
             return;
         }
+
+        if (!signature || !signature.startsWith('sha256=')) {
+            return;
+          }
+          console.log(appSecret);
+          console.log("signature:",signature);
+          
+          const elements = signature.split('=');  
+          const method = elements[0];
+          const signatureHash = elements[1];
+        
+          // Convert body to a JSON string for hashing
+          const bodyString = typeof body === 'string' ? body : JSON.stringify(body);
+        
+          const expectedHash = crypto.createHmac('sha256', appSecret).update(bodyString).digest('hex');
+          console.log("signaturehash:", signatureHash);
+          console.log("expectedHash:", expectedHash);
 
         // const rawBody = (request as any).rawBody; 
         if (!verifySignature(signature, body, appSecret)) {
