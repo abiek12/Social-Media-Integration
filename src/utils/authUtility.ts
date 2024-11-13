@@ -39,6 +39,8 @@ export class authUtility {
 
           // Extract the token part by removing "Bearer " prefix
           const token = authHeader.split(' ')[1];
+          console.log(token);
+          
           if (!token) {
             res.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "Un-Authorized Access"));
             return;
