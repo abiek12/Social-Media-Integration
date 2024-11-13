@@ -40,10 +40,10 @@ export class metaServices {
         //     response.status(FORBIDDEN).send(CustomError(FORBIDDEN, 'Forbidden'));
         //     return;
         // }
-       console.info("request header X-Hub-Signature validated");
-       response.status(SUCCESS_GET).send('EVENT_RECEIVED');
+        console.info("request header X-Hub-Signature validated");
+        response.status(SUCCESS_GET).send('EVENT_RECEIVED');
 
-       // fetching leadgen id and page id from webhook data
+        // fetching leadgen id and page id from webhook data
         const leadgenData = fetchingLeadgenData(body);
 
         if (!leadgenData) {
