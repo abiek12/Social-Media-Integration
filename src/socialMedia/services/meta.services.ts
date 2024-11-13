@@ -28,18 +28,18 @@ export class metaServices {
         console.log(body);
         
         const appSecret = process.env.META_APP_SECRET;
-        if(appSecret) {
-            if (!verifySignature(signature, body, appSecret)) {
-                console.error('App Secret is not valid');
-                response.status(FORBIDDEN).send(CustomError(FORBIDDEN, 'Forbidden'));
-                return;
-            }
-        } else{
+        if(!appSecret) {
             console.error('META_APP_SECRET is not defined');
             response.status(FORBIDDEN).send(CustomError(FORBIDDEN, 'Forbidden'));
             return;
         }
 
+        const rawBody = (request as any).rawBody; 
+        if (!verifySignature(signature, rawBody, appSecret)) {
+            console.error('App Secret is not valid');
+            response.status(FORBIDDEN).send(CustomError(FORBIDDEN, 'Forbidden'));
+            return;
+        }
        console.info("request header X-Hub-Signature validated");
        response.status(SUCCESS_GET).send('EVENT_RECEIVED');
 
