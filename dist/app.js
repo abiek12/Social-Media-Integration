@@ -34,7 +34,11 @@ app.use(express_1.default.urlencoded({ extended: true }));
 app.use((0, express_session_1.default)({
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
-    saveUninitialized: true
+    saveUninitialized: true,
+    cookie: {
+        sameSite: 'none',
+        secure: true
+    }
 }));
 // Initialize Passport
 app.use(passport_1.default.initialize());
