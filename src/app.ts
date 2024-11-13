@@ -17,9 +17,6 @@ dotenv.config();
 
 const app: Application = express();
 
-// Trust the first proxy, needed for Render and similar hosting environments
-app.set('trust proxy', 1);
-
 // Enable CORS
 const corsOptions = {
   origin: process.env.FRONTEND_URL,
@@ -41,7 +38,7 @@ app.use(session({
   cookie: {
     sameSite: 'none',
     secure: true,
-    domain: 'social-media-integration.onrender.com'
+    domain: 'social-media-integration.onrender.com',
   }
 }));
 

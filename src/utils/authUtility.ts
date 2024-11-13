@@ -28,15 +28,22 @@ export class authUtility {
     // Middleware to verify token
     verifyToken = async (req: Request, res: Response, next: NextFunction) => {
         try {
-          let token = req.cookies.accessToken;
-          console.dir(req.cookies);
-          if (!token) {
-            res.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "Un-Authorized Access"));
+          // Get the token from the Authorization header
+          const authHeader = req.headers.authorization;
+
+          // Check if the header is present
+          if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            res.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "Authorization header missing or invalid"));
             return;
           }
 
-          if (token.startsWith("Bearer ")) {
-            token = token.slice(7, token.length).trimLeft();
+          // Extract the token part by removing "Bearer " prefix
+          const token = authHeader.split(' ')[1];
+          console.log(token);
+          
+          if (!token) {
+            res.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "Un-Authorized Access"));
+            return;
           }
 
           const decoded = jwt.verify(token, process.env.SECRET_KEY as string);
