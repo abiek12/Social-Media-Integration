@@ -34,8 +34,8 @@ export class metaServices {
             return;
         }
 
-        const rawBody = (request as any).rawBody; 
-        if (!verifySignature(signature, rawBody, appSecret)) {
+        // const rawBody = (request as any).rawBody; 
+        if (!verifySignature(signature, body, appSecret)) {
             console.error('App Secret is not valid');
             response.status(FORBIDDEN).send(CustomError(FORBIDDEN, 'Forbidden'));
             return;
