@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { leadStatus } from '../enums/lead.enums';
 import { subscribers } from '../../../users/subscriber/dataModels/entities/subscriber.entity';
 
@@ -22,10 +22,10 @@ export class Leads {
   @Column({ name: 'contact_email'})
   contactEmail: string;
 
-  @Column({ name: 'created_at' })
+  @CreateDateColumn({ name: "created_at" })
   createdAt: Date;
 
-  @Column({ name: 'updated_at' })
+  @UpdateDateColumn({ name: "updated_at" })
   updatedAt: Date;
 
   @Column({ type: "boolean", default: false, name: "is_deleted" })

@@ -72,7 +72,6 @@ export class metaServices {
 
                     // fetching actual lead data with page access token and leadgen id using meta graph api
                     const leadData: LeadData = await fetchingLeadDetails(pageAccessToken, leadgenId);
-                    console.log(leadData);
                     if (leadData) {
                         let email = null;
                         let fullName = null;
@@ -134,7 +133,7 @@ export class metaServices {
                                 contactCity:city ? city : null,
 
                             }
-                            console.log(data);
+                            console.log("Extracted data:",data);
                             
                             // Creating Lead with the above data
                             const subscriberLeadService = new LeadsService();
