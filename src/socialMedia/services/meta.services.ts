@@ -207,17 +207,20 @@ export class metaServices {
             // }
 
             for (const pageData of pages) {
-                const subscriberFacebookEntity = new SubscriberFacebookSettings();
-                subscriberFacebookEntity.pageId = pageData.id;
-                subscriberFacebookEntity.pageAccessToken = pageData.access_token;
-                subscriberFacebookEntity.pageName = pageData.name;
-                subscriberFacebookEntity.pageTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
-                const facebookEntityResponse = await subscriberFacebookRepository.save(subscriberFacebookEntity);
+                const pageExistance = await subscriberFacebookRepository.findOneBy({ pageId: pageData.id });
+                if(!pageExistance) {
+                    const subscriberFacebookEntity = new SubscriberFacebookSettings();
+                    subscriberFacebookEntity.pageId = pageData.id;
+                    subscriberFacebookEntity.pageAccessToken = pageData.access_token;
+                    subscriberFacebookEntity.pageName = pageData.name;
+                    subscriberFacebookEntity.pageTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+                    const facebookEntityResponse = await subscriberFacebookRepository.save(subscriberFacebookEntity);
 
-                const subscriberSocialMediaEntity = new subscriberSocialMedia();
-                subscriberSocialMediaEntity.facebook = facebookEntityResponse;
-                subscriberSocialMediaEntity.subscriber = existingSubscriber;
-                await subscriberSocialMediaRepository.save(subscriberSocialMediaEntity);
+                    const subscriberSocialMediaEntity = new subscriberSocialMedia();
+                    subscriberSocialMediaEntity.facebook = facebookEntityResponse;
+                    subscriberSocialMediaEntity.subscriber = existingSubscriber;
+                    await subscriberSocialMediaRepository.save(subscriberSocialMediaEntity);
+                }
             }
 
             // Installing meta app on the subscriber's facebook pages
