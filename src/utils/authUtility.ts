@@ -38,16 +38,13 @@ export class authUtility {
           }
 
           // Extract the token part by removing "Bearer " prefix
-          const token = authHeader.split(' ')[1];
-          console.log(token);
-          
+          const token = authHeader.split(' ')[1];          
           if (!token) {
             res.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "Un-Authorized Access"));
             return;
           }
 
           const decoded = jwt.verify(token, process.env.SECRET_KEY as string);
-          console.log(decoded);
           (req as any).user = decoded;
 
           next(); // Move to the next middleware or route handler
