@@ -28,17 +28,17 @@ export class authUtility {
     // Middleware to verify token
     verifyToken = async (req: Request, res: Response, next: NextFunction) => {
         try {
-          // Get the token from the Authorization header
+          // Try retrieving the token from the Authorization header first
           const authHeader = req.headers.authorization;
-
-          // Check if the header is present
-          if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            res.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "Authorization header missing or invalid"));
-            return;
-          }
-
-          // Extract the token part by removing "Bearer " prefix
-          const token = authHeader.split(' ')[1];          
+          let token;
+          
+          if (authHeader && authHeader.startsWith('Bearer ')) {
+              token = authHeader.split(' ')[1];
+          } else if (req.query.token) {
+              // If not found in header, check in query parameter
+              token = req.query.token as string;
+          }   
+             
           if (!token) {
             res.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "Un-Authorized Access"));
             return;
