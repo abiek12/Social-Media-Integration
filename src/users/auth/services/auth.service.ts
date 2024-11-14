@@ -42,9 +42,9 @@ export class AuthService {
              return;
           }
 
-          const user = await userQueryBuilder.getOne();
+          const user = await userQueryBuilder.where("company_email = :email", { email }).getOne();
           if (!user) {
-            console.error(`User not found`);
+            console.error(`User not found`);  
             response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "User not found"));
             return;
           }
@@ -64,16 +64,8 @@ export class AuthService {
               userid = user.user_id;
               break;
           }
-
+        
           let loginResponse = await generateTokens(user.userRole, user.subscriberId ? user.subscriberId : userid);
-          
-          // Set the token in the cookie
-          response.cookie('accessToken', loginResponse.accessToken, {
-            httpOnly: true,    // Ensures cookie can't be accessed by JavaScript
-            secure: true,      // Only send the cookie over HTTPS
-            domain: 'social-media-integration.onrender.com'  // Ensure the domain matches the backend
-          });
-
           console.log("User Logged in");
           response.status(SUCCESS_GET).send(Success(loginResponse));
           return;
