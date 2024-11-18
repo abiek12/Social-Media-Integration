@@ -25,13 +25,6 @@ passport.deserializeUser(async (id: string, done) => {
 passport.use(new FacebookStrategy( facebookStrategyConfig, 
   async (accessToken: string, refreshToken: string, profile: any, done: any) /*callback function */ => {
   try {
-    console.log("Facebook OAuth Profile:", profile);
-    if (!accessToken) {
-      console.error("Access token missing");
-      return done(new Error("Access token missing"));
-    }
-    console.log("Access Token:", accessToken);
-
     let subscriberId = 1;
     const existingSubscriber = await checkSubscriberExitenceUsingId(subscriberId);
 
