@@ -141,7 +141,7 @@ export const getAppAccessToken = async () => {
 }
 
 // Subscribe & Configure Webhook
-export const subscribeWebhook = async () => {
+export const subscribeWebhook = async (object: string, fields: string[], callbackURL: string) => {
   try {
     const appDataSource = await getDataSource();
     const adminSocialMediaRepository = appDataSource.getRepository(adminSocialMedia);
@@ -152,49 +152,45 @@ export const subscribeWebhook = async () => {
       .leftJoinAndSelect("adminSocialMedia.facebook", "facebook")
       .getOne();
 
-    if(adminSocialMediaData) {
-      const appId = process.env.META_APP_ID;
-      const verifyToken = process.env.META_APP_VERIFY_TOKEN;
-      const callbackUrl = process.env.BACKEND_URL +'/api/v1/meta/webhook';   
-      // const callbackUrl = ngrokUrl + '/api/v1/meta/webhook';
-      const appAccessToken = adminSocialMediaData.facebook.appAccessToken;
-
-      const url = `https://graph.facebook.com/v20.0/${appId}/subscriptions?access_token=${appAccessToken}`;
-      const data = {
-        object: 'page',
-        fields: [
-          'leadgen',
-        ],
-        access_token: appAccessToken,
-        callback_url: callbackUrl,
-        include_values: 'true',
-        verify_token: verifyToken,
-      };
-
-      const headers= {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      }
-
-      const bodyData = {
-          ...data,
-          fields: data.fields.join(','),
-      };
-      // Use URLSearchParams to serialize the data
-      const body = new URLSearchParams(bodyData as Record<string, string>);
-
-      const response = await fetch(url, { method: 'post', headers, body });
-      const finalRes = await response.json();
-      if(finalRes.error) {
-        console.error('WEBHOOK_SUBSCRIPTION:: Error while subscribing webhook', finalRes.error);
-        console.log("WEBHOOK_SUBSCRIPTION:: Webhook not subscribed!");
-        return;
-      }
-
-      // Save webhook subscription status if it's successful
-      adminSocialMediaData.isWebhookSubscribed = true;
-      await adminSocialMediaRepository.save(adminSocialMediaData);
-      return console.log('WEBHOOK_SUBSCRIPTION:: Webhook subscribed successfully');
+    if (!adminSocialMediaData) {
+      console.error('WEBHOOK_SUBSCRIPTION:: No admin social media data found!');
+      return;
     }
+
+    const appId = process.env.META_APP_ID;
+    const verifyToken = process.env.META_APP_VERIFY_TOKEN;
+    const appAccessToken = adminSocialMediaData.facebook.appAccessToken;
+    const url = `https://graph.facebook.com/v20.0/${appId}/subscriptions?access_token=${appAccessToken}`;
+
+    // const callbackUrl = ngrokUrl + '/api/v1/meta/webhook';
+    // const callbackUrl = process.env.BACKEND_URL +'/api/v1/meta/webhook';  
+    const callbackUrl = callbackURL;
+
+    const data = {
+      object: object,
+      fields: fields.join(','),
+      access_token: appAccessToken,
+      callback_url: callbackUrl,
+      verify_token: verifyToken,
+      include_values: 'true',
+    };
+
+    const headers= {'Content-Type': 'application/x-www-form-urlencoded'}
+
+    // Use URLSearchParams to serialize the data
+    const body = new URLSearchParams(data as Record<string, string>);
+    const response = await fetch(url, { method: 'post', headers, body });
+    const finalRes = await response.json();
+    if(finalRes.error) {
+      console.error('WEBHOOK_SUBSCRIPTION:: Error while subscribing webhook', finalRes.error);
+      console.log("WEBHOOK_SUBSCRIPTION:: Webhook not subscribed!");
+      return;
+    }
+
+    // Save webhook subscription status if it's successful
+    adminSocialMediaData.isWebhookSubscribed = true;
+    await adminSocialMediaRepository.save(adminSocialMediaData);
+    return console.log('WEBHOOK_SUBSCRIPTION:: Webhook subscribed successfully');
 
   } catch (error) {
     console.log('WEBHOOK_SUBSCRIPTION:: Error while subscribing webhook',error);
