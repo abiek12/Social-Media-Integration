@@ -7,6 +7,7 @@ import { getDataSource } from './dataSource';
 import { FacebookWebhookRequest } from '../socialMedia/dataModels/types/meta.types';
 import { SubscriberFacebookSettings } from '../socialMedia/dataModels/entities/subscriberFacebook.entity';
 import { socialMediaType } from '../socialMedia/dataModels/enums/socialMedia.enums';
+import { needsRefresh, subscriberFacebookRepo, subscriberSocialMediaRepo } from './common';
 // import { ngrokUrl } from '../server';
 
 // Social Media Utility Constants
@@ -265,7 +266,6 @@ export const getMetaUserAccessTokenDb = async (subscriberId: number) => {
       .andWhere("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
       .getOne();
 
-    
     if (!subscriberSocialMediaData) {
       console.log(`No facebook user access token found for subscriber with ID ${subscriberId}`);
       return null;
@@ -326,27 +326,10 @@ export const checkWebhookSubscription = async (): Promise<boolean> => {
   }
 }
 
-const subscriberSocialMediaRepo = async (subscriberId: number) => {
-  try {
-    const appDataSource = await getDataSource();
-    const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
-    const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
-    const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
-      .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-      .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
-      .where("subscriber.subscriberId = :subscriberId", { subscriberId })
-      .getOne();
-    return subscriberSocialMediaData;
-  } catch (error) {
-    console.log("Error while fetching subscriber social media repo");
-    throw error;
-  }
-}
-
 export const checkForSubscribersMetaConnection = async (subscriberId: number): Promise<boolean> => {
   try {
     const subscriberSocialMediaData = await subscriberSocialMediaRepo(subscriberId);
-    if(subscriberSocialMediaData && subscriberSocialMediaData.facebook.userAccessToken) return true;
+    if(subscriberSocialMediaData && subscriberSocialMediaData.userAccessToken) return true;
     else return false;
   } catch (error) {
     console.log("Error while fetching subscriber social media details!");
@@ -356,7 +339,7 @@ export const checkForSubscribersMetaConnection = async (subscriberId: number): P
 
 export const getSubscribersWithExpiringTokens = async (subscriberId: number) => {
   try {
-    const subscriberSocialMediaData = await subscriberSocialMediaRepo(subscriberId);
+    const subscriberSocialMediaData = await subscriberFacebookRepo(subscriberId);
     if(!subscriberSocialMediaData) return null;
     return subscriberSocialMediaData;
   } catch (error) {
@@ -410,20 +393,14 @@ export const updateUserAccessTokenInDb = async (subscriberId: number, userAccess
   try {
     const appDataSource = await getDataSource();
     const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
-    const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
-    const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
-      .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-      .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
-      .where("subscriber.subscriberId = :subscriberId", { subscriberId })
-      .getOne();
-    
+    const subscriberSocialMediaData = await subscriberSocialMediaRepo(subscriberId);
     if (!subscriberSocialMediaData) {
       console.log(`No social media data found for subscriber with ID ${subscriberId}`);
       return null;
     }
 
-    subscriberSocialMediaData.facebook.userAccessToken = userAccessToken;
-    subscriberSocialMediaData.facebook.userTokenExpiresAt = new Date(Date.now() + 3600000);
+    subscriberSocialMediaData.userAccessToken = userAccessToken;
+    subscriberSocialMediaData.userTokenExpiresAt = new Date(Date.now() + 3600000);
     await subscriberSocialMediaRepository.save(subscriberSocialMediaData);
   } catch (error) {
     console.log('Error while updating user access token in database', error);
@@ -435,37 +412,22 @@ export const updateUserAccessTokenInDb = async (subscriberId: number, userAccess
 export const updatePagesInDb = async (subscriberId: number, pageAccessToken: string) => {
   try {
     const appDataSource = await getDataSource();
-    const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
-    const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
-    const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
-      .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-      .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
-      .where("subscriber.subscriberId = :subscriberId", { subscriberId })
-      .getOne();
+    const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
+    const subscriberFacebookData = await subscriberFacebookRepo(subscriberId);
     
-    if (!subscriberSocialMediaData) {
+    if (!subscriberFacebookData) {
       console.log(`No social media data found for subscriber with ID ${subscriberId}`);
       return null;
     }
 
-    subscriberSocialMediaData.facebook.pageAccessToken = pageAccessToken;
-    subscriberSocialMediaData.facebook.pageTokenExpiresAt = new Date(Date.now() + 3600000);
-    await subscriberSocialMediaRepository.save(subscriberSocialMediaData);
+    subscriberFacebookData.pageAccessToken = pageAccessToken;
+    subscriberFacebookData.pageTokenExpiresAt = new Date(Date.now() + 3600000);
+    await subscriberFacebookRepository.save(subscriberFacebookData);
   } catch (error) {
     console.log('Error while updating page access token in database', error);
     throw error;
   }
 }
-
-// Helper function to check if token needs refreshing
-const needsRefresh = (expiryDate: string | Date) => {
-  const refreshThreshold = 7 * 24 * 60 * 60 * 1000; // e.g., 7 days before expiry
-  const expiryTimestamp = new Date(expiryDate).getTime();
-  const currentTimestamp = Date.now();
-  
-  // Check if the time remaining before expiry is less than the threshold
-  return expiryTimestamp - currentTimestamp < refreshThreshold;
-};
 
 // Refreshing facebook user and page access token
 export const refreshAllTokens = async (subscriberId: number) => {
@@ -473,18 +435,18 @@ export const refreshAllTokens = async (subscriberId: number) => {
   if (subscriber) {
     try {
       // Refresh user token if it's close to expiry
-      if (subscriber.facebook.userTokenExpiresAt && needsRefresh(subscriber.facebook.userTokenExpiresAt)) {
-        const newUserToken = await getLongLivedUserToken(subscriber.facebook.userAccessToken);
-        await updateUserAccessTokenInDb(subscriber.subscriber.subscriberId, newUserToken);
+      if (subscriber.subscriberSocialMedia.userAccessToken && needsRefresh(subscriber.subscriberSocialMedia.userTokenExpiresAt)) {
+        const newUserToken = await getLongLivedUserToken(subscriber.subscriberSocialMedia.userAccessToken);
+        await updateUserAccessTokenInDb(subscriber.subscriberSocialMedia.subscriber.subscriberId, newUserToken);
       }
   
       // Refresh page tokens if the user token was updated or nearing expiry
-      if (subscriber.facebook.pageTokenExpiresAt && needsRefresh(subscriber.facebook.pageTokenExpiresAt)) {
-        const newPageTokens = await getPageAccessToken(subscriber.facebook.pageId, subscriber.facebook.userAccessToken);
-        await updatePagesInDb(subscriber.subscriber.subscriberId, newPageTokens);
+      if (subscriber.pageTokenExpiresAt && needsRefresh(subscriber.pageTokenExpiresAt)) {
+        const newPageTokens = await getPageAccessToken(subscriber.pageId, subscriber.subscriberSocialMedia.userAccessToken);
+        await updatePagesInDb(subscriber.subscriberSocialMedia.subscriber.subscriberId, newPageTokens);
       }
     } catch (error) {
-      console.error(`Error refreshing tokens for subscriber ${subscriber.subscriber.subscriberId}:`, error);
+      console.error(`Error refreshing tokens for subscriber ${subscriber.subscriberSocialMedia.subscriber.subscriberId}:`, error);
     }
   }
 };
@@ -496,7 +458,6 @@ export const findUserByProfileId = async (profileId: string) => {
     const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
     const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
       .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-      .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
       .where("facebook.profileId = :profileId", { profileId })
       .getOne();
     

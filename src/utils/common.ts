@@ -1,3 +1,4 @@
+import { SubscriberFacebookSettings } from "../socialMedia/dataModels/entities/subscriberFacebook.entity";
 import { subscriberSocialMedia } from "../socialMedia/dataModels/entities/subscriberSocialMedia.entity";
 import { socialMediaType } from "../socialMedia/dataModels/enums/socialMedia.enums";
 import { admins } from "../users/admin/dataModels/entities/admin.entity";
@@ -133,3 +134,51 @@ export const generateTokens = async (userRole: string, userId: number) => {
   const refreshToken = await _authUtility.generateRefreshToken(userRole, userId);
   return { accessToken, refreshToken };
 };
+
+// Helper function to check if token needs refreshing
+export const needsRefresh = (expiryDate: string | Date) => {
+  const refreshThreshold = 7 * 24 * 60 * 60 * 1000; // e.g., 7 days before expiry
+  const expiryTimestamp = new Date(expiryDate).getTime();
+  const currentTimestamp = Date.now();
+  
+  // Check if the time remaining before expiry is less than the threshold
+  return expiryTimestamp - currentTimestamp < refreshThreshold;
+};
+
+
+export const subscriberSocialMediaRepo = async (subscriberId: number) => {
+  try {
+    const appDataSource = await getDataSource();
+    const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
+    const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
+    const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
+      .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+      .where("subscriber.subscriberId = :subscriberId", { subscriberId })
+      .andWhere("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
+      .getOne();
+    return subscriberSocialMediaData;
+  } catch (error) {
+    console.log("Error while fetching subscriber social media repo");
+    throw error;
+  }
+}
+
+export const subscriberFacebookRepo = async (subscriberId: number) => {
+  try {
+    const appDataSource = await getDataSource();
+    const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
+    const subscriberFacebookQueryBuilder = subscriberFacebookRepository.createQueryBuilder("subscriberFacebook");
+
+    const subscriberFacebookData = await subscriberFacebookQueryBuilder
+      .leftJoinAndSelect("subscriberFacebook.subscriberSocialMedia", "subscriberSocialMedia")
+      .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+      .where("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
+      .andWhere("subscriber.subscriber = :subscriberId", { subscriberId })
+      .getOne();
+
+    return subscriberFacebookData;
+  } catch (error) {
+    console.log("Error while fetching subscriber social media repo");
+    throw error;
+  }
+}
