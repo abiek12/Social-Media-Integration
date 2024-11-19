@@ -20,7 +20,7 @@ export const cronJob = new CronJob("*/1 * * * *", async () => {
     
     // Admin Meta webhook subscription if not subscribed.
     if(!await checkWebhookSubscription()) {
-        await subscribeWebhook('page', ['leadgen', 'messages']);
+        await subscribeWebhook('page', ['messages', 'leadgen']);
     }
 },
 null,
