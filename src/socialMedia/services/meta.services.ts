@@ -26,6 +26,7 @@ export class metaServices {
         try {
             const signature = request.headers['x-hub-signature'] as string | undefined;
             const body = request.body;
+            console.log(body);
             console.log(body.entry[0].changes);
             console.log(body.entry[0].changes[0]);
         
