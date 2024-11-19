@@ -141,7 +141,7 @@ export const getAppAccessToken = async () => {
 }
 
 // Subscribe & Configure Webhook
-export const subscribeWebhook = async (object: string, fields: string[], callbackURL: string) => {
+export const subscribeWebhook = async (object: string, field: string) => {
   try {
     const appDataSource = await getDataSource();
     const adminSocialMediaRepository = appDataSource.getRepository(adminSocialMedia);
@@ -163,12 +163,17 @@ export const subscribeWebhook = async (object: string, fields: string[], callbac
     const url = `https://graph.facebook.com/v20.0/${appId}/subscriptions?access_token=${appAccessToken}`;
 
     // const callbackUrl = ngrokUrl + '/api/v1/meta/webhook';
-    // const callbackUrl = process.env.BACKEND_URL +'/api/v1/meta/webhook';  
-    const callbackUrl = callbackURL;
+    let callbackUrl;
+    switch (field) {
+      case 'leadgen':
+        callbackUrl = process.env.BACKEND_URL +'/api/v1/meta/webhook';
+      default:
+        callbackUrl = process.env.BACKEND_URL +'/api/v1/meta/webhook';
+    }
 
     const data = {
       object: object,
-      fields: fields.join(','),
+      fields: [field],
       access_token: appAccessToken,
       callback_url: callbackUrl,
       verify_token: verifyToken,
@@ -176,9 +181,13 @@ export const subscribeWebhook = async (object: string, fields: string[], callbac
     };
 
     const headers= {'Content-Type': 'application/x-www-form-urlencoded'}
+    const bodyData = {
+       ...data,
+       fields: data.fields.join(','),
+    };
 
     // Use URLSearchParams to serialize the data
-    const body = new URLSearchParams(data as Record<string, string>);
+    const body = new URLSearchParams(bodyData as Record<string, string>);
     const response = await fetch(url, { method: 'post', headers, body });
     const finalRes = await response.json();
     if(finalRes.error) {
