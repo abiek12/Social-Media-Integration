@@ -95,8 +95,7 @@ export const getSubscriberSocialMediaData = async (subscriberId: number, profile
 
     const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
       .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-      .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
-      .where("facebook.profileId = :profileId", { profileId: profile.id })
+      .where("subscriberSocialMedia.profileId = :profileId", { profileId: profile.id })
       .andWhere("subscriber.subscriberId = :subscriberId", { subscriberId: subscriberId })
       .getOne();
 

@@ -12,10 +12,17 @@ export class subscriberSocialMedia {
     @JoinColumn({ name: "subscriber_id" })
     subscriber: subscribers;
 
-    @Column({ type: "int", name: "facebook_id" })
-    @ManyToOne(() => SubscriberFacebookSettings)
-    @JoinColumn({ name: "facebook_id" })
-    facebook: SubscriberFacebookSettings;
+    @Column({ type: "text", nullable: false, name: "social_media_name" })
+    socialMedia: string;
+
+    @Column({ type: "varchar", length: 255, nullable: true, name: "profle_id" })
+    profileId: string;
+
+    @Column({ type: "text", nullable: true, name: "user_access_token" })
+    userAccessToken: string;
+
+    @Column({ type: "date", nullable: true, name: "user_token_expires_at" })
+    userTokenExpiresAt: Date;
 
     @CreateDateColumn({name: "created_at"})
     createdAt: Date;
