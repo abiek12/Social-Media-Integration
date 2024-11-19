@@ -4,7 +4,11 @@ import { subscriberSocialMedia } from '../socialMedia/dataModels/entities/subscr
 import { AdminFacebookSettings } from '../socialMedia/dataModels/entities/adminFacebook.entity';
 import { admins } from '../users/admin/dataModels/entities/admin.entity';
 import { getDataSource } from './dataSource';
-import { FacebookWebhookRequest } from '../socialMedia/dataModels/types/meta.types';
+import { FacebookWebhookRequest, LeadData } from '../socialMedia/dataModels/types/meta.types';
+import { SubscriberFacebookSettings } from '../socialMedia/dataModels/entities/subscriberFacebook.entity';
+import { socialMediaType } from '../socialMedia/dataModels/enums/socialMedia.enums';
+import { needsRefresh, subscriberFacebookRepo, subscriberSocialMediaRepo } from './common';
+import { leadStatus } from '../leads/dataModels/enums/lead.enums';
 // import { ngrokUrl } from '../server';
 
 // Social Media Utility Constants
@@ -138,7 +142,7 @@ export const getAppAccessToken = async () => {
 }
 
 // Subscribe & Configure Webhook
-export const subscribeWebhook = async () => {
+export const subscribeWebhook = async (object: string, fields: string[]) => {
   try {
     const appDataSource = await getDataSource();
     const adminSocialMediaRepository = appDataSource.getRepository(adminSocialMedia);
@@ -149,49 +153,44 @@ export const subscribeWebhook = async () => {
       .leftJoinAndSelect("adminSocialMedia.facebook", "facebook")
       .getOne();
 
-    if(adminSocialMediaData) {
-      const appId = process.env.META_APP_ID;
-      const verifyToken = process.env.META_APP_VERIFY_TOKEN;
-      const callbackUrl = process.env.BACKEND_URL +'/api/v1/meta/webhook';   
-      // const callbackUrl = ngrokUrl + '/api/v1/meta/webhook';
-      const appAccessToken = adminSocialMediaData.facebook.appAccessToken;
-
-      const url = `https://graph.facebook.com/v20.0/${appId}/subscriptions?access_token=${appAccessToken}`;
-      const data = {
-        object: 'page',
-        fields: [
-          'leadgen',
-        ],
-        access_token: appAccessToken,
-        callback_url: callbackUrl,
-        include_values: 'true',
-        verify_token: verifyToken,
-      };
-
-      const headers= {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      }
-
-      const bodyData = {
-          ...data,
-          fields: data.fields.join(','),
-      };
-      // Use URLSearchParams to serialize the data
-      const body = new URLSearchParams(bodyData as Record<string, string>);
-
-      const response = await fetch(url, { method: 'post', headers, body });
-      const finalRes = await response.json();
-      if(finalRes.error) {
-        console.error('WEBHOOK_SUBSCRIPTION:: Error while subscribing webhook', finalRes.error);
-        console.log("WEBHOOK_SUBSCRIPTION:: Webhook not subscribed!");
-        return;
-      }
-
-      // Save webhook subscription status if it's successful
-      adminSocialMediaData.isWebhookSubscribed = true;
-      await adminSocialMediaRepository.save(adminSocialMediaData);
-      return console.log('WEBHOOK_SUBSCRIPTION:: Webhook subscribed successfully');
+    if (!adminSocialMediaData) {
+      console.error('WEBHOOK_SUBSCRIPTION:: No admin social media data found!');
+      return;
     }
+
+    const appId = process.env.META_APP_ID;
+    const verifyToken = process.env.META_APP_VERIFY_TOKEN;
+    const appAccessToken = adminSocialMediaData.facebook.appAccessToken;
+    const url = `https://graph.facebook.com/v20.0/${appId}/subscriptions?access_token=${appAccessToken}`;
+
+    // const callbackUrl = ngrokUrl + '/api/v1/meta/webhook';
+    const callbackUrl = process.env.BACKEND_URL +'/api/v1/meta/webhook';
+
+    const data = {
+      object: object,
+      fields: fields.join(','),
+      access_token: appAccessToken,
+      callback_url: callbackUrl,
+      verify_token: verifyToken,
+      include_values: 'true',
+    };
+
+    const headers= {'Content-Type': 'application/x-www-form-urlencoded'}
+
+    // Use URLSearchParams to serialize the data
+    const body = new URLSearchParams(data as Record<string, string>);
+    const response = await fetch(url, { method: 'post', headers, body });
+    const finalRes = await response.json();
+    if(finalRes.error) {
+      console.error('WEBHOOK_SUBSCRIPTION:: Error while subscribing webhook', finalRes.error);
+      console.log("WEBHOOK_SUBSCRIPTION:: Webhook not subscribed!");
+      return;
+    }
+
+    // Save webhook subscription status if it's successful
+    adminSocialMediaData.isWebhookSubscribed = true;
+    await adminSocialMediaRepository.save(adminSocialMediaData);
+    return console.log('WEBHOOK_SUBSCRIPTION:: Webhook subscribed successfully');
 
   } catch (error) {
     console.log('WEBHOOK_SUBSCRIPTION:: Error while subscribing webhook',error);
@@ -203,19 +202,18 @@ export const subscribeWebhook = async () => {
 export const installMetaApp = async (subscriberId: number) => {
   try {
     const appDataSource = await getDataSource();
-    const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
-    const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
+    const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
+    const subscriberFacebookQueryBuilder = subscriberFacebookRepository.createQueryBuilder("subscriberFacebook");
 
-    const subscriberSocialMediaDatas = await subscriberSocialMediaQueryBuilder
+    const subscriberFacebookDatas = await subscriberFacebookQueryBuilder
+      .leftJoinAndSelect("subscriberFacebook.subscriberSocialMedia", "subscriberSocialMedia")
       .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-      .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
-      .where("subscriber.subscriberId = :subscriberId", { subscriberId })
       .getMany();
 
-    if (subscriberSocialMediaDatas.length > 0) {
-      for (const invidualData of subscriberSocialMediaDatas) {
-        const pageId = invidualData.facebook.pageId;
-        const pageAccessToken = invidualData.facebook.pageAccessToken;
+    if (subscriberFacebookDatas.length > 0) {
+      for (const invidualData of subscriberFacebookDatas) {
+        const pageId = invidualData.pageId;
+        const pageAccessToken = invidualData.pageAccessToken;
 
         // Check for valid pageId and access token
         if (!pageId || !pageAccessToken) {
@@ -260,16 +258,16 @@ export const getMetaUserAccessTokenDb = async (subscriberId: number) => {
 
     const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
       .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-      .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
       .where("subscriber.subscriberId = :subscriberId", { subscriberId })
+      .andWhere("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
       .getOne();
-    
+
     if (!subscriberSocialMediaData) {
       console.log(`No facebook user access token found for subscriber with ID ${subscriberId}`);
       return null;
     }
 
-    return subscriberSocialMediaData.facebook.userAccessToken;
+    return subscriberSocialMediaData.userAccessToken;
   } catch (error) {
     console.log('Error while fetching user access token from database', error);
     throw error;
@@ -324,27 +322,10 @@ export const checkWebhookSubscription = async (): Promise<boolean> => {
   }
 }
 
-const subscriberSocialMediaRepo = async (subscriberId: number) => {
-  try {
-    const appDataSource = await getDataSource();
-    const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
-    const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
-    const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
-      .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-      .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
-      .where("subscriber.subscriberId = :subscriberId", { subscriberId })
-      .getOne();
-    return subscriberSocialMediaData;
-  } catch (error) {
-    console.log("Error while fetching subscriber social media repo");
-    throw error;
-  }
-}
-
 export const checkForSubscribersMetaConnection = async (subscriberId: number): Promise<boolean> => {
   try {
     const subscriberSocialMediaData = await subscriberSocialMediaRepo(subscriberId);
-    if(subscriberSocialMediaData && subscriberSocialMediaData.facebook.userAccessToken) return true;
+    if(subscriberSocialMediaData && subscriberSocialMediaData.userAccessToken) return true;
     else return false;
   } catch (error) {
     console.log("Error while fetching subscriber social media details!");
@@ -354,7 +335,7 @@ export const checkForSubscribersMetaConnection = async (subscriberId: number): P
 
 export const getSubscribersWithExpiringTokens = async (subscriberId: number) => {
   try {
-    const subscriberSocialMediaData = await subscriberSocialMediaRepo(subscriberId);
+    const subscriberSocialMediaData = await subscriberFacebookRepo(subscriberId);
     if(!subscriberSocialMediaData) return null;
     return subscriberSocialMediaData;
   } catch (error) {
@@ -408,20 +389,14 @@ export const updateUserAccessTokenInDb = async (subscriberId: number, userAccess
   try {
     const appDataSource = await getDataSource();
     const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
-    const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
-    const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
-      .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-      .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
-      .where("subscriber.subscriberId = :subscriberId", { subscriberId })
-      .getOne();
-    
+    const subscriberSocialMediaData = await subscriberSocialMediaRepo(subscriberId);
     if (!subscriberSocialMediaData) {
       console.log(`No social media data found for subscriber with ID ${subscriberId}`);
       return null;
     }
 
-    subscriberSocialMediaData.facebook.userAccessToken = userAccessToken;
-    subscriberSocialMediaData.facebook.userTokenExpiresAt = new Date(Date.now() + 3600000);
+    subscriberSocialMediaData.userAccessToken = userAccessToken;
+    subscriberSocialMediaData.userTokenExpiresAt = new Date(Date.now() + 3600000);
     await subscriberSocialMediaRepository.save(subscriberSocialMediaData);
   } catch (error) {
     console.log('Error while updating user access token in database', error);
@@ -433,37 +408,22 @@ export const updateUserAccessTokenInDb = async (subscriberId: number, userAccess
 export const updatePagesInDb = async (subscriberId: number, pageAccessToken: string) => {
   try {
     const appDataSource = await getDataSource();
-    const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
-    const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
-    const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
-      .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-      .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
-      .where("subscriber.subscriberId = :subscriberId", { subscriberId })
-      .getOne();
+    const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
+    const subscriberFacebookData = await subscriberFacebookRepo(subscriberId);
     
-    if (!subscriberSocialMediaData) {
+    if (!subscriberFacebookData) {
       console.log(`No social media data found for subscriber with ID ${subscriberId}`);
       return null;
     }
 
-    subscriberSocialMediaData.facebook.pageAccessToken = pageAccessToken;
-    subscriberSocialMediaData.facebook.pageTokenExpiresAt = new Date(Date.now() + 3600000);
-    await subscriberSocialMediaRepository.save(subscriberSocialMediaData);
+    subscriberFacebookData.pageAccessToken = pageAccessToken;
+    subscriberFacebookData.pageTokenExpiresAt = new Date(Date.now() + 3600000);
+    await subscriberFacebookRepository.save(subscriberFacebookData);
   } catch (error) {
     console.log('Error while updating page access token in database', error);
     throw error;
   }
 }
-
-// Helper function to check if token needs refreshing
-const needsRefresh = (expiryDate: string | Date) => {
-  const refreshThreshold = 7 * 24 * 60 * 60 * 1000; // e.g., 7 days before expiry
-  const expiryTimestamp = new Date(expiryDate).getTime();
-  const currentTimestamp = Date.now();
-  
-  // Check if the time remaining before expiry is less than the threshold
-  return expiryTimestamp - currentTimestamp < refreshThreshold;
-};
 
 // Refreshing facebook user and page access token
 export const refreshAllTokens = async (subscriberId: number) => {
@@ -471,18 +431,18 @@ export const refreshAllTokens = async (subscriberId: number) => {
   if (subscriber) {
     try {
       // Refresh user token if it's close to expiry
-      if (subscriber.facebook.userTokenExpiresAt && needsRefresh(subscriber.facebook.userTokenExpiresAt)) {
-        const newUserToken = await getLongLivedUserToken(subscriber.facebook.userAccessToken);
-        await updateUserAccessTokenInDb(subscriber.subscriber.subscriberId, newUserToken);
+      if (subscriber.subscriberSocialMedia.userAccessToken && needsRefresh(subscriber.subscriberSocialMedia.userTokenExpiresAt)) {
+        const newUserToken = await getLongLivedUserToken(subscriber.subscriberSocialMedia.userAccessToken);
+        await updateUserAccessTokenInDb(subscriber.subscriberSocialMedia.subscriber.subscriberId, newUserToken);
       }
   
       // Refresh page tokens if the user token was updated or nearing expiry
-      if (subscriber.facebook.pageTokenExpiresAt && needsRefresh(subscriber.facebook.pageTokenExpiresAt)) {
-        const newPageTokens = await getPageAccessToken(subscriber.facebook.pageId, subscriber.facebook.userAccessToken);
-        await updatePagesInDb(subscriber.subscriber.subscriberId, newPageTokens);
+      if (subscriber.pageTokenExpiresAt && needsRefresh(subscriber.pageTokenExpiresAt)) {
+        const newPageTokens = await getPageAccessToken(subscriber.pageId, subscriber.subscriberSocialMedia.userAccessToken);
+        await updatePagesInDb(subscriber.subscriberSocialMedia.subscriber.subscriberId, newPageTokens);
       }
     } catch (error) {
-      console.error(`Error refreshing tokens for subscriber ${subscriber.subscriber.subscriberId}:`, error);
+      console.error(`Error refreshing tokens for subscriber ${subscriber.subscriberSocialMedia.subscriber.subscriberId}:`, error);
     }
   }
 };
@@ -494,7 +454,6 @@ export const findUserByProfileId = async (profileId: string) => {
     const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
     const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
       .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-      .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
       .where("facebook.profileId = :profileId", { profileId })
       .getOne();
     
@@ -506,5 +465,23 @@ export const findUserByProfileId = async (profileId: string) => {
     return subscriberSocialMediaData;
   } catch (error) {
     console.error("Error while fetching user by profile id");
+    throw error;
   }
 }
+
+export const parseLeadData = (leadData: LeadData, subscriberId: number) => {
+  const parsedData: any = {
+      leadText: `Enquiry from ${leadData.field_data?.find((f: any) => f.name === "full_name")?.values[0]}`,
+      status: leadStatus.LEAD,
+      contactEmail: leadData.field_data?.find((f: any) => f.name === "email")?.values[0],
+      contactName: leadData.field_data?.find((f: any) => f.name === "full_name")?.values[0],
+      subscriberId,
+      companyName: leadData.field_data?.find((f: any) => f.name === "company_name")?.values[0] || null,
+      contactPhone: leadData.field_data?.find((f: any) => f.name === "phone")?.values[0] || null,
+      contactCountry: leadData.field_data?.find((f: any) => f.name === "country")?.values[0] || null,
+      contactState: leadData.field_data?.find((f: any) => f.name === "state")?.values[0] || null,
+      contactCity: leadData.field_data?.find((f: any) => f.name === "city")?.values[0] || null,
+  };
+
+  return parsedData.contactEmail && parsedData.contactName ? parsedData : null;
+};

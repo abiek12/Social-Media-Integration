@@ -2,12 +2,12 @@ import { Request, Response } from "express";
 import { subscriberSocialMedia } from "../dataModels/entities/subscriberSocialMedia.entity";
 import { SubscriberFacebookSettings } from "../dataModels/entities/subscriberFacebook.entity";
 import { getDataSource } from "../../utils/dataSource";
-import { FacebookWebhookRequest, LeadData, pageMetaDataTypes, VerificationData } from "../dataModels/types/meta.types";
+import { pageMetaDataTypes, VerificationData } from "../dataModels/types/meta.types";
 import { CustomError, Success } from "../../utils/response";
 import { BAD_REQUEST, checkSubscriberExitenceUsingId, CONFLICT, ERROR_COMMON_MESSAGE, FORBIDDEN, INTERNAL_ERROR, NOT_AUTHORIZED, NOT_FOUND, SUCCESS_GET } from "../../utils/common";
-import { fetchFacebookPages, fetchingLeadDetails, fetchingLeadgenData, getMetaUserAccessTokenDb, installMetaApp, verifySignature } from "../../utils/socialMediaUtility";
-import { leadStatus } from "../../leads/dataModels/enums/lead.enums";
-import { LeadsService } from "../../leads/services/lead.service";
+import { fetchFacebookPages, getMetaUserAccessTokenDb, installMetaApp, verifySignature } from "../../utils/socialMediaUtility";
+import { socialMediaType } from "../dataModels/enums/socialMedia.enums";
+import { handleLeadgenEvent, handleMessagingEvent } from "./webhook.services";
 
 export class metaServices {
     // Meta Webhook Verification Endpoint
@@ -25,13 +25,13 @@ export class metaServices {
     handleWebhook = async (request: Request, response: Response) => {
         try {
             const signature = request.headers['x-hub-signature'] as string | undefined;
-            const body = request.body as FacebookWebhookRequest;
+            const body = request.body;
             console.log(body);
-            
+        
             const appSecret = process.env.META_APP_SECRET;
-            if(!appSecret) {
+            if (!appSecret) {
                 console.error('META_APP_SECRET is not defined');
-                response.status(FORBIDDEN).send(CustomError(FORBIDDEN, 'Forbidden'));
+                response.status(FORBIDDEN).send(CustomError(FORBIDDEN, 'META_APP_SECRET is not defined'));
                 return;
             }
 
@@ -41,112 +41,43 @@ export class metaServices {
             //     response.status(FORBIDDEN).send(CustomError(FORBIDDEN, 'Forbidden'));
             //     return;
             // }
-            console.info("request header X-Hub-Signature validated");
-            response.status(SUCCESS_GET).send('EVENT_RECEIVED');
-
-            // fetching leadgen id and page id from webhook data
-            const leadgenData = fetchingLeadgenData(body);
-
-            if (!leadgenData) {
-                console.error('No leadgen data found in the payload');
-                response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, 'No leadgen data found'));
+        
+            // Validate Signature
+            if (!verifySignature(signature, body, appSecret)) {
+                console.error('Invalid signature');
+                response.status(FORBIDDEN).send(CustomError(FORBIDDEN, 'Invalid signature'));
                 return;
             }
+        
+            // Acknowledge the webhook event
+            console.info("request header X-Hub-Signature validated");
+            console.log("Event Received:", body);
+            response.status(SUCCESS_GET).send('EVENT_RECEIVED');
+        
+            // Process events
+            const { entry } = body;
+            for (const pageEntry of entry) {
+                const pageId = pageEntry.id;
+                const timestamp = pageEntry.time;
 
-            const { leadgenId, pageId } = leadgenData;
-
-            if (leadgenId && pageId) {
-               const appDataSource = await getDataSource();
-               const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
-               const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
-
-               const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
-                    .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-                    .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
-                    .where("facebook.pageId = :pageId", { pageId })
-                    .getOne();
-
-                if (subscriberSocialMediaData) {
-                    const subscriberId = subscriberSocialMediaData.subscriber.subscriberId;
-                    const pageAccessToken = subscriberSocialMediaData.facebook.pageAccessToken;
-
-                    // fetching actual lead data with page access token and leadgen id using meta graph api
-                    const leadData: LeadData = await fetchingLeadDetails(pageAccessToken, leadgenId);
-                    if (leadData) {
-                        let email = null;
-                        let fullName = null;
-                        let phoneNumber = null;
-                        let country = null;
-                        let state = null;
-                        let city = null;
-                        let leadText = null;
-                        let companyName = null;
-                        let designation = null;
-                        for await( let lead of leadData.field_data ) {
-                            for await (let value of lead.values) {
-                                switch (lead.name) {
-                                    case "email":
-                                        email = value;
-                                        break;
-                                    case "full_name":
-                                        fullName = value;
-                                        break;
-                                    case "phone":
-                                        phoneNumber = value;
-                                        break;
-                                    case "country":
-                                        country = value;
-                                        break;
-                                    case "state":
-                                        state = value;
-                                        break;
-                                    case "city":
-                                        city = value;
-                                        break;
-                                    case "leadText":
-                                        leadText = value;
-                                        break;
-                                    case "company_name":
-                                        companyName = value;
-                                        break;
-                                    case "job_title":
-                                        designation = value;
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }                        
+                if(pageEntry.changes) {
+                    for (const change of pageEntry.changes) {
+                        switch (change.field) {
+                          case 'leadgen':
+                            await handleLeadgenEvent(change);
+                            break;
+                        
+                          default:
+                            console.warn(`Unhandled event field: ${change.field}`);
                         }
-
-                        if(email && fullName) {
-                            const data = {
-                                leadText: leadText? leadText : `Enquiry from ${fullName}`,
-                                status: leadStatus.LEAD,
-                                contactEmail: email,
-                                contactName: fullName,
-                                companyName: companyName,
-                                designation: designation,
-                                subscriberId: subscriberId,
-                                contactPhone: phoneNumber ? phoneNumber : null,
-                                contactCountry: country ? country : null,
-                                contactState:state ? state : null,
-                                contactCity:city ? city : null,
-
-                            }
-                            console.log("Extracted data:",data);
-                            
-                            // Creating Lead with the above data
-                            const subscriberLeadService = new LeadsService();
-                            await subscriberLeadService.createSubscribersLeads(data);
-                        }
-                    }
+                      }
                 }
             }
         } catch (error) {
-            console.error("Error while receiving webhook data.",error);
-            throw error;
+            console.error('Error processing webhook event:', error);
         }
-    }
+    };
+
 
     // Fetch facebook pages of the subscriber.
     fetchPages = async (request: Request, response: Response) => {
@@ -184,7 +115,7 @@ export class metaServices {
             const appDataSource = await getDataSource();
             const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
             const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
-            // const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
+            const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
 
             const existingSubscriber = await checkSubscriberExitenceUsingId(subscriberId);
 
@@ -193,18 +124,17 @@ export class metaServices {
                 response.status(NOT_FOUND).send(CustomError(NOT_FOUND, "Subscriber not found!"));
                 return;
             }
-            // const existingSubscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
-            //     .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-            //     .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
-            //     .where("subscriber.subscriberId = :subscriberId", { subscriberId })
-            //     .getMany();
+            const existingSubscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
+                .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+                .andWhere("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
+                .where("subscriber.subscriberId = :subscriberId", { subscriberId })
+                .getOne();
             
-            // if(existingSubscriberSocialMediaData.length > 0) {
-            //    for(const invidualData of existingSubscriberSocialMediaData) {
-            //         await subscriberSocialMediaRepository.delete(invidualData.subscriberSocialMediaId);
-            //         await subscriberFacebookRepository.delete(invidualData.facebook.subFacebookSettingsId);
-            //     }
-            // }
+            if(!existingSubscriberSocialMediaData) {
+                console.error("Subscriber not authenticated to fetch facebook pages!");
+                response.status(CONFLICT).send(CustomError(CONFLICT, "Subscriber not authenticated to fetch facebook pages!"));
+                return;
+            }
 
             for (const pageData of pages) {
                 const pageExistance = await subscriberFacebookRepository.findOneBy({ pageId: pageData.id });
@@ -214,12 +144,8 @@ export class metaServices {
                     subscriberFacebookEntity.pageAccessToken = pageData.access_token;
                     subscriberFacebookEntity.pageName = pageData.name;
                     subscriberFacebookEntity.pageTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
-                    const facebookEntityResponse = await subscriberFacebookRepository.save(subscriberFacebookEntity);
-
-                    const subscriberSocialMediaEntity = new subscriberSocialMedia();
-                    subscriberSocialMediaEntity.facebook = facebookEntityResponse;
-                    subscriberSocialMediaEntity.subscriber = existingSubscriber;
-                    await subscriberSocialMediaRepository.save(subscriberSocialMediaEntity);
+                    subscriberFacebookEntity.subscriberSocialMedia = existingSubscriberSocialMediaData;
+                    await subscriberFacebookRepository.save(subscriberFacebookEntity);
                 }
             }
 
@@ -235,7 +161,8 @@ export class metaServices {
             return;
         }
     }
-
+    
+    // Handler for checking facebook status
     checkFacebookStatus = async (request: Request, response: Response) => {
        try {
         const subscriberId: number = (request as any).user.userId;
@@ -253,10 +180,10 @@ export class metaServices {
 
         const existingSubscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
             .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-            .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
             .where("subscriber.subscriberId = :subscriberId", { subscriberId })
+            .andWhere("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
             .getOne();
-        if(existingSubscriberSocialMediaData && existingSubscriberSocialMediaData.facebook.userAccessToken) {
+        if(existingSubscriberSocialMediaData && existingSubscriberSocialMediaData.userAccessToken) {
             response.status(SUCCESS_GET).send(true);
             return;
         } else {

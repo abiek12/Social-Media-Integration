@@ -1,10 +1,10 @@
 import { Strategy as FacebookStrategy } from "passport-facebook";
-import { SubscriberFacebookSettings } from "../dataModels/entities/subscriberFacebook.entity";
 import { facebookStrategyConfig, findUserByProfileId } from "../../utils/socialMediaUtility";
 import passport from "passport";
 import { subscriberSocialMedia } from "../dataModels/entities/subscriberSocialMedia.entity";
 import { getDataSource } from "../../utils/dataSource";
 import { checkSubscriberExitenceUsingId, getSubscriberSocialMediaData } from "../../utils/common";
+import { socialMediaType } from "../dataModels/enums/socialMedia.enums";
 
 
 // Serialize user ID to store in the session
@@ -25,13 +25,6 @@ passport.deserializeUser(async (id: string, done) => {
 passport.use(new FacebookStrategy( facebookStrategyConfig, 
   async (accessToken: string, refreshToken: string, profile: any, done: any) /*callback function */ => {
   try {
-    console.log("Facebook OAuth Profile:", profile);
-    if (!accessToken) {
-      console.error("Access token missing");
-      return done(new Error("Access token missing"));
-    }
-    console.log("Access Token:", accessToken);
-
     let subscriberId = 1;
     const existingSubscriber = await checkSubscriberExitenceUsingId(subscriberId);
 
@@ -40,30 +33,21 @@ passport.use(new FacebookStrategy( facebookStrategyConfig,
     }
     
     const appDataSource = await getDataSource();
-    const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
-    const subscriberFacebookQueryBuilder = subscriberFacebookRepository.createQueryBuilder("subscriberFacebook");
     const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
     const subscriberSocialMediaData = await getSubscriberSocialMediaData(existingSubscriber.subscriberId, profile);
 
     if (subscriberSocialMediaData) {
-      const subscriberFacebookData = await subscriberFacebookQueryBuilder
-        .where("subscriberFacebook.subFacebookSettingsId = :id", { id: subscriberSocialMediaData.facebook.subFacebookSettingsId })
-        .getOne();
-      if (subscriberFacebookData) {
-        subscriberFacebookData.userAccessToken = accessToken;
-        await subscriberFacebookRepository.save(subscriberFacebookData);
+      subscriberSocialMediaData.userAccessToken = accessToken;
+      subscriberSocialMediaData.userTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      subscriberSocialMediaRepository.save(subscriberSocialMediaData);
+      return done(null, profile);
 
-        return done(null, profile);
-      }
     } else {
-      const subscriberFacebookEntity = new SubscriberFacebookSettings();
-      subscriberFacebookEntity.profileId = profile.id;
-      subscriberFacebookEntity.userAccessToken = accessToken;
-      subscriberFacebookEntity.userTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
-      const response = await subscriberFacebookRepository.save(subscriberFacebookEntity);
-
       const subscriberSocialMediaEntity = new subscriberSocialMedia();
-      subscriberSocialMediaEntity.facebook = response;
+      subscriberSocialMediaEntity.userAccessToken = accessToken;
+      subscriberSocialMediaEntity.userTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      subscriberSocialMediaEntity.socialMedia = socialMediaType.FACEBOOK;
+      subscriberSocialMediaEntity.profileId = profile.id;
       subscriberSocialMediaEntity.subscriber = existingSubscriber;
       await subscriberSocialMediaRepository.save(subscriberSocialMediaEntity);
 
