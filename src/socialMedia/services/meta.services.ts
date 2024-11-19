@@ -2,13 +2,12 @@ import { Request, Response } from "express";
 import { subscriberSocialMedia } from "../dataModels/entities/subscriberSocialMedia.entity";
 import { SubscriberFacebookSettings } from "../dataModels/entities/subscriberFacebook.entity";
 import { getDataSource } from "../../utils/dataSource";
-import { FacebookWebhookRequest, LeadData, pageMetaDataTypes, VerificationData } from "../dataModels/types/meta.types";
+import { pageMetaDataTypes, VerificationData } from "../dataModels/types/meta.types";
 import { CustomError, Success } from "../../utils/response";
 import { BAD_REQUEST, checkSubscriberExitenceUsingId, CONFLICT, ERROR_COMMON_MESSAGE, FORBIDDEN, INTERNAL_ERROR, NOT_AUTHORIZED, NOT_FOUND, SUCCESS_GET } from "../../utils/common";
-import { fetchFacebookPages, fetchingLeadDetails, fetchingLeadgenData, getMetaUserAccessTokenDb, handleLeadgenEvent, installMetaApp, verifySignature } from "../../utils/socialMediaUtility";
-import { leadStatus } from "../../leads/dataModels/enums/lead.enums";
-import { LeadsService } from "../../leads/services/lead.service";
+import { fetchFacebookPages, getMetaUserAccessTokenDb, installMetaApp, verifySignature } from "../../utils/socialMediaUtility";
 import { socialMediaType } from "../dataModels/enums/socialMedia.enums";
+import { handleLeadgenEvent, handleMessagingEvent } from "./webhook.services";
 
 export class metaServices {
     // Meta Webhook Verification Endpoint
@@ -27,6 +26,7 @@ export class metaServices {
         try {
             const signature = request.headers['x-hub-signature'] as string | undefined;
             const body = request.body;
+            console.log(body);
         
             const appSecret = process.env.META_APP_SECRET;
             if (!appSecret) {
@@ -51,34 +51,33 @@ export class metaServices {
         
             // Acknowledge the webhook event
             console.info("request header X-Hub-Signature validated");
-            response.status(200).send('EVENT_RECEIVED');
+            console.log("Event Received:", body);
+            response.status(SUCCESS_GET).send('EVENT_RECEIVED');
         
             // Process events
             const { entry } = body;
             for (const pageEntry of entry) {
-              for (const change of pageEntry.changes) {
-                switch (change.field) {
-                  case 'leadgen':
-                    await handleLeadgenEvent(change);
-                    break;
-                
-                  case 'messages':
-                    await handleMessagingEvent(change);
-                    break;
-                
-                //   case 'instagram':
-                //     await handleInstagramEvent(change);
-                //     break;
-                
-                  default:
-                    console.warn(`Unhandled event field: ${change.field}`);
+                const pageId = pageEntry.id;
+                const timestamp = pageEntry.time;
+
+                if(pageEntry.changes) {
+                    for (const change of pageEntry.changes) {
+                        switch (change.field) {
+                          case 'leadgen':
+                            await handleLeadgenEvent(change);
+                            break;
+                        
+                          default:
+                            console.warn(`Unhandled event field: ${change.field}`);
+                        }
+                      }
                 }
-              }
             }
         } catch (error) {
             console.error('Error processing webhook event:', error);
         }
     };
+
 
     // Fetch facebook pages of the subscriber.
     fetchPages = async (request: Request, response: Response) => {
@@ -162,7 +161,8 @@ export class metaServices {
             return;
         }
     }
-
+    
+    // Handler for checking facebook status
     checkFacebookStatus = async (request: Request, response: Response) => {
        try {
         const subscriberId: number = (request as any).user.userId;

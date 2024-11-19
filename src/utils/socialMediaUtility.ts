@@ -8,7 +8,6 @@ import { FacebookWebhookRequest, LeadData } from '../socialMedia/dataModels/type
 import { SubscriberFacebookSettings } from '../socialMedia/dataModels/entities/subscriberFacebook.entity';
 import { socialMediaType } from '../socialMedia/dataModels/enums/socialMedia.enums';
 import { needsRefresh, subscriberFacebookRepo, subscriberSocialMediaRepo } from './common';
-import { LeadsService } from '../leads/services/lead.service';
 import { leadStatus } from '../leads/dataModels/enums/lead.enums';
 // import { ngrokUrl } from '../server';
 
@@ -470,7 +469,7 @@ export const findUserByProfileId = async (profileId: string) => {
   }
 }
 
-const parseLeadData = (leadData: LeadData, subscriberId: number) => {
+export const parseLeadData = (leadData: LeadData, subscriberId: number) => {
   const parsedData: any = {
       leadText: `Enquiry from ${leadData.field_data?.find((f: any) => f.name === "full_name")?.values[0]}`,
       status: leadStatus.LEAD,
@@ -486,43 +485,3 @@ const parseLeadData = (leadData: LeadData, subscriberId: number) => {
 
   return parsedData.contactEmail && parsedData.contactName ? parsedData : null;
 };
-
-
-export const handleLeadgenEvent = async (event: any) => {
-  try {
-    const leadgenId = event.value.leadgen_id;
-    const pageId = event.value.page_id;
-  
-    if (leadgenId && pageId) {
-      const appDataSource = await getDataSource();
-      const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
-      const subscriberFacebookQueryBuilder = subscriberFacebookRepository.createQueryBuilder("subscriberFacebook");
-      const subscriberFacebookData = await subscriberFacebookQueryBuilder
-          .leftJoinAndSelect("subscriberFacebook.subscriberSocialMedia", "subscriberSocialMedia")
-          .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-          .where("subscriberFacebook.pageId = :pageId", { pageId })
-          .getOne();
-      if(!subscriberFacebookData) {
-        console.log(`No social media data found for the page with ID ${pageId}`);
-        return null;
-      }
-      const subscriberId = subscriberFacebookData.subscriberSocialMedia.subscriber.subscriberId;
-      const pageAccessToken = subscriberFacebookData.pageAccessToken;
-
-      const leadData: LeadData = await fetchingLeadDetails(pageAccessToken, leadgenId);
-      if (!leadData) {
-        console.log(`No lead data found for the leadgen with ID ${leadgenId}`);
-        return null;
-      }
-
-      const parsedLead = parseLeadData(leadData, subscriberId);
-      if (parsedLead) {
-          const leadsService = new LeadsService();
-          await leadsService.createSubscribersLeads(parsedLead);
-      }
-    }
-  } catch (error) {
-    console.error("Error while handling leadgen event");
-    throw error;
-  }
-}
