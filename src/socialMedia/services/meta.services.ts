@@ -26,7 +26,6 @@ export class metaServices {
         try {
             const signature = request.headers['x-hub-signature'] as string | undefined;
             const body = request.body as FacebookWebhookRequest;
-            console.log(body);
             
             const appSecret = process.env.META_APP_SECRET;
             if(!appSecret) {
