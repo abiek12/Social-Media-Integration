@@ -1,4 +1,5 @@
 import { subscriberSocialMedia } from "../socialMedia/dataModels/entities/subscriberSocialMedia.entity";
+import { socialMediaType } from "../socialMedia/dataModels/enums/socialMedia.enums";
 import { admins } from "../users/admin/dataModels/entities/admin.entity";
 import { subscribers } from "../users/subscriber/dataModels/entities/subscriber.entity";
 import { userRoles } from "../users/subscriber/dataModels/enums/userRoles.enums";
@@ -96,6 +97,7 @@ export const getSubscriberSocialMediaData = async (subscriberId: number, profile
     const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
       .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
       .where("subscriberSocialMedia.profileId = :profileId", { profileId: profile.id })
+      .andWhere("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
       .andWhere("subscriber.subscriberId = :subscriberId", { subscriberId: subscriberId })
       .getOne();
 

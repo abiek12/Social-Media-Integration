@@ -1,5 +1,4 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
-import { SubscriberFacebookSettings } from "./subscriberFacebook.entity";
 import { subscribers } from "../../../users/subscriber/dataModels/entities/subscriber.entity";
 
 @Entity("sub_social_media")

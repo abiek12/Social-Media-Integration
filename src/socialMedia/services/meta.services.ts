@@ -8,6 +8,7 @@ import { BAD_REQUEST, checkSubscriberExitenceUsingId, CONFLICT, ERROR_COMMON_MES
 import { fetchFacebookPages, fetchingLeadDetails, fetchingLeadgenData, getMetaUserAccessTokenDb, installMetaApp, verifySignature } from "../../utils/socialMediaUtility";
 import { leadStatus } from "../../leads/dataModels/enums/lead.enums";
 import { LeadsService } from "../../leads/services/lead.service";
+import { socialMediaType } from "../dataModels/enums/socialMedia.enums";
 
 export class metaServices {
     // Meta Webhook Verification Endpoint
@@ -56,18 +57,18 @@ export class metaServices {
 
             if (leadgenId && pageId) {
                const appDataSource = await getDataSource();
-               const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
-               const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
+               const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
+               const subscriberFacebookQueryBuilder = subscriberFacebookRepository.createQueryBuilder("subscriberFacebook");
 
-               const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
+               const subscriberFacebookData = await subscriberFacebookQueryBuilder
+                    .leftJoinAndSelect("subscriberFacebook.subscriberSocialMedia", "subscriberSocialMedia")
                     .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-                    .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
-                    .where("facebook.pageId = :pageId", { pageId })
+                    .where("subscriberFacebook.pageId = :pageId", { pageId })
                     .getOne();
 
-                if (subscriberSocialMediaData) {
-                    const subscriberId = subscriberSocialMediaData.subscriber.subscriberId;
-                    const pageAccessToken = subscriberSocialMediaData.facebook.pageAccessToken;
+                if (subscriberFacebookData) {
+                    const subscriberId = subscriberFacebookData.subscriberSocialMedia.subscriber.subscriberId;
+                    const pageAccessToken = subscriberFacebookData.pageAccessToken;
 
                     // fetching actual lead data with page access token and leadgen id using meta graph api
                     const leadData: LeadData = await fetchingLeadDetails(pageAccessToken, leadgenId);
@@ -183,7 +184,7 @@ export class metaServices {
             const appDataSource = await getDataSource();
             const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
             const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
-            // const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
+            const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
 
             const existingSubscriber = await checkSubscriberExitenceUsingId(subscriberId);
 
@@ -192,18 +193,17 @@ export class metaServices {
                 response.status(NOT_FOUND).send(CustomError(NOT_FOUND, "Subscriber not found!"));
                 return;
             }
-            // const existingSubscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
-            //     .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-            //     .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
-            //     .where("subscriber.subscriberId = :subscriberId", { subscriberId })
-            //     .getMany();
+            const existingSubscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
+                .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+                .andWhere("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
+                .where("subscriber.subscriberId = :subscriberId", { subscriberId })
+                .getOne();
             
-            // if(existingSubscriberSocialMediaData.length > 0) {
-            //    for(const invidualData of existingSubscriberSocialMediaData) {
-            //         await subscriberSocialMediaRepository.delete(invidualData.subscriberSocialMediaId);
-            //         await subscriberFacebookRepository.delete(invidualData.facebook.subFacebookSettingsId);
-            //     }
-            // }
+            if(!existingSubscriberSocialMediaData) {
+                console.error("Subscriber not authenticated to fetch facebook pages!");
+                response.status(CONFLICT).send(CustomError(CONFLICT, "Subscriber not authenticated to fetch facebook pages!"));
+                return;
+            }
 
             for (const pageData of pages) {
                 const pageExistance = await subscriberFacebookRepository.findOneBy({ pageId: pageData.id });
@@ -213,12 +213,8 @@ export class metaServices {
                     subscriberFacebookEntity.pageAccessToken = pageData.access_token;
                     subscriberFacebookEntity.pageName = pageData.name;
                     subscriberFacebookEntity.pageTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
-                    const facebookEntityResponse = await subscriberFacebookRepository.save(subscriberFacebookEntity);
-
-                    const subscriberSocialMediaEntity = new subscriberSocialMedia();
-                    subscriberSocialMediaEntity.facebook = facebookEntityResponse;
-                    subscriberSocialMediaEntity.subscriber = existingSubscriber;
-                    await subscriberSocialMediaRepository.save(subscriberSocialMediaEntity);
+                    subscriberFacebookEntity.subscriberSocialMedia = existingSubscriberSocialMediaData;
+                    await subscriberFacebookRepository.save(subscriberFacebookEntity);
                 }
             }
 
@@ -252,10 +248,10 @@ export class metaServices {
 
         const existingSubscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
             .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-            .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
             .where("subscriber.subscriberId = :subscriberId", { subscriberId })
+            .andWhere("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
             .getOne();
-        if(existingSubscriberSocialMediaData && existingSubscriberSocialMediaData.facebook.userAccessToken) {
+        if(existingSubscriberSocialMediaData && existingSubscriberSocialMediaData.userAccessToken) {
             response.status(SUCCESS_GET).send(true);
             return;
         } else {

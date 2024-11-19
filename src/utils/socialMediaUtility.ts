@@ -5,6 +5,8 @@ import { AdminFacebookSettings } from '../socialMedia/dataModels/entities/adminF
 import { admins } from '../users/admin/dataModels/entities/admin.entity';
 import { getDataSource } from './dataSource';
 import { FacebookWebhookRequest } from '../socialMedia/dataModels/types/meta.types';
+import { SubscriberFacebookSettings } from '../socialMedia/dataModels/entities/subscriberFacebook.entity';
+import { socialMediaType } from '../socialMedia/dataModels/enums/socialMedia.enums';
 // import { ngrokUrl } from '../server';
 
 // Social Media Utility Constants
@@ -203,19 +205,18 @@ export const subscribeWebhook = async () => {
 export const installMetaApp = async (subscriberId: number) => {
   try {
     const appDataSource = await getDataSource();
-    const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
-    const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
+    const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
+    const subscriberFacebookQueryBuilder = subscriberFacebookRepository.createQueryBuilder("subscriberFacebook");
 
-    const subscriberSocialMediaDatas = await subscriberSocialMediaQueryBuilder
+    const subscriberFacebookDatas = await subscriberFacebookQueryBuilder
+      .leftJoinAndSelect("subscriberFacebook.subscriberSocialMedia", "subscriberSocialMedia")
       .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-      .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
-      .where("subscriber.subscriberId = :subscriberId", { subscriberId })
       .getMany();
 
-    if (subscriberSocialMediaDatas.length > 0) {
-      for (const invidualData of subscriberSocialMediaDatas) {
-        const pageId = invidualData.facebook.pageId;
-        const pageAccessToken = invidualData.facebook.pageAccessToken;
+    if (subscriberFacebookDatas.length > 0) {
+      for (const invidualData of subscriberFacebookDatas) {
+        const pageId = invidualData.pageId;
+        const pageAccessToken = invidualData.pageAccessToken;
 
         // Check for valid pageId and access token
         if (!pageId || !pageAccessToken) {
@@ -260,16 +261,17 @@ export const getMetaUserAccessTokenDb = async (subscriberId: number) => {
 
     const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
       .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-      .leftJoinAndSelect("subscriberSocialMedia.facebook", "facebook")
       .where("subscriber.subscriberId = :subscriberId", { subscriberId })
+      .andWhere("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
       .getOne();
+
     
     if (!subscriberSocialMediaData) {
       console.log(`No facebook user access token found for subscriber with ID ${subscriberId}`);
       return null;
     }
 
-    return subscriberSocialMediaData.facebook.userAccessToken;
+    return subscriberSocialMediaData.userAccessToken;
   } catch (error) {
     console.log('Error while fetching user access token from database', error);
     throw error;
