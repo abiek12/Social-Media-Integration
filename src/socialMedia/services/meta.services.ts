@@ -26,7 +26,8 @@ export class metaServices {
         try {
             const signature = request.headers['x-hub-signature'] as string | undefined;
             const body = request.body;
-            console.log(body);
+            console.log(body.entry[0].changes);
+            console.log(body.entry[0].changes[0]);
         
             const appSecret = process.env.META_APP_SECRET;
             if (!appSecret) {
@@ -57,21 +58,24 @@ export class metaServices {
             // Process events
             const { entry } = body;
             for (const pageEntry of entry) {
-                const pageId = pageEntry.id;
-                const timestamp = pageEntry.time;
-
-                if(pageEntry.changes) {
-                    for (const change of pageEntry.changes) {
-                        switch (change.field) {
-                          case 'leadgen':
-                            await handleLeadgenEvent(change);
-                            break;
-                        
-                          default:
-                            console.warn(`Unhandled event field: ${change.field}`);
-                        }
-                      }
+              for (const change of pageEntry.changes) {
+                switch (change.field) {
+                  case 'leadgen':
+                    await handleLeadgenEvent(change);
+                    break;
+                
+                  case 'messages':
+                    await handleMessagingEvent(change);
+                    break;
+                
+                //   case 'instagram':
+                //     await handleInstagramEvent(change);
+                //     break;
+                
+                  default:
+                    console.warn(`Unhandled event field: ${change.field}`);
                 }
+              }
             }
         } catch (error) {
             console.error('Error processing webhook event:', error);
