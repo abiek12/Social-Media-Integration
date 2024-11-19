@@ -5,7 +5,7 @@ import { getDataSource } from "../../utils/dataSource";
 import { FacebookWebhookRequest, LeadData, pageMetaDataTypes, VerificationData } from "../dataModels/types/meta.types";
 import { CustomError, Success } from "../../utils/response";
 import { BAD_REQUEST, checkSubscriberExitenceUsingId, CONFLICT, ERROR_COMMON_MESSAGE, FORBIDDEN, INTERNAL_ERROR, NOT_AUTHORIZED, NOT_FOUND, SUCCESS_GET } from "../../utils/common";
-import { fetchFacebookPages, fetchingLeadDetails, fetchingLeadgenData, getMetaUserAccessTokenDb, installMetaApp, verifySignature } from "../../utils/socialMediaUtility";
+import { fetchFacebookPages, fetchingLeadDetails, fetchingLeadgenData, getMetaUserAccessTokenDb, handleLeadgenEvent, installMetaApp, verifySignature } from "../../utils/socialMediaUtility";
 import { leadStatus } from "../../leads/dataModels/enums/lead.enums";
 import { LeadsService } from "../../leads/services/lead.service";
 import { socialMediaType } from "../dataModels/enums/socialMedia.enums";
@@ -26,12 +26,12 @@ export class metaServices {
     handleWebhook = async (request: Request, response: Response) => {
         try {
             const signature = request.headers['x-hub-signature'] as string | undefined;
-            const body = request.body as FacebookWebhookRequest;
-            
+            const body = request.body;
+        
             const appSecret = process.env.META_APP_SECRET;
-            if(!appSecret) {
+            if (!appSecret) {
                 console.error('META_APP_SECRET is not defined');
-                response.status(FORBIDDEN).send(CustomError(FORBIDDEN, 'Forbidden'));
+                response.status(FORBIDDEN).send(CustomError(FORBIDDEN, 'META_APP_SECRET is not defined'));
                 return;
             }
 
@@ -41,112 +41,44 @@ export class metaServices {
             //     response.status(FORBIDDEN).send(CustomError(FORBIDDEN, 'Forbidden'));
             //     return;
             // }
-            console.info("request header X-Hub-Signature validated");
-            response.status(SUCCESS_GET).send('EVENT_RECEIVED');
-
-            // fetching leadgen id and page id from webhook data
-            const leadgenData = fetchingLeadgenData(body);
-
-            if (!leadgenData) {
-                console.error('No leadgen data found in the payload');
-                response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, 'No leadgen data found'));
+        
+            // Validate Signature
+            if (!verifySignature(signature, body, appSecret)) {
+                console.error('Invalid signature');
+                response.status(FORBIDDEN).send(CustomError(FORBIDDEN, 'Invalid signature'));
                 return;
             }
-
-            const { leadgenId, pageId } = leadgenData;
-
-            if (leadgenId && pageId) {
-               const appDataSource = await getDataSource();
-               const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
-               const subscriberFacebookQueryBuilder = subscriberFacebookRepository.createQueryBuilder("subscriberFacebook");
-
-               const subscriberFacebookData = await subscriberFacebookQueryBuilder
-                    .leftJoinAndSelect("subscriberFacebook.subscriberSocialMedia", "subscriberSocialMedia")
-                    .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-                    .where("subscriberFacebook.pageId = :pageId", { pageId })
-                    .getOne();
-
-                if (subscriberFacebookData) {
-                    const subscriberId = subscriberFacebookData.subscriberSocialMedia.subscriber.subscriberId;
-                    const pageAccessToken = subscriberFacebookData.pageAccessToken;
-
-                    // fetching actual lead data with page access token and leadgen id using meta graph api
-                    const leadData: LeadData = await fetchingLeadDetails(pageAccessToken, leadgenId);
-                    if (leadData) {
-                        let email = null;
-                        let fullName = null;
-                        let phoneNumber = null;
-                        let country = null;
-                        let state = null;
-                        let city = null;
-                        let leadText = null;
-                        let companyName = null;
-                        let designation = null;
-                        for await( let lead of leadData.field_data ) {
-                            for await (let value of lead.values) {
-                                switch (lead.name) {
-                                    case "email":
-                                        email = value;
-                                        break;
-                                    case "full_name":
-                                        fullName = value;
-                                        break;
-                                    case "phone":
-                                        phoneNumber = value;
-                                        break;
-                                    case "country":
-                                        country = value;
-                                        break;
-                                    case "state":
-                                        state = value;
-                                        break;
-                                    case "city":
-                                        city = value;
-                                        break;
-                                    case "leadText":
-                                        leadText = value;
-                                        break;
-                                    case "company_name":
-                                        companyName = value;
-                                        break;
-                                    case "job_title":
-                                        designation = value;
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }                        
-                        }
-
-                        if(email && fullName) {
-                            const data = {
-                                leadText: leadText? leadText : `Enquiry from ${fullName}`,
-                                status: leadStatus.LEAD,
-                                contactEmail: email,
-                                contactName: fullName,
-                                companyName: companyName,
-                                designation: designation,
-                                subscriberId: subscriberId,
-                                contactPhone: phoneNumber ? phoneNumber : null,
-                                contactCountry: country ? country : null,
-                                contactState:state ? state : null,
-                                contactCity:city ? city : null,
-
-                            }
-                            console.log("Extracted data:",data);
-                            
-                            // Creating Lead with the above data
-                            const subscriberLeadService = new LeadsService();
-                            await subscriberLeadService.createSubscribersLeads(data);
-                        }
-                    }
+        
+            // Acknowledge the webhook event
+            console.info("request header X-Hub-Signature validated");
+            response.status(200).send('EVENT_RECEIVED');
+        
+            // Process events
+            const { entry } = body;
+            for (const pageEntry of entry) {
+              for (const change of pageEntry.changes) {
+                switch (change.field) {
+                  case 'leadgen':
+                    await handleLeadgenEvent(change);
+                    break;
+                
+                  case 'messages':
+                    await handleMessagingEvent(change);
+                    break;
+                
+                //   case 'instagram':
+                //     await handleInstagramEvent(change);
+                //     break;
+                
+                  default:
+                    console.warn(`Unhandled event field: ${change.field}`);
                 }
+              }
             }
         } catch (error) {
-            console.error("Error while receiving webhook data.",error);
-            throw error;
+            console.error('Error processing webhook event:', error);
         }
-    }
+    };
 
     // Fetch facebook pages of the subscriber.
     fetchPages = async (request: Request, response: Response) => {

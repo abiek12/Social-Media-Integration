@@ -4,10 +4,12 @@ import { subscriberSocialMedia } from '../socialMedia/dataModels/entities/subscr
 import { AdminFacebookSettings } from '../socialMedia/dataModels/entities/adminFacebook.entity';
 import { admins } from '../users/admin/dataModels/entities/admin.entity';
 import { getDataSource } from './dataSource';
-import { FacebookWebhookRequest } from '../socialMedia/dataModels/types/meta.types';
+import { FacebookWebhookRequest, LeadData } from '../socialMedia/dataModels/types/meta.types';
 import { SubscriberFacebookSettings } from '../socialMedia/dataModels/entities/subscriberFacebook.entity';
 import { socialMediaType } from '../socialMedia/dataModels/enums/socialMedia.enums';
 import { needsRefresh, subscriberFacebookRepo, subscriberSocialMediaRepo } from './common';
+import { LeadsService } from '../leads/services/lead.service';
+import { leadStatus } from '../leads/dataModels/enums/lead.enums';
 // import { ngrokUrl } from '../server';
 
 // Social Media Utility Constants
@@ -141,7 +143,7 @@ export const getAppAccessToken = async () => {
 }
 
 // Subscribe & Configure Webhook
-export const subscribeWebhook = async (object: string, field: string) => {
+export const subscribeWebhook = async (object: string, fields: string[]) => {
   try {
     const appDataSource = await getDataSource();
     const adminSocialMediaRepository = appDataSource.getRepository(adminSocialMedia);
@@ -163,17 +165,11 @@ export const subscribeWebhook = async (object: string, field: string) => {
     const url = `https://graph.facebook.com/v20.0/${appId}/subscriptions?access_token=${appAccessToken}`;
 
     // const callbackUrl = ngrokUrl + '/api/v1/meta/webhook';
-    let callbackUrl;
-    switch (field) {
-      case 'leadgen':
-        callbackUrl = process.env.BACKEND_URL +'/api/v1/meta/webhook';
-      default:
-        callbackUrl = process.env.BACKEND_URL +'/api/v1/meta/webhook';
-    }
+    const callbackUrl = process.env.BACKEND_URL +'/api/v1/meta/webhook';
 
     const data = {
       object: object,
-      fields: [field],
+      fields: fields.join(','),
       access_token: appAccessToken,
       callback_url: callbackUrl,
       verify_token: verifyToken,
@@ -181,13 +177,9 @@ export const subscribeWebhook = async (object: string, field: string) => {
     };
 
     const headers= {'Content-Type': 'application/x-www-form-urlencoded'}
-    const bodyData = {
-       ...data,
-       fields: data.fields.join(','),
-    };
 
     // Use URLSearchParams to serialize the data
-    const body = new URLSearchParams(bodyData as Record<string, string>);
+    const body = new URLSearchParams(data as Record<string, string>);
     const response = await fetch(url, { method: 'post', headers, body });
     const finalRes = await response.json();
     if(finalRes.error) {
@@ -474,5 +466,63 @@ export const findUserByProfileId = async (profileId: string) => {
     return subscriberSocialMediaData;
   } catch (error) {
     console.error("Error while fetching user by profile id");
+    throw error;
+  }
+}
+
+const parseLeadData = (leadData: LeadData, subscriberId: number) => {
+  const parsedData: any = {
+      leadText: `Enquiry from ${leadData.field_data?.find((f: any) => f.name === "full_name")?.values[0]}`,
+      status: leadStatus.LEAD,
+      contactEmail: leadData.field_data?.find((f: any) => f.name === "email")?.values[0],
+      contactName: leadData.field_data?.find((f: any) => f.name === "full_name")?.values[0],
+      subscriberId,
+      companyName: leadData.field_data?.find((f: any) => f.name === "company_name")?.values[0] || null,
+      contactPhone: leadData.field_data?.find((f: any) => f.name === "phone")?.values[0] || null,
+      contactCountry: leadData.field_data?.find((f: any) => f.name === "country")?.values[0] || null,
+      contactState: leadData.field_data?.find((f: any) => f.name === "state")?.values[0] || null,
+      contactCity: leadData.field_data?.find((f: any) => f.name === "city")?.values[0] || null,
+  };
+
+  return parsedData.contactEmail && parsedData.contactName ? parsedData : null;
+};
+
+
+export const handleLeadgenEvent = async (event: any) => {
+  try {
+    const leadgenId = event.value.leadgen_id;
+    const pageId = event.value.page_id;
+  
+    if (leadgenId && pageId) {
+      const appDataSource = await getDataSource();
+      const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
+      const subscriberFacebookQueryBuilder = subscriberFacebookRepository.createQueryBuilder("subscriberFacebook");
+      const subscriberFacebookData = await subscriberFacebookQueryBuilder
+          .leftJoinAndSelect("subscriberFacebook.subscriberSocialMedia", "subscriberSocialMedia")
+          .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+          .where("subscriberFacebook.pageId = :pageId", { pageId })
+          .getOne();
+      if(!subscriberFacebookData) {
+        console.log(`No social media data found for the page with ID ${pageId}`);
+        return null;
+      }
+      const subscriberId = subscriberFacebookData.subscriberSocialMedia.subscriber.subscriberId;
+      const pageAccessToken = subscriberFacebookData.pageAccessToken;
+
+      const leadData: LeadData = await fetchingLeadDetails(pageAccessToken, leadgenId);
+      if (!leadData) {
+        console.log(`No lead data found for the leadgen with ID ${leadgenId}`);
+        return null;
+      }
+
+      const parsedLead = parseLeadData(leadData, subscriberId);
+      if (parsedLead) {
+          const leadsService = new LeadsService();
+          await leadsService.createSubscribersLeads(parsedLead);
+      }
+    }
+  } catch (error) {
+    console.error("Error while handling leadgen event");
+    throw error;
   }
 }
