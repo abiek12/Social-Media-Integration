@@ -36,13 +36,6 @@ export class metaServices {
                 response.status(FORBIDDEN).send(CustomError(FORBIDDEN, 'META_APP_SECRET is not defined'));
                 return;
             }
-
-            // const rawBody = (request as any).rawBody; 
-            // if (!verifySignature(signature, body, appSecret)) {
-            //     console.error('App Secret is not valid');
-            //     response.status(FORBIDDEN).send(CustomError(FORBIDDEN, 'Forbidden'));
-            //     return;
-            // }
         
             // Validate Signature
             if (!verifySignature(signature, body, appSecret)) {
@@ -51,33 +44,36 @@ export class metaServices {
                 return;
             }
         
+            console.info("Request header X-Hub-Signature validated");
+            console.log("Event Received");
             // Acknowledge the webhook event
-            console.info("request header X-Hub-Signature validated");
-            console.log("Event Received:", body);
             response.status(SUCCESS_GET).send('EVENT_RECEIVED');
         
             // Process events
-            const { entry } = body;
-            for (const pageEntry of entry) {
-              for (const change of pageEntry.changes) {
-                switch (change.field) {
-                  case 'leadgen':
-                    await handleLeadgenEvent(change);
-                    break;
-                
-                  case 'messages':
-                    await handleMessagingEvent(change);
-                    break;
-                
-                //   case 'instagram':
-                //     await handleInstagramEvent(change);
-                //     break;
-                
-                  default:
-                    console.warn(`Unhandled event field: ${change.field}`);
+            if(body.object === 'page') {
+                const { entry } = body;
+                for (const pageEntry of entry) {
+                    for (const change of pageEntry.changes) {
+                        switch (change.field) {
+                            case 'leadgen':
+                              await handleLeadgenEvent(change);
+                              break;
+
+                            case 'messages':
+                              await handleMessagingEvent(change);
+                              break;
+                        
+                            default:
+                              console.warn(`Unhandled event field: ${change.field}`);
+                              break;
+                        }
+                    }
                 }
-              }
             }
+
+            // if(body.object === 'instagram') {
+                
+            // }
         } catch (error) {
             console.error('Error processing webhook event:', error);
         }
