@@ -10,6 +10,7 @@ import facebookAuthRoutes from './socialMedia/routes/auth.routes';
 import subscriberRoutes from './users/subscriber/routes/subscriber.route';
 import authRoutes from './users/auth/routes/auth.route';
 import leadRoutes from './leads/routes/lead.route';
+import whatsappRoutes from './socialMedia/routes/whatsapp.routes';
 import cors from 'cors'
 
 // Load environment variables
@@ -55,6 +56,7 @@ app.use('/api/v1/meta', metaRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/subscriber', subscriberRoutes);
 app.use('/api/v1/lead', leadRoutes);
+app.use('/api/v1/whatsapp', whatsappRoutes );
 
 // Error handling middleware
 app.use((error: any, req: Request, res: Response, next: any) => {
