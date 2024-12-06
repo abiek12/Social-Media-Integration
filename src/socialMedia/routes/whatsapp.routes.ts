@@ -1,9 +1,9 @@
 import express from "express";
-import { whatsAppBroadcast, whatsAppWebhook } from "../services/whatsapp.service";
+import { verifyWhatsappWebhook, whatsAppBroadcast, whatsAppWebhook } from "../services/whatsapp.service";
 
 const router = express.Router();
 
-router.get("/webhook", whatsAppWebhook);
+router.get("/webhook", verifyWhatsappWebhook);
 router.post("/webhook", whatsAppWebhook);
 router.get("/", whatsAppBroadcast);
 
