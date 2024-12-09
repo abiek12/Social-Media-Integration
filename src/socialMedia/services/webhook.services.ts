@@ -44,9 +44,9 @@ export const handleLeadgenEvent = async (event: any) => {
 }
 
 export const handleMessagingEvent = async (event: any) => {
-  const message = event.value.message;
-  const senderId = event.value.sender.id;
-  const recipientId = event.value.recipient.id;
+  const message = event.message;
+  const senderId = event.sender.id;
+  const recipientId = event.recipient.id;
 
   console.log('New Message:', { message, senderId, recipientId });
 

@@ -68,6 +68,7 @@ export class metaServices {
                         for (const pageEntry of entry) {
                             for (const change of pageEntry.changes) {
                                 if (change.field === 'leadgen') {
+                                    console.log("Leadgen Event Received");
                                     await handleLeadgenEvent(change);
                                 }
                             }
@@ -75,6 +76,7 @@ export class metaServices {
                         break;
                     case "messages":
                         for (const pageEntry of entry) {
+                            console.log("Message Event Received");
                             await handleMessagingEvent(pageEntry.messaging);
                         }
                         break;
