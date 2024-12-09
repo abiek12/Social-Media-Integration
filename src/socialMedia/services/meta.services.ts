@@ -24,12 +24,18 @@ export class metaServices {
     // Meta Webhook Event Notification Endpoint
     handleWebhook = async (request: Request, response: Response) => {
         try {
-            const signature = request.headers['x-hub-signature'] as string | undefined;
+            const signature = request.headers['x-hub-signature-256'] as string;
             const rawBody = (request as any).rawBody;
             const body = request.body;
             console.log("Row Body:",rawBody);
             console.log("Body:",body);
-        
+
+            if (!signature) {
+                console.error('X-Hub-Signature-256 is not in request header');
+                response.status(FORBIDDEN).send(CustomError(FORBIDDEN, 'X-Hub-Signature-256 is not in request header'));
+                return;
+            }
+            
             const appSecret = process.env.META_APP_SECRET;
             if (!appSecret) {
                 console.error('META_APP_SECRET is not defined');

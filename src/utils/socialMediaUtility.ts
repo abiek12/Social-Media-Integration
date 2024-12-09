@@ -24,10 +24,7 @@ export const facebookStrategyConfig = {
 }
 
 // Social Media Utility Functions
-export const verifySignature = (signature: string | undefined, rawBody: string, appSecret: string): boolean => {
-  if (!signature || !signature.startsWith('sha256=')) {
-    return false;
-  }
+export const verifySignature = (signature: string, rawBody: string, appSecret: string): boolean => {
   const signatureHash = signature.split('=')[1];
 
   const expectedHash = crypto.createHmac('sha256', appSecret).update(rawBody).digest('hex');
