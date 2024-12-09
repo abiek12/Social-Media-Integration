@@ -26,7 +26,7 @@ export class metaServices {
         try {
             const signature = request.headers['x-hub-signature'] as string | undefined;
             const rawBody = request.body;
-            const body = JSON.parse(rawBody);
+            const body = request.body;
             console.log("Row Body:",rawBody);
             console.log("Body:",body);
         
