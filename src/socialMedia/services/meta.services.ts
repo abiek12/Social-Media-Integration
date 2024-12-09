@@ -25,11 +25,10 @@ export class metaServices {
     handleWebhook = async (request: Request, response: Response) => {
         try {
             const signature = request.headers['x-hub-signature'] as string | undefined;
-            const rawBody = request.body.toString('utf8');
-            console.log(rawBody);
-            
-            const body = JSON.parse(rawBody);
-            console.log(body);
+            const rawBody = (request as any).rawBody;
+            const body = request.body;
+            console.log("Row Body:",rawBody);
+            console.log("Body:",body);
         
             const appSecret = process.env.META_APP_SECRET;
             if (!appSecret) {
