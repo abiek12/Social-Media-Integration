@@ -77,10 +77,11 @@ export class metaServices {
                             }
                             break;
                         case "messages":
-                            console.log("Message Event Received");
-                            console.log(pageEntry.messaging);
-                            await handleMessagingEvent(pageEntry.messaging);
-                            break;
+                            for(const message of pageEntry.messaging || []) {
+                                console.log("Messaging Event Received");
+                                console.log(message);
+                                await handleMessagingEvent(message);
+                            }
                         default:
                             console.warn(`Unhandled event field: ${fields}`);
                             break;
