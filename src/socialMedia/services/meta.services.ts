@@ -28,6 +28,8 @@ export class metaServices {
             const rawBody = (request as any).rawBody;
             const body = request.body;
             console.log("Body:",body);
+            console.log("content:",body.entry[0].messaging);
+            console.log("content:",body.entry[0].changes[0].value);
 
             if (!signature || !signature.startsWith('sha256=')) {
                 console.error('X-Hub-Signature-256 is not in request header');
