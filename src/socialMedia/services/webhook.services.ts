@@ -1,6 +1,6 @@
 import { LeadsService } from "../../leads/services/lead.service";
 import { getDataSource } from "../../utils/dataSource";
-import { fetchingLeadDetails, fetchSenderDetails, parseLeadData } from "../../utils/socialMediaUtility";
+import { fetchingLeadDetails, fetchMessageDetails, parseLeadData } from "../../utils/socialMediaUtility";
 import { SubscriberFacebookSettings } from "../dataModels/entities/subscriberFacebook.entity";
 import { LeadData } from "../dataModels/types/meta.types";
 
@@ -45,18 +45,18 @@ export const handleLeadgenEvent = async (event: any) => {
 
 export const handleMessagingEvent = async (event: any) => {
   try {
-    const message = event.message;
+    const messageId = event.message.mid;
     const senderId = event.sender.id;
     const pageId = event.recipient.id;
-    console.log('New Message:', { message, senderId, pageId });
+    console.log('New Message:', messageId, senderId, pageId);
 
-    if(!message || !pageId) {
-      console.error('Message or recipientId is missing');
+    if(!pageId) {
+      console.error('RecipientId or PageId is missing!');
       return;
     }
 
-    if(!senderId) {
-      console.error("Sender id is missing!")
+    if(!messageId) {
+      console.error("Message id is missing!")
       return;
     }
 
@@ -66,12 +66,12 @@ export const handleMessagingEvent = async (event: any) => {
       return;
     }
 
-    const senderDetails = await fetchSenderDetails(senderId, pageAccessToken)
-    if(!senderDetails) {
+    const msgDetails = await fetchMessageDetails(senderId, pageAccessToken)
+    if(!msgDetails) {
       console.error("Sender does'nt exist!");
       return;
     }
-    console.log(senderDetails);
+    console.log(msgDetails);
 
   } catch (error) {
     console.error("Error while handling messaging event");
