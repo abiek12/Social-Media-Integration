@@ -82,6 +82,7 @@ export class metaServices {
                                 console.log(message);
                                 await handleMessagingEvent(message);
                             }
+                            break;
                         default:
                             console.warn(`Unhandled event field: ${fields}`);
                             break;

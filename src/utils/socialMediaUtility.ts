@@ -9,6 +9,7 @@ import { SubscriberFacebookSettings } from '../socialMedia/dataModels/entities/s
 import { socialMediaType } from '../socialMedia/dataModels/enums/socialMedia.enums';
 import { needsRefresh, subscriberFacebookRepo, subscriberSocialMediaRepo } from './common';
 import { leadStatus } from '../leads/dataModels/enums/lead.enums';
+import axios from 'axios';
 // import { ngrokUrl } from '../server';
 
 // Social Media Utility Constants
@@ -471,3 +472,14 @@ export const parseLeadData = (leadData: LeadData, subscriberId: number) => {
 
   return parsedData.contactEmail && parsedData.contactName ? parsedData : null;
 };
+
+export const fetchSenderDetails = async (senderId: string, pageAccessToken: string) => {
+  try {
+    const url = `https://graph.facebook.com/v17.0/${senderId}?fields=id,name,profile_pic&access_token=${pageAccessToken}`;
+    const response = await axios.get(url);
+    return response.data;
+  } catch (error) {
+    console.error("Error while fetching sender details!");
+    throw error;
+  }
+}

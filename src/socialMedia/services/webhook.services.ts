@@ -1,6 +1,6 @@
 import { LeadsService } from "../../leads/services/lead.service";
 import { getDataSource } from "../../utils/dataSource";
-import { fetchingLeadDetails, parseLeadData } from "../../utils/socialMediaUtility";
+import { fetchingLeadDetails, fetchSenderDetails, parseLeadData } from "../../utils/socialMediaUtility";
 import { SubscriberFacebookSettings } from "../dataModels/entities/subscriberFacebook.entity";
 import { LeadData } from "../dataModels/types/meta.types";
 
@@ -44,11 +44,38 @@ export const handleLeadgenEvent = async (event: any) => {
 }
 
 export const handleMessagingEvent = async (event: any) => {
-  const message = event.message;
-  const senderId = event.sender.id;
-  const recipientId = event.recipient.id;
+  try {
+    const message = event.message;
+    const senderId = event.sender.id;
+    const pageId = event.recipient.id;
+    console.log('New Message:', { message, senderId, pageId });
 
-  console.log('New Message:', { message, senderId, recipientId });
+    if(!message || !pageId) {
+      console.error('Message or recipientId is missing');
+      return;
+    }
 
+    if(!senderId) {
+      console.error("Sender id is missing!")
+      return;
+    }
+
+    const pageAccessToken =  "EAAHdP3GumlsBO7ZBuv2nKjxlPL4DjCxv7jCg2x5Ak4RSDr7eAB7kPDT706Rx2alhUNsmcOWoKnwCmiQHKLHeKi81OIzM3sHPrCLYQEKk1hOaqYQD7L9jIPWGR4argI1sKGUj3qZBgeZAwjZCROuQOeM7IGcmkys6xLIxhpyB9at8u8KWOnGtlWTy5uUcwuLmbEAHy75lmKhG0FGojiCyCD5XxekOOssVoAjQj9Lf"
+    if(!pageAccessToken) {
+      console.error("Page access tokekn is missing for the page id!");
+      return;
+    }
+
+    const senderDetails = await fetchSenderDetails(senderId, pageAccessToken)
+    if(!senderDetails) {
+      console.error("Sender does'nt exist!");
+      return;
+    }
+    console.log(senderDetails);
+
+  } catch (error) {
+    console.error("Error while handling messaging event");
+    throw error;
+  }
 };
   
