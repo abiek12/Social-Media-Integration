@@ -30,9 +30,9 @@ app.use(cors(corsOptions));
 
 // Middleware
 app.use(cookieParser());
-app.use(rawbodyParserMiddleware);
-// app.use(bodyParser.json());
-// app.use(bodyParser.raw({type: '*/*'}));
+// app.use(rawbodyParserMiddleware);
+app.use(bodyParser.json());
+app.use(bodyParser.raw({type: '*/*'}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
