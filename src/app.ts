@@ -31,10 +31,23 @@ app.use(cors(corsOptions));
 // Middleware
 app.use(cookieParser());
 // app.use(rawbodyParserMiddleware);
-app.use(bodyParser.json());
-app.use(bodyParser.raw({type: '*/*'}));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// app.use(bodyParser.json());
+// app.use(bodyParser.raw({type: '*/*'}));
+// app.use(express.json());
+// app.use(express.urlencoded({ extended: true }));
+
+app.use(bodyParser.json({
+  verify: function (req, res, buf, encoding) {
+      (req as any).rawBody = buf;
+  }
+}));
+
+app.use(bodyParser.urlencoded({
+  extended: false,
+  verify: function (req, res, buf, encoding) {
+      (req as any).rawBody = buf;
+  }
+}));
 
 // Express-session setup (required for Passport)
 app.use(session({
