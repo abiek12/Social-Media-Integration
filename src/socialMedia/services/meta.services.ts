@@ -25,7 +25,8 @@ export class metaServices {
     handleWebhook = async (request: Request, response: Response) => {
         try {
             const signature = request.headers['x-hub-signature'] as string | undefined;
-            const body = request.body;
+            const rawBody = request.body.toString('utf8');
+            const body = JSON.parse(rawBody);
             console.log(body);
         
             const appSecret = process.env.META_APP_SECRET;
@@ -36,7 +37,7 @@ export class metaServices {
             }
         
             // Validate Signature
-            if (!verifySignature(signature, body, appSecret)) {
+            if (!verifySignature(signature, rawBody, appSecret)) {
                 console.error('Invalid signature');
                 response.status(FORBIDDEN).send(CustomError(FORBIDDEN, 'Invalid signature'));
                 return;
