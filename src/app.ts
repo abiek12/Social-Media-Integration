@@ -38,14 +38,14 @@ app.use(cookieParser());
 
 app.use(bodyParser.json({
   verify: function (req, res, buf, encoding) {
-      (req as any).rawBody = buf;
+      (req as any).rawBody = buf.toString('utf8');
   }
 }));
 
 app.use(bodyParser.urlencoded({
   extended: false,
   verify: function (req, res, buf, encoding) {
-      (req as any).rawBody = buf;
+      (req as any).rawBody = buf.toString('utf8');;
   }
 }));
 
