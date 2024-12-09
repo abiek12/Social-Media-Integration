@@ -12,6 +12,8 @@ import authRoutes from './users/auth/routes/auth.route';
 import leadRoutes from './leads/routes/lead.route';
 import whatsappRoutes from './socialMedia/routes/whatsapp.routes';
 import cors from 'cors'
+import bodyParser from 'body-parser';
+import { rawbodyParserMiddleware } from './middlewares/bodyParser.middleware';
 
 // Load environment variables
 dotenv.config();
@@ -28,6 +30,9 @@ app.use(cors(corsOptions));
 
 // Middleware
 app.use(cookieParser());
+app.use(rawbodyParserMiddleware);
+app.use(bodyParser.json());
+app.use(bodyParser.raw({type: '*/*'}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
