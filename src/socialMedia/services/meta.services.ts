@@ -59,22 +59,28 @@ export class metaServices {
             // Process events
             if(body.object === 'page') {
                 const { entry } = body;
-                for (const pageEntry of entry) {
-                    for (const change of pageEntry.changes) {
-                        switch (change.field) {
-                            case 'leadgen':
-                              await handleLeadgenEvent(change);
-                              break;
+                let fields;
+                if(entry[0].changes[0].field) fields = "leadgen";
+                if(entry[0].messaging) fields = "messages";
 
-                            case 'messages':
-                              await handleMessagingEvent(change);
-                              break;
-                        
-                            default:
-                              console.warn(`Unhandled event field: ${change.field}`);
-                              break;
+                switch(fields) {
+                    case "leadgen":
+                        for (const pageEntry of entry) {
+                            for (const change of pageEntry.changes) {
+                                if (change.field === 'leadgen') {
+                                    await handleLeadgenEvent(change);
+                                }
+                            }
                         }
-                    }
+                        break;
+                    case "messages":
+                        for (const pageEntry of entry) {
+                            await handleMessagingEvent(pageEntry.messaging);
+                        }
+                        break;
+                    default:
+                        console.warn(`Unhandled event field: ${fields}`);
+                        break;
                 }
             }
 
