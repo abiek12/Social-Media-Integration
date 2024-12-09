@@ -57,32 +57,37 @@ export class metaServices {
             // Process events
             if(body.object === 'page') {
                 const { entry } = body;
-                let fields;
-                if(entry[0].changes[0].field) fields = "leadgen";
-                if(entry[0].messaging) fields = "messages";
+                for(const pageEntry of entry) {
+                    let fields;
+                    // Determine the event type
+                    if (pageEntry?.changes?.[0]?.field === 'leadgen') {
+                        fields = 'leadgen';
+                    } else if (pageEntry?.messaging) {
+                        fields = 'messages';
+                    }
 
-                switch(fields) {
-                    case "leadgen":
-                        for (const pageEntry of entry) {
-                            for (const change of pageEntry.changes) {
+                    switch(fields) {
+                        case "leadgen":
+                            for (const change of pageEntry.changes || []) {
                                 if (change.field === 'leadgen') {
                                     console.log("Leadgen Event Received");
                                     console.log(change);
                                     await handleLeadgenEvent(change);
                                 }
                             }
-                        }
-                        break;
-                    case "messages":
-                        for (const pageEntry of entry) {
-                            console.log("Message Event Received");
-                            console.log(pageEntry.messaging);
-                            await handleMessagingEvent(pageEntry.messaging);
-                        }
-                        break;
-                    default:
-                        console.warn(`Unhandled event field: ${fields}`);
-                        break;
+                            break;
+                        case "messages":
+                            for (const pageEntry of entry || []) {
+                                console.log("Message Event Received");
+                                console.log(pageEntry.messaging);
+                                await handleMessagingEvent(pageEntry.messaging);
+                            }
+                            break;
+                        default:
+                            console.warn(`Unhandled event field: ${fields}`);
+                            break;
+                    }
+
                 }
             }
 
