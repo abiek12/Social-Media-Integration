@@ -28,8 +28,6 @@ export class metaServices {
             const rawBody = (request as any).rawBody;
             const body = request.body;
             console.log("Body:",body);
-            console.log("content:",body.entry[0].messaging);
-            console.log("content:",body.entry[0].changes[0].value);
 
             if (!signature || !signature.startsWith('sha256=')) {
                 console.error('X-Hub-Signature-256 is not in request header');
@@ -69,6 +67,7 @@ export class metaServices {
                             for (const change of pageEntry.changes) {
                                 if (change.field === 'leadgen') {
                                     console.log("Leadgen Event Received");
+                                    console.log(change);
                                     await handleLeadgenEvent(change);
                                 }
                             }
@@ -77,6 +76,7 @@ export class metaServices {
                     case "messages":
                         for (const pageEntry of entry) {
                             console.log("Message Event Received");
+                            console.log(pageEntry.messaging);
                             await handleMessagingEvent(pageEntry.messaging);
                         }
                         break;
