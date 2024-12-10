@@ -475,12 +475,8 @@ export const parseLeadData = (leadData: LeadData, subscriberId: number) => {
 
 export const fetchMessageDetails = async (messageId: string, pageAccessToken: string) => {
   try {
-    const url = `https://graph.facebook.com/v21.0/${messageId}`;
-    const response = await axios.get(url, {
-      params: {
-        access_token: pageAccessToken
-      }
-    });
+    const url = `https://graph.facebook.com/v20.0/${messageId}?access_token=${pageAccessToken}`;
+    const response = await axios.get(url);
     return response.data;
   } catch (error) {
     console.error("Error while fetching sender details!");
