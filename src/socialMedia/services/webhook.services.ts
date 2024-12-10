@@ -60,7 +60,7 @@ export const handleMessagingEvent = async (event: any) => {
       return;
     }
 
-    const pageAccessToken =  "EAAHdP3GumlsBO6bYiJAKqZBwnjOp97Nfpwnn96qNoHAsdZBCtpF9wXAbAQbMIFfJWZA8EAflWnH1N3eHSnMZABpXbfZAngfSZAW9vW8CZCOSedXDSE8ZCwIO7dSVepbFvUx1N6ElcBeTRviLUuvQZCzxXRdmGZBZBOaUxpV50reeuLAWzunZACneZCsBfZC6uWQHZCf1PffdBGZBj1efZAgi85otbzADUzgD39uv3ab8bOZCldbZCEj"
+    const pageAccessToken =  "EAAHdP3GumlsBOxIOpPgzLO1bUrRCBZCA7eU28uFY1U8XmrgmAZAWbff5ePqPGopPpq2wLRo1ZC96ZBvDvDJIypsukklSHq2pC5ZCFk3ZAavP8NtmmVdY705bPBw1iefhAYdn5MS7lA1ZAMxC6tBbqKiPqZA4Db7AKzW2JZCeuXw6yMAHZA6ILhnSgcWyVIzMKTb2QbQKb62cw3AE3oxmjyrfsGhom4MriH82y3uynQHQHxBAZDZD"
     if(!pageAccessToken) {
       console.error("Page access tokekn is missing for the page id!");
       return;
