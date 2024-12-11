@@ -5,12 +5,12 @@ export interface LeadData {
     status: leadStatus; 
     contactEmail: string;
     contactName: string;
-    companyName: string | null;
-    designation: string | null;
     subscriberId: number;
-    contactPhone: string | null;
-    contactCountry: string | null;
-    contactState: string | null;
-    contactCity: string | null;
+    companyName?: string;
+    designation?: string;
+    contactPhone?: string;
+    contactCountry?: string;
+    contactState?: string;
+    contactCity?: string;
   }
   

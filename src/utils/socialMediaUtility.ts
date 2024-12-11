@@ -4,7 +4,7 @@ import { subscriberSocialMedia } from '../socialMedia/dataModels/entities/subscr
 import { AdminFacebookSettings } from '../socialMedia/dataModels/entities/adminFacebook.entity';
 import { admins } from '../users/admin/dataModels/entities/admin.entity';
 import { getDataSource } from './dataSource';
-import { FacebookWebhookRequest, LeadData } from '../socialMedia/dataModels/types/meta.types';
+import { FacebookWebhookRequest, FetchMessageDetailsResponse, FetchMessageDetailsSuccessResponse, LeadData } from '../socialMedia/dataModels/types/meta.types';
 import { SubscriberFacebookSettings } from '../socialMedia/dataModels/entities/subscriberFacebook.entity';
 import { socialMediaType } from '../socialMedia/dataModels/enums/socialMedia.enums';
 import { needsRefresh, subscriberFacebookRepo, subscriberSocialMediaRepo } from './common';
@@ -473,7 +473,33 @@ export const parseLeadData = (leadData: LeadData, subscriberId: number) => {
   return parsedData.contactEmail && parsedData.contactName ? parsedData : null;
 };
 
-export const fetchMessageDetails = async (messageId: string, pageAccessToken: string) => {
+export const processMessages = async (msgDetails: FetchMessageDetailsSuccessResponse, subscriberId: number) => {
+  try {
+    let fromName;
+    if(msgDetails.from.name) fromName = msgDetails.from.name;
+    else if(msgDetails.from.username) fromName = msgDetails.from.username;
+    else fromName = "";
+    const parsedMessages = {
+      leadText: `Enquiry from ${fromName}`,
+      status: leadStatus.LEAD,
+      contactEmail: msgDetails.from.email ? msgDetails.from.email : "",
+      contactName: fromName,
+      subscriberId,
+      companyName: fromName,
+      contactPhone:"",
+      contactCountry: "",
+      contactState: "",
+      contactCity: ""
+    }
+
+    return parsedMessages.contactEmail && parsedMessages.contactName ? parsedMessages : null;
+  } catch (error) {
+    console.error("Error while processing messages!");
+    throw error; 
+  }
+}
+
+export const fetchMessageDetails = async (messageId: string, pageAccessToken: string): Promise<FetchMessageDetailsResponse> => {
   try {
     const url = `https://graph.facebook.com/v21.0/${messageId}?fields=from,to,message&access_token=${pageAccessToken}`;
     const response = await axios.get(url);
