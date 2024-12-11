@@ -475,7 +475,7 @@ export const parseLeadData = (leadData: LeadData, subscriberId: number) => {
 
 export const fetchMessageDetails = async (messageId: string, pageAccessToken: string) => {
   try {
-    const url = `https://graph.facebook.com/v21.0/${messageId}?access_token=${pageAccessToken}`;
+    const url = `https://graph.facebook.com/v21.0/${messageId}?fields=from,to,message&access_token=${pageAccessToken}`;
     const response = await axios.get(url);
     return response.data;
   } catch (error) {
