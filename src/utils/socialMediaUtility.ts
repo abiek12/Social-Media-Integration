@@ -480,7 +480,7 @@ export const processMessages = async (msgDetails: FetchMessageDetailsSuccessResp
     else if(msgDetails.from.username) fromName = msgDetails.from.username;
     else fromName = "";
     const parsedMessages = {
-      leadText: `Enquiry from ${fromName}`,
+      leadText: `Enquiry from ${fromName}, Message:${msgDetails.message}`,
       status: leadStatus.LEAD,
       contactEmail: msgDetails.from.email ? msgDetails.from.email : "",
       contactName: fromName,
