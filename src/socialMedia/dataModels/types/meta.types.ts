@@ -62,3 +62,60 @@ export interface pageMetaDataTypes {
     access_token: string;
     tasks: ["ADMINISTER", "EDIT_PROFILE", "MODERATE", "CREATE_CONTENT", "VIEW_INSIGHTS"];
 }
+
+// Page message response types
+export interface From {
+  id?: string;
+  email?: string;
+  name?: string;
+  username?: string;
+}
+  
+export interface To {
+  data?: Array<{
+    id?: string;
+    email?: string;
+    name?: string;
+    username?: string;
+  }>;
+}
+  
+export interface ReactionUser {
+  id?: string;
+  username?: string;
+}
+  
+export interface Reaction {
+  reaction?: string;
+  users?: ReactionUser[];
+}
+  
+export interface FetchMessageDetailsSuccessResponse {
+  from: From;
+  to: To;
+  message: string;
+  id?: string;
+  created_time?: string; // ISO 8601 format
+  is_unsupported?: boolean;
+  reactions?: {
+    data?: Reaction[];
+  };
+}
+  
+export interface FetchMessageDetailsErrorResponse {
+  error: {
+    message: string;
+    type: string;
+    code: number;
+    error_subcode?: number;
+    fbtrace_id?: string;
+  };
+}
+  
+// Union Type for the Function Return
+export type FetchMessageDetailsResponse =
+    | FetchMessageDetailsSuccessResponse
+    | FetchMessageDetailsErrorResponse;
+  
+  
+  

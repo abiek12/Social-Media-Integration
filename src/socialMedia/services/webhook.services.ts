@@ -1,8 +1,8 @@
 import { LeadsService } from "../../leads/services/lead.service";
 import { getDataSource } from "../../utils/dataSource";
-import { fetchingLeadDetails, fetchMessageDetails, parseLeadData } from "../../utils/socialMediaUtility";
+import { fetchingLeadDetails, fetchMessageDetails, parseLeadData, processMessages } from "../../utils/socialMediaUtility";
 import { SubscriberFacebookSettings } from "../dataModels/entities/subscriberFacebook.entity";
-import { LeadData } from "../dataModels/types/meta.types";
+import { FetchMessageDetailsResponse, LeadData } from "../dataModels/types/meta.types";
 
 export const handleLeadgenEvent = async (event: any) => {
   try {
@@ -48,7 +48,6 @@ export const handleMessagingEvent = async (event: any) => {
     const messageId = event.message.mid;
     const senderId = event.sender.id;
     const pageId = event.recipient.id;
-    console.log('New Message:', messageId, senderId, pageId);
 
     if(!pageId) {
       console.error('RecipientId or PageId is missing!');
@@ -60,19 +59,41 @@ export const handleMessagingEvent = async (event: any) => {
       return;
     }
 
-    const pageAccessToken =  "EAAHdP3GumlsBO3esiJZB3fGMucBatdOnQZA91ODT5ga6wQZABHsZCOXpCWw8Tl73OejnFToMExbeUYxZCPRbM7C3y0kdMtmKgX0LRUZCLZCEPtmb9DOXSXrcv1ZCYw9qYZBFYIcmv8YZBZAQLLArOnpxZBRlGMhrSZAyyFyPZAsZArZABRZAewj6CVulyVZCPZCvlk6D8VXcWgOpmLGS8m4sWp9uCDKKbzptNEv5IinotghBmpWJIlZA"
+    // Find out the user related to this message
+    const appDataSource = await getDataSource();
+    const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
+    const subscriberFacebookQueryBuilder = subscriberFacebookRepository.createQueryBuilder("subscriberFacebook");
+    const subscriberFacebookData = await subscriberFacebookQueryBuilder
+        .leftJoinAndSelect("subscriberFacebook.subscriberSocialMedia", "subscriberSocialMedia")
+        .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+        .where("subscriberFacebook.pageId = :pageId", { pageId })
+        .getOne();
+
+    if(!subscriberFacebookData) {
+      console.log(`No social media data found for the page with ID ${pageId}`);
+      return;
+    }
+
+    const subscriberId = subscriberFacebookData.subscriberSocialMedia.subscriber.subscriberId;
+    const pageAccessToken = subscriberFacebookData.pageAccessToken || 'EAAHdP3GumlsBO6ZAw8INWyd89qL3JC1BHVUnnPHZBKhgENgo8IvVJRNdBZBD4GplEmWxB8ycTH1sgwnR87cnlBRZAG8xYtGwqkPGqvZBGOygAQHhrbZB2zMZAvgcSG6FdCh7Yw9405OzSzYDpc7huMTF9VpU4cnTeiZBH3wFyZAabZBpP3ZAsFCJQl8bnG26tvDbrP9inYjHfnkY3TwnvZCSYVmBzTyUsMrZCRbpLRr1jRQLv';
+
     if(!pageAccessToken) {
       console.error("Page access tokekn is missing for the page id!");
       return;
     }
 
-    const msgDetails = await fetchMessageDetails(messageId, pageAccessToken)
-    if(!msgDetails) {
-      console.error("Sender does'nt exist!");
+    const msgDetails: FetchMessageDetailsResponse = await fetchMessageDetails(messageId, pageAccessToken);
+    if("error" in msgDetails) {
+      console.error("Error while fetching fetching messages!");
       return;
     }
     console.log(msgDetails);
-
+    const processedMessage = await processMessages(msgDetails, subscriberId);
+    console.log(processedMessage);
+    if(processedMessage) {
+      const leadsService = new LeadsService();
+      await leadsService.createSubscribersLeads(processedMessage);
+    }
   } catch (error) {
     console.error("Error while handling messaging event");
     throw error;
