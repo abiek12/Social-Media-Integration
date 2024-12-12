@@ -96,8 +96,31 @@ export class metaServices {
                 for(const pageEntry of entry) {
                     let fields;
                     // Determine the event type
-                    console.log(pageEntry?.changes?.[0]);
-                    console.log(pageEntry?.messaging);
+                    if (pageEntry?.changes?.[0]?.field === 'comments') {
+                        fields = 'comments';
+                    } else if (pageEntry?.messaging) {
+                        fields = 'messages';
+                    }
+
+                    switch(fields) {
+                        case "comments":
+                            for (const change of pageEntry.changes || []) {
+                                if (change.field === 'comments') {
+                                    console.log("Comments Event Received");
+                                    console.log(change);
+                                }
+                            }
+                            break;
+                        case "messages":
+                            for(const message of pageEntry.messaging || []) {
+                                console.log("Messaging Event Received");
+                                console.log(message);
+                            }
+                            break;
+                        default:
+                            console.warn(`Unhandled event field: ${fields}`);
+                            break;
+                    }
                 }
             }
         } catch (error) {
