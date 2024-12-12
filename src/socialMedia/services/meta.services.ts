@@ -91,9 +91,15 @@ export class metaServices {
                 }
             }
 
-            // if(body.object === 'instagram') {
-                
-            // }
+            if(body.object === 'instagram') {
+                const { entry } = body;
+                for(const pageEntry of entry) {
+                    let fields;
+                    // Determine the event type
+                    console.log(pageEntry?.changes?.[0]);
+                    console.log(pageEntry?.messaging);
+                }
+            }
         } catch (error) {
             console.error('Error processing webhook event:', error);
         }

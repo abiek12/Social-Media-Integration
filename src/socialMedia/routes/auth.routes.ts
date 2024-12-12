@@ -17,7 +17,7 @@ router.get('/facebook', _authUtility.verifyToken, _authUtility.isSubscriber, (re
         'pages_read_engagement',
         'pages_manage_ads',
         'pages_show_list',
-        'pages_read_engagement',
+        'pages_manage_engagement',
         'pages_messaging',
         'leads_retrieval',
         'ads_management',

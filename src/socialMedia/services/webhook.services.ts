@@ -75,7 +75,7 @@ export const handleMessagingEvent = async (event: any) => {
     }
 
     const subscriberId = subscriberFacebookData.subscriberSocialMedia.subscriber.subscriberId;
-    const pageAccessToken = subscriberFacebookData.pageAccessToken || 'EAAHdP3GumlsBO6ZAw8INWyd89qL3JC1BHVUnnPHZBKhgENgo8IvVJRNdBZBD4GplEmWxB8ycTH1sgwnR87cnlBRZAG8xYtGwqkPGqvZBGOygAQHhrbZB2zMZAvgcSG6FdCh7Yw9405OzSzYDpc7huMTF9VpU4cnTeiZBH3wFyZAabZBpP3ZAsFCJQl8bnG26tvDbrP9inYjHfnkY3TwnvZCSYVmBzTyUsMrZCRbpLRr1jRQLv';
+    const pageAccessToken = subscriberFacebookData.pageAccessToken || 'EAAHdP3GumlsBO1nvZBY3KtFaIq9WdhGvH2kNAGuFrTinjeHdRgDuJrfJZAZCjDKz1tLpcauv0YBH673vbx3ETAZBWE8wKk5UXp3jNXCdS5brQgHnK5HqcurJwvZCbnDqY9F6XoEa4xM6u8dGfbc8niDYqNjvwwTaH1dEZCr8XvfH5IqkTHVq5eCUiKoyfmnXAwzkvrHRypvKJmZAQ0CqaCYsMK9v34y37UkGmqdQqIP';
 
     if(!pageAccessToken) {
       console.error("Page access tokekn is missing for the page id!");
