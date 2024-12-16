@@ -30,7 +30,7 @@ router.get('/facebook', _authUtility.verifyToken, _authUtility.isSubscriber, (re
         'whatsapp_business_management',
         'whatsapp_business_messaging',
       ],
-      state: stateValue, // Pass the state dynamically
+      state: stateValue.toString(), // Pass the state dynamically
     })(req, res, next);
   });
   
