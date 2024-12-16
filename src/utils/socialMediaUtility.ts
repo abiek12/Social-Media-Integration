@@ -22,7 +22,7 @@ export const facebookStrategyConfig = {
   callbackURL: `${process.env.BACKEND_URL}/auth/facebook/callback`,
   profileFields: ['id', 'displayName', 'emails'],
   // enableProof: true,
-  // state: true
+  state: true
 }
 
 // Social Media Utility Functions
@@ -368,6 +368,8 @@ export const getPageAccessToken = async (pageId: string, userAccessToken: string
       throw new Error(data.error.message);
     }
 
+    console.log(data);
+
     // Search for the specific page by Page ID
     const page = data.data?.find((p: any) => p.id === pageId);
 
@@ -443,9 +445,6 @@ export const refreshAllTokens = async (subscriberId: number) => {
         // Refresh page tokens if the user token was updated or nearing expiry
         if (subscriber.pageTokenExpiresAt && needsRefresh(subscriber.pageTokenExpiresAt)) {          
           const newPageTokens = await getPageAccessToken(subscriber.pageId, subscriber.subscriberSocialMedia.userAccessToken);
-          console.log("newPageTokens:", newPageTokens);
-
-          console.log("subscriberId:", subscriber.subscriberSocialMedia.subscriber.subscriberId);
           await updatePagesInDb(subscriber.subscriberSocialMedia.subscriber.subscriberId, newPageTokens);
         }
       } catch (error) {
