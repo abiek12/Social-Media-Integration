@@ -69,18 +69,18 @@ export async function checkSubscriberExitenceUsingId(subscriberId: number) {
       .where("subscriber.subscriberId = :subscriberId", {
         subscriberId: subscriberId,
       })
-      // .select([
-      //   "subscriber.subscriberId",
-      //   "subscriber.userName",
-      //   "subscriber.company",
-      //   "subscriber.email",
-      //   "subscriber.contactNumber",
-      //   "subscriber.country",
-      //   "subscriber.state",
-      //   "subscriber.city",
-      //   "subscriber.pincode",
-      //   "subscriber.address"
-      // ])
+      .select([
+        "subscriber.subscriberId",
+        "subscriber.userName",
+        "subscriber.company",
+        "subscriber.email",
+        "subscriber.contactNumber",
+        "subscriber.country",
+        "subscriber.state",
+        "subscriber.city",
+        "subscriber.pincode",
+        "subscriber.address"
+      ])
       .getOne();
 
     return subscriber;
