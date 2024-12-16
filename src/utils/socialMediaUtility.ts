@@ -22,7 +22,6 @@ export const facebookStrategyConfig = {
   callbackURL: `${process.env.BACKEND_URL}/auth/facebook/callback`,
   profileFields: ['id', 'displayName', 'emails'],
   enableProof: true,
-  state: true
 }
 
 // Social Media Utility Functions
