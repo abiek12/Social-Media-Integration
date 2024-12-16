@@ -418,16 +418,24 @@ export const refreshAllTokens = async (subscriberId: number) => {
   const subscriber = await getSubscribersWithExpiringTokens(subscriberId);
   if (subscriber) {
     try {
-      // Refresh user token if it's close to expiry
-      if (subscriber.subscriberSocialMedia.userAccessToken && needsRefresh(subscriber.subscriberSocialMedia.userTokenExpiresAt)) {
-        const newUserToken = await getLongLivedUserToken(subscriber.subscriberSocialMedia.userAccessToken);
-        await updateUserAccessTokenInDb(subscriber.subscriberSocialMedia.subscriber.subscriberId, newUserToken);
+      try {
+        // Refresh user token if it's close to expiry
+        if (subscriber.subscriberSocialMedia.userAccessToken && needsRefresh(subscriber.subscriberSocialMedia.userTokenExpiresAt)) {
+          const newUserToken = await getLongLivedUserToken(subscriber.subscriberSocialMedia.userAccessToken);
+          await updateUserAccessTokenInDb(subscriber.subscriberSocialMedia.subscriber.subscriberId, newUserToken);
+        }
+      } catch (error) {
+        console.error("Error while refreshing user token:", error);
       }
   
-      // Refresh page tokens if the user token was updated or nearing expiry
-      if (subscriber.pageTokenExpiresAt && needsRefresh(subscriber.pageTokenExpiresAt)) {
-        const newPageTokens = await getPageAccessToken(subscriber.pageId, subscriber.subscriberSocialMedia.userAccessToken);
-        await updatePagesInDb(subscriber.subscriberSocialMedia.subscriber.subscriberId, newPageTokens);
+      try {
+        // Refresh page tokens if the user token was updated or nearing expiry
+        if (subscriber.pageTokenExpiresAt && needsRefresh(subscriber.pageTokenExpiresAt)) {
+          const newPageTokens = await getPageAccessToken(subscriber.pageId, subscriber.subscriberSocialMedia.userAccessToken);
+          await updatePagesInDb(subscriber.subscriberSocialMedia.subscriber.subscriberId, newPageTokens);
+        }
+      } catch (error) {
+        console.error("Error while refreshing page tokens:", error);
       }
     } catch (error) {
       console.error(`Error refreshing tokens for subscriber ${subscriber.subscriberSocialMedia.subscriber.subscriberId}:`, error);
