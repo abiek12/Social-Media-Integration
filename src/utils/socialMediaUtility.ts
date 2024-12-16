@@ -359,7 +359,7 @@ export const getPageAccessToken = async (pageId: string, userAccessToken: string
     if(!pageId || !userAccessToken) {
       throw new Error("Page ID or user access token is missing");
     }
-    const url = `https://graph.facebook.com/v20.0/${pageId}/accounts?access_token=${userAccessToken}`;
+    const url = `https://graph.facebook.com/v20.0/me/accounts?access_token=${userAccessToken}`;
   
     const response = await fetch(url);
     const data = await response.json();
@@ -435,10 +435,7 @@ export const refreshAllTokens = async (subscriberId: number) => {
   
       try {
         // Refresh page tokens if the user token was updated or nearing expiry
-        if (subscriber.pageTokenExpiresAt && needsRefresh(subscriber.pageTokenExpiresAt)) {
-          console.log("pageId:", subscriber.pageId);
-          console.log("userAccessToken:", subscriber.subscriberSocialMedia.userAccessToken);
-          
+        if (subscriber.pageTokenExpiresAt && needsRefresh(subscriber.pageTokenExpiresAt)) {          
           const newPageTokens = await getPageAccessToken(subscriber.pageId, subscriber.subscriberSocialMedia.userAccessToken);
           console.log("newPageTokens:", newPageTokens);
 
