@@ -363,8 +363,6 @@ export const getPageAccessToken = async (pageId: string, userAccessToken: string
   
     const response = await fetch(url);
     const data = await response.json();
-
-    console.log(data);
   
     if (data.error) {
       throw new Error(data.error.message);
