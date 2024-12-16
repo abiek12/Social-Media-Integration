@@ -356,10 +356,15 @@ export const getLongLivedUserToken = async (shortLivedToken: string) => {
 // Get page access token
 export const getPageAccessToken = async (pageId: string, userAccessToken: string) => {
   try {
+    if(!pageId || !userAccessToken) {
+      throw new Error("Page ID or user access token is missing");
+    }
     const url = `https://graph.facebook.com/v20.0/${pageId}/accounts?access_token=${userAccessToken}`;
   
     const response = await fetch(url);
     const data = await response.json();
+
+    console.log(data);
   
     if (data.data && data.data.length > 0) {
       return data.data[0].access_token;
