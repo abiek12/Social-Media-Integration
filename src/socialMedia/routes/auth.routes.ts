@@ -10,7 +10,6 @@ const _authUtility = new authUtility();
 // passport.authenticate('facebook') is a middleware used to authenticate the user then it will call the facebook strategy
 router.get('/facebook', _authUtility.verifyToken, _authUtility.isSubscriber, (req, res, next) => {
     const stateValue = (req as any).user.userId // dynamically pass `state`
-    console.log('State (userId):', stateValue);
     passport.authenticate('facebook', {
       scope: [
         'public_profile',
@@ -40,7 +39,6 @@ router.get('/facebook', _authUtility.verifyToken, _authUtility.isSubscriber, (re
 router.get('/facebook/callback', (req, res, next) => {
     // Retrieve the state (userId) from the query params
     const state = req.query.state as string; 
-    console.log('State (userId):', state);
 
     // Optionally store it in the session for further use
     (req as any).session.stateUserId = state;
