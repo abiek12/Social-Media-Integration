@@ -21,7 +21,7 @@ export const facebookStrategyConfig = {
   clientSecret: process.env.META_APP_SECRET as string,
   callbackURL: `${process.env.BACKEND_URL}/auth/facebook/callback`,
   profileFields: ['id', 'displayName', 'emails'],
-  enableProof: true
+  state: true,
 }
 
 // Social Media Utility Functions
