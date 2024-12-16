@@ -7,10 +7,10 @@ import { checkSubscriberExitenceUsingId, getSubscriberSocialMediaData } from "..
 import { socialMediaType } from "../dataModels/enums/socialMedia.enums";
 
 
-// // Serialize user ID to store in the session
-// passport.serializeUser((user: any, done) => {
-//   done(null, user.id);  // Store user ID in session
-// });
+// Serialize user ID to store in the session
+passport.serializeUser((user: any, done) => {
+  done(null, user.id);  // Store user ID in session
+});
 
 // // Deserialize user using the ID stored in the session
 // passport.deserializeUser(async (id: string, done) => {
