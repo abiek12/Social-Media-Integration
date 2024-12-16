@@ -12,15 +12,15 @@ passport.serializeUser((user: any, done) => {
   done(null, user.id);  // Store user ID in session
 });
 
-// // Deserialize user using the ID stored in the session
-// passport.deserializeUser(async (id: string, done) => {
-//   try {
-//     const user = await findUserByProfileId(id);  // Fetch the user from the database
-//     done(null, user);  // Pass the full user object back
-//   } catch (err) {
-//     done(err, null);
-//   }
-// });
+// Deserialize user using the ID stored in the session
+passport.deserializeUser(async (id: string, done) => {
+  try {
+    const user = await findUserByProfileId(id);  // Fetch the user from the database
+    done(null, user);  // Pass the full user object back
+  } catch (err) {
+    done(err, null);
+  }
+});
 
 passport.use(new FacebookStrategy( facebookStrategyConfig, 
   async (accessToken: string, refreshToken: string, profile: any, done: any) /*callback function */ => {
