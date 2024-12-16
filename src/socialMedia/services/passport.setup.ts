@@ -28,34 +28,34 @@ passport.use(new FacebookStrategy( facebookStrategyConfig,
     console.log('State from OAuth:', profile);
     console.log('State from OAuth:', profile._json);
     console.log('State from OAuth:', profile._json.state);
-    // let subscriberId = profile._json.state;
-    // const existingSubscriber = await checkSubscriberExitenceUsingId(subscriberId);
+    let subscriberId = profile._json.state;
+    const existingSubscriber = await checkSubscriberExitenceUsingId(subscriberId);
 
-    // if(!existingSubscriber) {
-    //   return done(null, false);
-    // }
+    if(!existingSubscriber) {
+      return done(null, false);
+    }
     
-    // const appDataSource = await getDataSource();
-    // const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
-    // const subscriberSocialMediaData = await getSubscriberSocialMediaData(existingSubscriber.subscriberId, profile);
+    const appDataSource = await getDataSource();
+    const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
+    const subscriberSocialMediaData = await getSubscriberSocialMediaData(existingSubscriber.subscriberId, profile);
 
-    // if (subscriberSocialMediaData) {
-    //   subscriberSocialMediaData.userAccessToken = accessToken;
-    //   subscriberSocialMediaData.userTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
-    //   subscriberSocialMediaRepository.save(subscriberSocialMediaData);
-    //   return done(null, profile);
+    if (subscriberSocialMediaData) {
+      subscriberSocialMediaData.userAccessToken = accessToken;
+      subscriberSocialMediaData.userTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      subscriberSocialMediaRepository.save(subscriberSocialMediaData);
+      return done(null, profile);
 
-    // } else {
-    //   const subscriberSocialMediaEntity = new subscriberSocialMedia();
-    //   subscriberSocialMediaEntity.userAccessToken = accessToken;
-    //   subscriberSocialMediaEntity.userTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
-    //   subscriberSocialMediaEntity.socialMedia = socialMediaType.FACEBOOK;
-    //   subscriberSocialMediaEntity.profileId = profile.id;
-    //   subscriberSocialMediaEntity.subscriber = existingSubscriber;
-    //   await subscriberSocialMediaRepository.save(subscriberSocialMediaEntity);
+    } else {
+      const subscriberSocialMediaEntity = new subscriberSocialMedia();
+      subscriberSocialMediaEntity.userAccessToken = accessToken;
+      subscriberSocialMediaEntity.userTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      subscriberSocialMediaEntity.socialMedia = socialMediaType.FACEBOOK;
+      subscriberSocialMediaEntity.profileId = profile.id;
+      subscriberSocialMediaEntity.subscriber = existingSubscriber;
+      await subscriberSocialMediaRepository.save(subscriberSocialMediaEntity);
 
       return done(null, profile);
-    // }
+    }
 
   } catch (error) {
     console.log("Error in facebook authentication", error);
