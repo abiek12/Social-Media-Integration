@@ -368,13 +368,10 @@ export const getPageAccessToken = async (pageId: string, userAccessToken: string
       throw new Error(data.error.message);
     }
 
-    console.log(data);
-
     // Search for the specific page by Page ID
     const page = data.data?.find((p: any) => p.id === pageId);
 
     if (page && page.access_token) {
-      console.log(`Page Access Token for ${pageId}:`, page.access_token);
       return page.access_token;
     } else {
       throw new Error("Failed to find the page or obtain the page access token");
