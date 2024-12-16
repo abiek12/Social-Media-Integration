@@ -171,9 +171,9 @@ export const subscriberFacebookRepo = async (subscriberId: number) => {
 
     const subscriberFacebookData = await subscriberFacebookQueryBuilder
       .leftJoinAndSelect("subscriberFacebook.subscriberSocialMedia", "subscriberSocialMedia")
-      .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscribers")
+      .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
       .where("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
-      .andWhere("subscriberSocialMedia.subscribers.subscriber = :subscriberId", { subscriberId })
+      .andWhere("subscriberSocialMedia.subscriber.subscriber = :subscriberId", { subscriberId })
       .getOne();
 
     return subscriberFacebookData;
