@@ -366,10 +366,18 @@ export const getPageAccessToken = async (pageId: string, userAccessToken: string
 
     console.log(data);
   
-    if (data.data && data.data.length > 0) {
-      return data.data[0].access_token;
+    if (data.error) {
+      throw new Error(data.error.message);
+    }
+
+    // Search for the specific page by Page ID
+    const page = data.data?.find((p: any) => p.id === pageId);
+
+    if (page && page.access_token) {
+      console.log(`Page Access Token for ${pageId}:`, page.access_token);
+      return page.access_token;
     } else {
-      throw new Error("Failed to obtain page access token");
+      throw new Error("Failed to find the page or obtain the page access token");
     }
   } catch (error) {
     console.log('Error while getting page access token', error);
