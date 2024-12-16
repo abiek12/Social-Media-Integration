@@ -54,7 +54,7 @@ export class metaServices {
             // Acknowledge the webhook event
             response.status(SUCCESS_GET).send('EVENT_RECEIVED');
         
-            // Process events
+            // Process Page Events
             if(body.object === 'page') {
                 const { entry } = body;
                 for(const pageEntry of entry) {
@@ -91,6 +91,7 @@ export class metaServices {
                 }
             }
 
+            // Process Instagram Events
             if(body.object === 'instagram') {
                 const { entry } = body;
                 for(const pageEntry of entry) {
@@ -111,6 +112,30 @@ export class metaServices {
                                 }
                             }
                             break;
+                        case "messages":
+                            for(const message of pageEntry.messaging || []) {
+                                console.log("Messaging Event Received");
+                                console.log(message);
+                            }
+                            break;
+                        default:
+                            console.warn(`Unhandled event field: ${fields}`);
+                            break;
+                    }
+                }
+            }
+
+            // Process Whatsapp Events
+            if(body.object === 'whatsapp_business_account') {
+                const { entry } = body;
+                for(const pageEntry of entry) {
+                    let fields;
+                    // Determine the event type
+                    if (pageEntry?.changes?.[0]?.field === 'messages') {
+                        fields = 'messages';
+                    }
+
+                    switch(fields) {
                         case "messages":
                             for(const message of pageEntry.messaging || []) {
                                 console.log("Messaging Event Received");
