@@ -29,18 +29,29 @@ router.get('/facebook', _authUtility.verifyToken, _authUtility.isSubscriber, (re
         'whatsapp_business_management',
         'whatsapp_business_messaging',
       ],
-      state: stateValue, // Pass the state dynamically
+      state: stateValue.toString(), // Pass the state dynamically
     })(req, res, next);
   });
   
 
 // Callback route for facebook to redirect to passport.authenticate('facebook')
 // is a middleware which is used to exchange the code with user details then fire callback function
-router.get('/facebook/callback', passport.authenticate('facebook', {
+router.get('/facebook/callback', (req, res, next) => {
+    // Retrieve the state (userId) from the query params
+    const state = req.query.state as string; 
+
+    // Optionally store it in the session for further use
+    (req as any).session.stateUserId = state;
+
+    // Pass control to the Facebook strategy
+    next();
+  },
+  passport.authenticate('facebook', {
     successRedirect: CLIENT_SUCCESS_URL,
     successMessage: "User authenticated facebook successfully",
     failureRedirect: CLIENT_FAILED_URL,
     failureMessage: "User authentication failed!",
-  }));
+  })
+);
 
 export default router;

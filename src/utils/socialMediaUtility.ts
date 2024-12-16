@@ -21,8 +21,7 @@ export const facebookStrategyConfig = {
   clientSecret: process.env.META_APP_SECRET as string,
   callbackURL: `${process.env.BACKEND_URL}/auth/facebook/callback`,
   profileFields: ['id', 'displayName', 'emails'],
-  // enableProof: true,
-  // state: true
+  passReqToCallback: true,
 }
 
 // Social Media Utility Functions
@@ -356,15 +355,25 @@ export const getLongLivedUserToken = async (shortLivedToken: string) => {
 // Get page access token
 export const getPageAccessToken = async (pageId: string, userAccessToken: string) => {
   try {
-    const url = `https://graph.facebook.com/v20.0/${pageId}/accounts?access_token=${userAccessToken}`;
+    if(!pageId || !userAccessToken) {
+      throw new Error("Page ID or user access token is missing");
+    }
+    const url = `https://graph.facebook.com/v20.0/me/accounts?access_token=${userAccessToken}`;
   
     const response = await fetch(url);
     const data = await response.json();
   
-    if (data.data && data.data.length > 0) {
-      return data.data[0].access_token;
+    if (data.error) {
+      throw new Error(data.error.message);
+    }
+
+    // Search for the specific page by Page ID
+    const page = data.data?.find((p: any) => p.id === pageId);
+
+    if (page && page.access_token) {
+      return page.access_token;
     } else {
-      throw new Error("Failed to obtain page access token");
+      throw new Error("Failed to find the page or obtain the page access token");
     }
   } catch (error) {
     console.log('Error while getting page access token', error);
@@ -418,16 +427,24 @@ export const refreshAllTokens = async (subscriberId: number) => {
   const subscriber = await getSubscribersWithExpiringTokens(subscriberId);
   if (subscriber) {
     try {
-      // Refresh user token if it's close to expiry
-      if (subscriber.subscriberSocialMedia.userAccessToken && needsRefresh(subscriber.subscriberSocialMedia.userTokenExpiresAt)) {
-        const newUserToken = await getLongLivedUserToken(subscriber.subscriberSocialMedia.userAccessToken);
-        await updateUserAccessTokenInDb(subscriber.subscriberSocialMedia.subscriber.subscriberId, newUserToken);
+      try {
+        // Refresh user token if it's close to expiry
+        if (subscriber.subscriberSocialMedia.userAccessToken && needsRefresh(subscriber.subscriberSocialMedia.userTokenExpiresAt)) {
+          const newUserToken = await getLongLivedUserToken(subscriber.subscriberSocialMedia.userAccessToken);
+          await updateUserAccessTokenInDb(subscriber.subscriberSocialMedia.subscriber.subscriberId, newUserToken);
+        }
+      } catch (error) {
+        console.error("Error while refreshing user token:", error);
       }
   
-      // Refresh page tokens if the user token was updated or nearing expiry
-      if (subscriber.pageTokenExpiresAt && needsRefresh(subscriber.pageTokenExpiresAt)) {
-        const newPageTokens = await getPageAccessToken(subscriber.pageId, subscriber.subscriberSocialMedia.userAccessToken);
-        await updatePagesInDb(subscriber.subscriberSocialMedia.subscriber.subscriberId, newPageTokens);
+      try {
+        // Refresh page tokens if the user token was updated or nearing expiry
+        if (subscriber.pageTokenExpiresAt && needsRefresh(subscriber.pageTokenExpiresAt)) {          
+          const newPageTokens = await getPageAccessToken(subscriber.pageId, subscriber.subscriberSocialMedia.userAccessToken);
+          await updatePagesInDb(subscriber.subscriberSocialMedia.subscriber.subscriberId, newPageTokens);
+        }
+      } catch (error) {
+        console.error("Error while refreshing page tokens:", error);
       }
     } catch (error) {
       console.error(`Error refreshing tokens for subscriber ${subscriber.subscriberSocialMedia.subscriber.subscriberId}:`, error);

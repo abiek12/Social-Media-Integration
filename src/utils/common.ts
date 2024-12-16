@@ -96,10 +96,10 @@ export const getSubscriberSocialMediaData = async (subscriberId: number, profile
     const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
 
     const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
-      // .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-      // .where("subscriberSocialMedia.profileId = :profileId", { profileId: profile.id })
-      // .andWhere("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
-      // .andWhere("subscriber.subscriberId = :subscriberId", { subscriberId: subscriberId })
+      .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+      .where("subscriberSocialMedia.profileId = :profileId", { profileId: profile.id })
+      .andWhere("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
+      .andWhere("subscriber.subscriberId = :subscriberId", { subscriberId: subscriberId })
       .getOne();
 
     return subscriberSocialMediaData;
@@ -173,7 +173,7 @@ export const subscriberFacebookRepo = async (subscriberId: number) => {
       .leftJoinAndSelect("subscriberFacebook.subscriberSocialMedia", "subscriberSocialMedia")
       .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
       .where("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
-      .andWhere("subscriber.subscriber = :subscriberId", { subscriberId })
+      .andWhere("subscriberSocialMedia.subscriber = :subscriberId", { subscriberId })
       .getOne();
 
     return subscriberFacebookData;
