@@ -9,6 +9,7 @@ const _authUtility = new authUtility();
 // This route will initially calls from the frontend by click on the facebook login button, 
 // passport.authenticate('facebook') is a middleware used to authenticate the user then it will call the facebook strategy
 router.get('/facebook', _authUtility.verifyToken, _authUtility.isSubscriber, (req, res, next) => {
+    const stateValue = (req as any).user.userId // dynamically pass `state`
     passport.authenticate('facebook', {
       scope: [
         'public_profile',
@@ -28,18 +29,21 @@ router.get('/facebook', _authUtility.verifyToken, _authUtility.isSubscriber, (re
         'whatsapp_business_management',
         'whatsapp_business_messaging',
       ],
-      state: (req as any).user.userId // dynamically pass `state`
+      state: stateValue, // Pass the state dynamically
     })(req, res, next);
   });
   
 
 // Callback route for facebook to redirect to passport.authenticate('facebook')
 // is a middleware which is used to exchange the code with user details then fire callback function
-router.get('/facebook/callback', passport.authenticate('facebook', {
+router.get('/facebook/callback', (req, res, next) => {
+  console.log('Callback Query Params:', req.query); // Log query parameters
+  passport.authenticate('facebook', {
     successRedirect: CLIENT_SUCCESS_URL,
     successMessage: "User authenticated facebook successfully",
     failureRedirect: CLIENT_FAILED_URL,
     failureMessage: "User authentication failed!",
-  }));
+  })
+});
 
 export default router;

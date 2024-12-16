@@ -25,7 +25,10 @@ passport.deserializeUser(async (id: string, done) => {
 passport.use(new FacebookStrategy( facebookStrategyConfig, 
   async (accessToken: string, refreshToken: string, profile: any, done: any) /*callback function */ => {
   try {
-    let subscriberId = 2;
+    console.log('State from OAuth:', profile);
+    console.log('State from OAuth:', profile._json);
+    console.log('State from OAuth:', profile._json.state);
+    let subscriberId = profile._json.state;
     const existingSubscriber = await checkSubscriberExitenceUsingId(subscriberId);
 
     if(!existingSubscriber) {
