@@ -69,18 +69,18 @@ export async function checkSubscriberExitenceUsingId(subscriberId: number) {
       .where("subscriber.subscriberId = :subscriberId", {
         subscriberId: subscriberId,
       })
-      .select([
-        "subscriber.subscriberId",
-        "subscriber.userName",
-        "subscriber.company",
-        "subscriber.email",
-        "subscriber.contactNumber",
-        "subscriber.country",
-        "subscriber.state",
-        "subscriber.city",
-        "subscriber.pincode",
-        "subscriber.address"
-      ])
+      // .select([
+      //   "subscriber.subscriberId",
+      //   "subscriber.userName",
+      //   "subscriber.company",
+      //   "subscriber.email",
+      //   "subscriber.contactNumber",
+      //   "subscriber.country",
+      //   "subscriber.state",
+      //   "subscriber.city",
+      //   "subscriber.pincode",
+      //   "subscriber.address"
+      // ])
       .getOne();
 
     return subscriber;
@@ -96,10 +96,10 @@ export const getSubscriberSocialMediaData = async (subscriberId: number, profile
     const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
 
     const subscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
-      .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-      .where("subscriberSocialMedia.profileId = :profileId", { profileId: profile.id })
-      .andWhere("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
-      .andWhere("subscriber.subscriberId = :subscriberId", { subscriberId: subscriberId })
+      // .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+      // .where("subscriberSocialMedia.profileId = :profileId", { profileId: profile.id })
+      // .andWhere("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
+      // .andWhere("subscriber.subscriberId = :subscriberId", { subscriberId: subscriberId })
       .getOne();
 
     return subscriberSocialMediaData;
