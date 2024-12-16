@@ -431,7 +431,13 @@ export const refreshAllTokens = async (subscriberId: number) => {
       try {
         // Refresh page tokens if the user token was updated or nearing expiry
         if (subscriber.pageTokenExpiresAt && needsRefresh(subscriber.pageTokenExpiresAt)) {
+          console.log("pageId:", subscriber.pageId);
+          console.log("userAccessToken:", subscriber.subscriberSocialMedia.userAccessToken);
+          
           const newPageTokens = await getPageAccessToken(subscriber.pageId, subscriber.subscriberSocialMedia.userAccessToken);
+          console.log("newPageTokens:", newPageTokens);
+
+          console.log("subscriberId:", subscriber.subscriberSocialMedia.subscriber.subscriberId);
           await updatePagesInDb(subscriber.subscriberSocialMedia.subscriber.subscriberId, newPageTokens);
         }
       } catch (error) {
