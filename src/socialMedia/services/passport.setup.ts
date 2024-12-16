@@ -26,7 +26,7 @@ passport.use(new FacebookStrategy( facebookStrategyConfig,
   async (accessToken: string, refreshToken: string, profile: any, done: any) /*callback function */ => {
   try {
     console.log('State from OAuth:', profile);
-    let subscriberId = 1;
+    let subscriberId = 3;
     const existingSubscriber = await checkSubscriberExitenceUsingId(subscriberId);
 
     if(!existingSubscriber) {
