@@ -222,6 +222,7 @@ export class metaServices {
                     subscriberFacebookEntity.pageName = pageData.name;
                     subscriberFacebookEntity.pageTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
                     subscriberFacebookEntity.subscriberSocialMedia = existingSubscriberSocialMediaData;
+                    subscriberFacebookEntity.subscriber = existingSubscriber;
                     await subscriberFacebookRepository.save(subscriberFacebookEntity);
                 }
             }
