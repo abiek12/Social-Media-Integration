@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, PrimaryColumn } from 'typeorm';
 import { leadSource, leadStatus } from '../enums/lead.enums';
 import { subscribers } from '../../../users/subscriber/dataModels/entities/subscriber.entity';
 
@@ -7,7 +7,7 @@ export class Leads {
   @PrimaryGeneratedColumn({ name: 'social_media_lead_id' })
   leadId: number;
 
-  @Column({ type: "int", nullable: false, name: "subscriber_id" })
+  @PrimaryColumn({ type: "int", nullable: false, name: "subscriber_id" })
   @ManyToOne(() => subscribers)
   @JoinColumn({ name: "subscriber_id" })
   subscriberId: number;

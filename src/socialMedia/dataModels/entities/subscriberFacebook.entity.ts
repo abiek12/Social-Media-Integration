@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { subscriberSocialMedia } from "./subscriberSocialMedia.entity";
 import { subscribers } from "../../../users/subscriber/dataModels/entities/subscriber.entity";
 
@@ -7,7 +7,7 @@ export class SubscriberFacebookSettings {
     @PrimaryGeneratedColumn({ name: "sub_fb_settings_id" })
     subFacebookSettingsId: number;
 
-    @Column({ type: "int", nullable: false, name: "subscriber_id" })
+    @PrimaryColumn({ type: "int", nullable: false, name: "subscriber_id" })
     @ManyToOne(() => subscribers)
     @JoinColumn({ name: "subscriber_id" })
     subscriber: subscribers;
