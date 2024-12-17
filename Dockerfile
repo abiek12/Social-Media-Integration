@@ -10,7 +10,7 @@ COPY . .
 RUN yarn
 
 # define the port number the container should expose
-EXPOSE 3022
+EXPOSE 3027
 
 # run the command
 CMD ["npm", "run", "start:prod"]

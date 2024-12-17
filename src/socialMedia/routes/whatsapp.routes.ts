@@ -7,4 +7,6 @@ router.get("/webhook", verifyWhatsappWebhook);
 router.post("/webhook", whatsAppWebhook);
 router.get("/", whatsAppBroadcast);
 
+// post route for whatsapp config
+
 export default router;

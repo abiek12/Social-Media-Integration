@@ -7,7 +7,7 @@ on:
 
 env:
     DOCKER_IMAGE_NAME: social_media_integration
-    DOCKER_PORT: 3022
+    DOCKER_PORT: 3027
 
 jobs:
     build:
@@ -53,7 +53,7 @@ jobs:
               uses: appleboy/ssh-action@master
               env:
                   DOCKER_IMAGE_NAME: social_media_integration
-                  DOCKER_PORT: 3022
+                  DOCKER_PORT: 3027
               with:
                   host: ${{ secrets.HOST_NAME }}
                   username: root
@@ -69,5 +69,5 @@ jobs:
                       docker pull ghcr.io/${{ github.repository }}:${{ github.run_id }}
                       docker run -d --name social_media_integration \
                       --restart always \
-                      -p 3022:3022 \
+                      -p 3027:3027 \
                       -i ghcr.io/${{ github.repository }}:${{ github.run_id }}
