@@ -8,6 +8,7 @@ import { BAD_REQUEST, checkSubscriberExitenceUsingId, CONFLICT, ERROR_COMMON_MES
 import { fetchFacebookPages, getMetaUserAccessTokenDb, installMetaApp, verifySignature } from "../../utils/socialMediaUtility";
 import { socialMediaType } from "../dataModels/enums/socialMedia.enums";
 import { handleLeadgenEvent, handleMessagingEvent } from "./webhook.services";
+import { leadSource } from "../../leads/dataModels/enums/lead.enums";
 
 export class metaServices {
     // Meta Webhook Verification Endpoint
@@ -80,7 +81,8 @@ export class metaServices {
                             for(const message of pageEntry.messaging || []) {
                                 console.log("Messaging Event Received");
                                 console.log(message);
-                                await handleMessagingEvent(message);
+                                const source = leadSource.FACEBOOK;
+                                await handleMessagingEvent(message, source);
                             }
                             break;
                         default:

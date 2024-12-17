@@ -8,7 +8,7 @@ import { FacebookWebhookRequest, FetchMessageDetailsResponse, FetchMessageDetail
 import { SubscriberFacebookSettings } from '../socialMedia/dataModels/entities/subscriberFacebook.entity';
 import { socialMediaType } from '../socialMedia/dataModels/enums/socialMedia.enums';
 import { needsRefresh, subscriberFacebookRepo, subscriberSocialMediaRepo } from './common';
-import { leadStatus } from '../leads/dataModels/enums/lead.enums';
+import { leadSource, leadStatus } from '../leads/dataModels/enums/lead.enums';
 import axios from 'axios';
 // import { ngrokUrl } from '../server';
 

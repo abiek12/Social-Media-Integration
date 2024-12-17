@@ -1,3 +1,4 @@
+import { leadSource } from "../../leads/dataModels/enums/lead.enums";
 import { LeadsService } from "../../leads/services/lead.service";
 import { getDataSource } from "../../utils/dataSource";
 import { fetchingLeadDetails, fetchMessageDetails, parseLeadData, processMessages } from "../../utils/socialMediaUtility";
@@ -30,11 +31,11 @@ export const handleLeadgenEvent = async (event: any) => {
         console.log(`No lead data found for the leadgen with ID ${leadgenId}`);
         return;
       }
-
+      let source = leadSource.FACEBOOK;
       const parsedLead = parseLeadData(leadData, subscriberId);
       if (parsedLead) {
           const leadsService = new LeadsService();
-          await leadsService.createSubscribersLeads(parsedLead);
+          await leadsService.createSubscribersLeads(parsedLead, source);
       }
     }
   } catch (error) {
@@ -43,7 +44,7 @@ export const handleLeadgenEvent = async (event: any) => {
   }
 }
 
-export const handleMessagingEvent = async (event: any) => {
+export const handleMessagingEvent = async (event: any, source: string) => {
   try {
     const messageId = event.message.mid;
     const senderId = event.sender.id;
@@ -92,7 +93,7 @@ export const handleMessagingEvent = async (event: any) => {
     console.log(processedMessage);
     if(processedMessage) {
       const leadsService = new LeadsService();
-      await leadsService.createSubscribersLeads(processedMessage);
+      await leadsService.createSubscribersLeads(processedMessage, source);
     }
   } catch (error) {
     console.error("Error while handling messaging event");
