@@ -10,7 +10,7 @@ export class SubscriberFacebookSettings {
     @Column({ type: "int", nullable: false, name: "subscriber_id" })
     @ManyToOne(() => subscribers)
     @JoinColumn({ name: "subscriber_id" })
-    subscriberId: number;
+    subscriber: subscribers;
 
     @Column({ type: "int", nullable: false, name: "social_media_id" })
     @ManyToOne(() => subscriberSocialMedia)
