@@ -167,13 +167,15 @@ export const getWhatsappConfig = async (req: Request, res: Response) => {
     const appDataSource = await getDataSource();
     const SubscriberWhatsappSettingsRepository = appDataSource.getRepository(SubscriberWhatsappSettings);
     const subscriberWhatsappConfig = await SubscriberWhatsappSettingsRepository.findOneBy({subscriber: existingSubscriber });
-    if(!subscriberWhatsappConfig) {
-      console.error("Subscriber whatsapp settings not found");
-      res.status(NOT_FOUND).send(CustomError(NOT_FOUND, "Subscriber whatsapp settings not found!"));
-      return;
+    const data = {
+      subscriberId: subscriberId,
+      id: subscriberWhatsappConfig?.subWhatsappSettingsId,
+      accessToken: subscriberWhatsappConfig?.accessToken,
+      phoneNoId: subscriberWhatsappConfig?.phoneNoId,
+      waId: subscriberWhatsappConfig?.waId,
     }
 
-    res.status(SUCCESS_GET).send(CustomError(SUCCESS_GET, subscriberWhatsappConfig));
+    res.status(SUCCESS_GET).send(CustomError(SUCCESS_GET, data));
     return;
   } catch (error) {
     console.error(error);
