@@ -1,4 +1,11 @@
 import axios from "axios";
+import { Request, Response } from "express";
+import { checkSubscriberExitenceUsingId, ERROR_COMMON_MESSAGE, INTERNAL_ERROR, NOT_AUTHORIZED, NOT_FOUND, SUCCESS_GET } from "../../utils/common";
+import { CustomError } from "../../utils/response";
+import { getDataSource } from "../../utils/dataSource";
+import { Leads } from "../../leads/dataModels/entities/lead.entity";
+import { sendBulkWhatsappMessage } from "../../utils/socialMediaUtility";
+import { SubscriberWhatsappSettings } from "../dataModels/entities/subscriberWhatsapp.entity";
 
 export const verifyWhatsappWebhook = async (req: any, res: any) => {
     try {
@@ -70,27 +77,72 @@ export const whatsAppWebhook = async (req: any, res: any) => {
     }
 }
 
-export const whatsAppBroadcast = async (req: any, res: any) => {
+// Bulk whatsapp message
+export const whatsAppBroadcast = async (req: Request, res: Response) => {
     try {
-        const numbers = ['917025683435', '919446806258']
-        numbers.map(number => {
-            axios.post('https://graph.facebook.com/v21.0/109765502147943/messages', {
-                messaging_product: 'whatsapp',
-                to: number,
-                type: 'text',
-                text: {
-                    body: 'Hello this is emergency evacuate the office now!! this is an SOS alert!!'
-                }
-            }, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer EAAXKYuGhc0wBO95ZCfylLy1y2PYZB72Np6t8fOsYISqNqYBzHBJswaDZBkesxu3b2PBndGTgZAhHcdJtbNArkARPNVPRfv0BPAXSZAQ2DqoExPTbmZCqkFGrePVB0RVkejyTJFQmFcN88yYkWyZCbZBPROhssOv01kb0iyNf8pLAGkSJ4BWwLdMRuPMzcKUwKLENvszfHl8gJMh5eJzJwxELuD9SoDt3yixVtENY3hZBWJjdoA0XqcoCz'
-                }
-            })
+      const subscriberId: number = (req as any).user.userId;
+      const {message} = req.body as { message: string };
+      
+      if(!subscriberId) {
+        console.error("User id not found");
+        res.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "User id not found"));
+        return;
+      }
+
+      if(!message) {
+        console.error("Message is mandatory");
+        res.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "Message is mandatory"));
+        return;
+      }
+
+      const existingSubscriber = await checkSubscriberExitenceUsingId(subscriberId);
+      if(!existingSubscriber) {
+        console.error("Subscriber not found");
+        res.status(NOT_FOUND).send(CustomError(NOT_FOUND, "Subscriber not found!"));
+        return;
+      }
+
+      const appDataSource = await getDataSource();
+      const socialMediaLeadRepository = appDataSource.getRepository(Leads);
+      const SubscriberWhatsappSettingsRepository = appDataSource.getRepository(SubscriberWhatsappSettings);
+      const leadData = await socialMediaLeadRepository.findBy({ subscriberId: subscriberId });
+
+      if(leadData.length > 0) {
+        console.error("Lead data not found");
+        res.status(NOT_FOUND).send(CustomError(NOT_FOUND, "Lead data not found!"));
+        return;
+      }
+
+      const phoneNumbers = leadData.map(lead => lead.contactPhone);
+
+      if(phoneNumbers.length === 0) {
+        console.error("No numbers found for leads");
+        res.status(NOT_FOUND).send(CustomError(NOT_FOUND, "No numbers found for leads!"));
+        return;
+      }
+
+      const subscriberWhatsappConfig = await SubscriberWhatsappSettingsRepository.findOneBy({subscriber: existingSubscriber });
+      if(!subscriberWhatsappConfig) {
+        console.error("Subscriber whatsapp settings not found");
+        res.status(NOT_FOUND).send(CustomError(NOT_FOUND, "Subscriber whatsapp settings not found!"));
+        return;
+      }
+
+      sendBulkWhatsappMessage(phoneNumbers, message, subscriberWhatsappConfig.accessToken, subscriberWhatsappConfig.phoneNoId)
+        .then((results) => {
+          console.log('Message delivery results:', results);
         })
-        res.send('Hello World!');
+        .catch((error) => {
+          console.error('Error sending messages:', error);
+          res.status(INTERNAL_ERROR).send(CustomError(INTERNAL_ERROR, "Error sending messages"));
+          return;
+        });
+
+      res.status(SUCCESS_GET).send(CustomError(SUCCESS_GET, "Message sent successfully!"));
+      return;
     } catch (error) {
         console.error(error);
-        res.sendStatus(500);
+        res.status(INTERNAL_ERROR).send(CustomError(INTERNAL_ERROR, ERROR_COMMON_MESSAGE));
+        return;
     }
 }
