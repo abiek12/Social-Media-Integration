@@ -1,6 +1,6 @@
 import axios from "axios";
 import { Request, Response } from "express";
-import { checkSubscriberExitenceUsingId, ERROR_COMMON_MESSAGE, INTERNAL_ERROR, NOT_AUTHORIZED, NOT_FOUND, SUCCESS_GET } from "../../utils/common";
+import { BAD_REQUEST, checkSubscriberExitenceUsingId, ERROR_COMMON_MESSAGE, INTERNAL_ERROR, NOT_AUTHORIZED, NOT_FOUND, SUCCESS_GET } from "../../utils/common";
 import { CustomError } from "../../utils/response";
 import { getDataSource } from "../../utils/dataSource";
 import { Leads } from "../../leads/dataModels/entities/lead.entity";
@@ -141,7 +141,7 @@ export const whatsAppBroadcast = async (req: Request, res: Response) => {
       res.status(SUCCESS_GET).send(CustomError(SUCCESS_GET, "Message sent successfully!"));
       return;
     } catch (error) {
-        console.error(error);
+        console.error("Error while sending bulk whatsapp message: ", error);
         res.status(INTERNAL_ERROR).send(CustomError(INTERNAL_ERROR, ERROR_COMMON_MESSAGE));
         return;
     }
@@ -178,7 +178,57 @@ export const getWhatsappConfig = async (req: Request, res: Response) => {
     res.status(SUCCESS_GET).send(CustomError(SUCCESS_GET, data));
     return;
   } catch (error) {
-    console.error(error);
+    console.error("Error while getting user whatsapp config: ", error);
+    res.status(INTERNAL_ERROR).send(CustomError(INTERNAL_ERROR, ERROR_COMMON_MESSAGE));
+    return;
+  }
+}
+
+// Create user whatsapp config
+export const createWhatsappConfig = async (req: Request, res: Response) => {
+  try {
+    const subscriberId: number = (req as any).user.userId;
+    const {accessToken, phoneNoId, waId} = req.body as { accessToken: string, phoneNoId: string, waId: string };
+    // input validations
+    if(!subscriberId) {
+      console.error("User id not found");
+      res.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "User id not found"));
+      return;
+    }
+
+    if(!accessToken || !phoneNoId) {
+      console.error("Missing required parameters: accessToken or phoneNoId");
+      res.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "Missing required parameters: accessToken or phoneNoId."));
+      return;
+    }
+
+    const existingSubscriber = await checkSubscriberExitenceUsingId(subscriberId);
+    if(!existingSubscriber) {
+      console.error("Subscriber not found");
+      res.status(NOT_FOUND).send(CustomError(NOT_FOUND, "Subscriber not found!"));
+      return;
+    }
+
+    const appDataSource = await getDataSource();
+    const SubscriberWhatsappSettingsRepository = appDataSource.getRepository(SubscriberWhatsappSettings);
+    const whatsappSettingsEntity =  new SubscriberWhatsappSettings()
+    whatsappSettingsEntity.subscriber = existingSubscriber;
+    whatsappSettingsEntity.accessToken = accessToken;
+    whatsappSettingsEntity.phoneNoId = phoneNoId;
+    whatsappSettingsEntity.waId = waId ?? null;
+
+    try {
+      await SubscriberWhatsappSettingsRepository.save(whatsappSettingsEntity);
+      res.status(SUCCESS_GET).send(CustomError(SUCCESS_GET, "User whatsapp config created successfully!"));
+      return;
+    } catch (error) {
+      console.error("Error while creating user whatsapp config: ", error);
+      res.status(INTERNAL_ERROR).send(CustomError(INTERNAL_ERROR, ERROR_COMMON_MESSAGE));
+      return;
+    }
+
+  } catch (error) {
+    console.error("Error while creating user whatsapp config: ", error);
     res.status(INTERNAL_ERROR).send(CustomError(INTERNAL_ERROR, ERROR_COMMON_MESSAGE));
     return;
   }

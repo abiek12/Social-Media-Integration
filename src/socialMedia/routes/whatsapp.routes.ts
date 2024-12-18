@@ -1,12 +1,12 @@
 import express from "express";
-import { verifyWhatsappWebhook, whatsAppBroadcast, whatsAppWebhook } from "../services/whatsapp.service";
+import { getWhatsappConfig, verifyWhatsappWebhook, whatsAppBroadcast, whatsAppWebhook } from "../services/whatsapp.service";
 import { authUtility } from "../../utils/authUtility";
 
 const router = express.Router();
 const _authUtility = new authUtility();
 
 // Whatsapp user config routes
-router.get("/config", _authUtility.verifyToken, _authUtility.isSubscriber, whatsAppWebhook);
+router.get("/config", _authUtility.verifyToken, _authUtility.isSubscriber, getWhatsappConfig);
 router.post("/config", _authUtility.verifyToken, _authUtility.isSubscriber, whatsAppWebhook);
 router.patch("/config", _authUtility.verifyToken, _authUtility.isSubscriber, whatsAppWebhook);
 

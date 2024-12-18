@@ -12,7 +12,7 @@ export class SubscriberWhatsappSettings {
     @JoinColumn({ name: "subscriber_id" })
     subscriber: subscribers;
 
-    @Column({ type: "int", nullable: false, name: "social_media_id" })
+    @Column({ type: "int",  name: "social_media_id" })
     @ManyToOne(() => subscriberSocialMedia)
     @JoinColumn({ name: "social_media_id" })
     subscriberSocialMedia: subscriberSocialMedia;
