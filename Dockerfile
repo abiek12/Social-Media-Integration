@@ -7,7 +7,7 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # install dependencies
-RUN yarn
+RUN npm ci
 
 # copy all the files to the container
 COPY . .
