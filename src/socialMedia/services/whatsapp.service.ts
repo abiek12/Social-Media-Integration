@@ -146,3 +146,38 @@ export const whatsAppBroadcast = async (req: Request, res: Response) => {
         return;
     }
 }
+
+// Get user whatsapp config
+export const getWhatsappConfig = async (req: Request, res: Response) => {
+  try {
+    const subscriberId: number = (req as any).user.userId;
+    if(!subscriberId) {
+      console.error("User id not found");
+      res.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "User id not found"));
+      return;
+    }
+    
+    const existingSubscriber = await checkSubscriberExitenceUsingId(subscriberId);
+    if(!existingSubscriber) {
+      console.error("Subscriber not found");
+      res.status(NOT_FOUND).send(CustomError(NOT_FOUND, "Subscriber not found!"));
+      return;
+    }
+
+    const appDataSource = await getDataSource();
+    const SubscriberWhatsappSettingsRepository = appDataSource.getRepository(SubscriberWhatsappSettings);
+    const subscriberWhatsappConfig = await SubscriberWhatsappSettingsRepository.findOneBy({subscriber: existingSubscriber });
+    if(!subscriberWhatsappConfig) {
+      console.error("Subscriber whatsapp settings not found");
+      res.status(NOT_FOUND).send(CustomError(NOT_FOUND, "Subscriber whatsapp settings not found!"));
+      return;
+    }
+
+    res.status(SUCCESS_GET).send(CustomError(SUCCESS_GET, subscriberWhatsappConfig));
+    return;
+  } catch (error) {
+    console.error(error);
+    res.status(INTERNAL_ERROR).send(CustomError(INTERNAL_ERROR, ERROR_COMMON_MESSAGE));
+    return;
+  }
+}
