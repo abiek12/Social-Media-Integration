@@ -233,3 +233,46 @@ export const createWhatsappConfig = async (req: Request, res: Response) => {
     return;
   }
 }
+
+// update user whatsapp config
+export const updateWhatsappConfig = async (req: Request, res: Response) => {
+  try {
+    const subscriberId: number = (req as any).user.userId;
+    const {accessToken, phoneNoId, waId} = req.body as { accessToken: string, phoneNoId: string, waId: string };
+    // input validations
+    if(!subscriberId) {
+      console.error("User id not found");
+      res.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "User id not found"));
+      return;
+    }
+
+    const existingSubscriber = await checkSubscriberExitenceUsingId(subscriberId);
+    if(!existingSubscriber) {
+      console.error("Subscriber not found");
+      res.status(NOT_FOUND).send(CustomError(NOT_FOUND, "Subscriber not found!"));
+      return;
+    }
+
+    const appDataSource = await getDataSource();
+    const SubscriberWhatsappSettingsRepository = appDataSource.getRepository(SubscriberWhatsappSettings);
+    const subscriberWhatsappConfig = await SubscriberWhatsappSettingsRepository.findOneBy({subscriber: existingSubscriber });
+
+    if(!subscriberWhatsappConfig) {
+      console.error("Subscriber whatsapp config not found");
+      res.status(NOT_FOUND).send(CustomError(NOT_FOUND, "Subscriber whatsapp config not found!"));
+      return;
+    }
+
+    subscriberWhatsappConfig.accessToken = accessToken ? accessToken : subscriberWhatsappConfig.accessToken;
+    subscriberWhatsappConfig.phoneNoId = phoneNoId ? phoneNoId : subscriberWhatsappConfig.phoneNoId;
+    subscriberWhatsappConfig.waId = "waId" in req.body ? waId : subscriberWhatsappConfig.waId;
+    await SubscriberWhatsappSettingsRepository.save(subscriberWhatsappConfig);
+
+    res.status(SUCCESS_GET).send(CustomError(SUCCESS_GET, "User whatsapp config updated successfully!"));
+    return;
+  } catch (error) {
+    console.error("Error while updating user whatsapp config: ", error);
+    res.status(INTERNAL_ERROR).send(CustomError(INTERNAL_ERROR, ERROR_COMMON_MESSAGE));
+    return;
+  }
+}
