@@ -118,6 +118,8 @@ export class metaServices {
                             for(const message of pageEntry.messaging || []) {
                                 console.log("Messaging Event Received");
                                 console.log(message);
+                                const source = leadSource.INSTAGRAM;
+                                await handleMessagingEvent(message, source);
                             }
                             break;
                         default:

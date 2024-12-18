@@ -3,16 +3,16 @@ import { subscriberSocialMedia } from "./subscriberSocialMedia.entity";
 import { subscribers } from "../../../users/subscriber/dataModels/entities/subscriber.entity";
 
 @Entity("sub_whatsapp_settings")
-export class SubscriberFacebookSettings {
+export class SubscriberWhatsappSettings {
     @PrimaryGeneratedColumn({ name: "sub_whatsapp_settings_id" })
-    subFacebookSettingsId: number;
+    subWhatsappSettingsId: number;
 
     @PrimaryColumn({ type: "int", nullable: false, name: "subscriber_id" })
     @ManyToOne(() => subscribers)
     @JoinColumn({ name: "subscriber_id" })
     subscriber: subscribers;
 
-    @Column({ type: "int", nullable: false, name: "social_media_id" })
+    @Column({ type: "int",  name: "social_media_id" })
     @ManyToOne(() => subscriberSocialMedia)
     @JoinColumn({ name: "social_media_id" })
     subscriberSocialMedia: subscriberSocialMedia;
