@@ -17,8 +17,8 @@ export const CLIENT_SUCCESS_URL = process.env.FRONTEND_SUCCESS_URL as string;
 export const CLIENT_FAILED_URL = process.env.FRONTEND_FAILED_URL as string;
 
 export const facebookStrategyConfig = {
-  clientID: process.env.META_APP_ID || '524739536656987' as string,
-  clientSecret: process.env.META_APP_SECRET || '7cac79f29be10f374e897bac77bde8f4' as string,
+  clientID: process.env.META_APP_ID as string,
+  clientSecret: process.env.META_APP_SECRET as string,
   callbackURL: `${process.env.BACKEND_URL}/auth/facebook/callback`,
   profileFields: ['id', 'displayName', 'emails'],
   passReqToCallback: true,
