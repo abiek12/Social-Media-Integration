@@ -277,7 +277,7 @@ export const createWhatsappConfig = async (req: Request, res: Response) => {
 
     try {
       await SubscriberWhatsappSettingsRepository.save(whatsappSettingsEntity);
-      res.status(SUCCESS_GET).send(CustomError(SUCCESS_GET, "User whatsapp config created successfully!"));
+      res.status(SUCCESS_GET).send(Success("User whatsapp config created successfully!"));
       return;
     } catch (error) {
       console.error("Error while creating user whatsapp config: ", error);
