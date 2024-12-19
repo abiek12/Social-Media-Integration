@@ -300,7 +300,7 @@ export const createWhatsappConfig = async (req: Request, res: Response) => {
 export const updateWhatsappConfig = async (req: Request, res: Response) => {
   try {
     const subscriberId: number = (req as any).user.userId;
-    const {accessToken, phoneNoId, waId} = req.body as { accessToken: string, phoneNoId: string, waId: string };
+    const {id, accessToken, phoneNoId, waId} = req.body as { id: number, accessToken: string, phoneNoId: string, waId: string };
     // input validations
     if(!subscriberId) {
       console.error("User id not found");
@@ -317,7 +317,12 @@ export const updateWhatsappConfig = async (req: Request, res: Response) => {
 
     const appDataSource = await getDataSource();
     const SubscriberWhatsappSettingsRepository = appDataSource.getRepository(SubscriberWhatsappSettings);
-    const subscriberWhatsappConfig = await SubscriberWhatsappSettingsRepository.findOneBy({subscriber: existingSubscriber });
+    const subscriberWhatsappSettingsQueryBuilder = SubscriberWhatsappSettingsRepository.createQueryBuilder("subscriberWhatsapp");
+    const subscriberWhatsappConfig = await subscriberWhatsappSettingsQueryBuilder
+      .leftJoinAndSelect("subscriberWhatsapp.subscriber", "subscriber")
+      .where("subscriber.subscriberId =:subscriberId", {subscriberId: existingSubscriber.subscriberId})
+      .andWhere("subscriberWhatsapp.subWhatsappSettingsId =:id", {id: id})
+      .getOne();
 
     if(!subscriberWhatsappConfig) {
       console.error("Subscriber whatsapp config not found");
@@ -365,8 +370,13 @@ export const deleteWhatsappConfig = async (req: Request, res: Response) => {
     }
 
     const appDataSource = await getDataSource();
-    const SubscriberWhatsappSettingsRepository = appDataSource.getRepository(SubscriberWhatsappSettings);
-    const subscriberWhatsappConfig = await SubscriberWhatsappSettingsRepository.findOneBy({subWhatsappSettingsId: id, subscriber: existingSubscriber });
+    const subscriberWhatsappSettingsRepository = appDataSource.getRepository(SubscriberWhatsappSettings);
+    const subscriberWhatsappSettingsQueryBuilder = subscriberWhatsappSettingsRepository.createQueryBuilder("subscriberWhatsapp");
+    const subscriberWhatsappConfig = await subscriberWhatsappSettingsQueryBuilder
+      .leftJoinAndSelect("subscriberWhatsapp.subscriber", "subscriber")
+      .where("subscriber.subscriberId =:subscriberId", {subscriberId: existingSubscriber.subscriberId})
+      .andWhere("subscriberWhatsapp.subWhatsappSettingsId =:id", {id: id})
+      .getOne();
 
     if(!subscriberWhatsappConfig) {
       console.error("Subscriber whatsapp config not found");
@@ -374,7 +384,7 @@ export const deleteWhatsappConfig = async (req: Request, res: Response) => {
       return;
     }
 
-    await SubscriberWhatsappSettingsRepository.createQueryBuilder()
+    await subscriberWhatsappSettingsRepository.createQueryBuilder()
       .delete()
       .where("subWhatsappSettingsId = :id", { id: id })
       .execute();

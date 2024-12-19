@@ -9,7 +9,7 @@ const _authUtility = new authUtility();
 router.get("/config", _authUtility.verifyToken, _authUtility.isSubscriber, getWhatsappConfig);
 router.post("/config", _authUtility.verifyToken, _authUtility.isSubscriber, createWhatsappConfig);
 router.patch("/config", _authUtility.verifyToken, _authUtility.isSubscriber, updateWhatsappConfig);
-router.delete("/config", _authUtility.verifyToken, _authUtility.isSubscriber, deleteWhatsappConfig);
+router.delete("/config/:id", _authUtility.verifyToken, _authUtility.isSubscriber, deleteWhatsappConfig);
 
 // Whatsapp webhook routes
 router.get("/webhook", verifyWhatsappWebhook);
