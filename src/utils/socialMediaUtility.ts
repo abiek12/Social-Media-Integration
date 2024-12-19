@@ -4,7 +4,7 @@ import { subscriberSocialMedia } from '../socialMedia/dataModels/entities/subscr
 import { AdminFacebookSettings } from '../socialMedia/dataModels/entities/adminFacebook.entity';
 import { admins } from '../users/admin/dataModels/entities/admin.entity';
 import { getDataSource } from './dataSource';
-import { FacebookWebhookRequest, FetchMessageDetailsResponse, FetchMessageDetailsSuccessResponse, LeadData } from '../socialMedia/dataModels/types/meta.types';
+import { FacebookWebhookRequest, FetchMessageDetailsResponse, FetchMessageDetailsSuccessResponse, LeadData, quickReplyData } from '../socialMedia/dataModels/types/meta.types';
 import { SubscriberFacebookSettings } from '../socialMedia/dataModels/entities/subscriberFacebook.entity';
 import { socialMediaType } from '../socialMedia/dataModels/enums/socialMedia.enums';
 import { needsRefresh, subscriberFacebookRepo, subscriberSocialMediaRepo } from './common';
@@ -583,3 +583,33 @@ export const sendBulkWhatsappMessage = async (
     throw error;
   }
 };
+
+
+// send response messages
+export const quickReply = async (
+  accessToken: string,
+  phoneNoId: string,
+  phoneNumber: string,
+  messageId: string,
+  message: string
+) => {
+  try {
+    await axios({
+      method: "POST",
+      url: `https://graph.facebook.com/v18.0/${phoneNoId}/messages`,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      data: {
+        messaging_product: "whatsapp",
+        to: phoneNumber,
+        text: { body: message },
+        context: {
+          message_id: messageId, // shows the message as a reply to the original user message
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error while sending quick reply")
+  }
+}

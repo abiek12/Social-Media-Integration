@@ -101,6 +101,31 @@ export interface FetchMessageDetailsSuccessResponse {
     data?: Reaction[];
   };
 }
+
+export interface WhatsappMessages {
+  from: string,
+  id: string,
+  timestamp: string,
+  text: {
+    body: string,
+  },
+  type: string
+}
+
+export interface WhatsappMessageWebhook {
+  messaging_product: string,
+  metaData: {
+    display_phone_number: string,
+    phone_number_id: string
+  },
+  contacts: Array<{
+    profile: {
+      name: string
+    },
+    wa_id: string
+  }>,
+  messages: WhatsappMessages
+}
   
 export interface FetchMessageDetailsErrorResponse {
   error: {
@@ -118,4 +143,9 @@ export type FetchMessageDetailsResponse =
     | FetchMessageDetailsErrorResponse;
   
   
-  
+export interface quickReplyData {
+  accessToken: string,
+  phoneNoId: string,
+  phoneNumber: string,
+  messageId: string
+}

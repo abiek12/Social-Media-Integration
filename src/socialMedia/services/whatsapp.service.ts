@@ -3,12 +3,12 @@ import { Request, Response } from "express";
 import { BAD_REQUEST, checkSubscriberExitenceUsingId, ERROR_COMMON_MESSAGE, FORBIDDEN, INTERNAL_ERROR, NOT_AUTHORIZED, NOT_FOUND, SUCCESS_GET } from "../../utils/common";
 import { CustomError, Success } from "../../utils/response";
 import { getDataSource } from "../../utils/dataSource";
-import { Leads } from "../../leads/dataModels/entities/lead.entity";
-import { processMessages, sendBulkWhatsappMessage } from "../../utils/socialMediaUtility";
+import { quickReply, sendBulkWhatsappMessage } from "../../utils/socialMediaUtility";
 import { SubscriberWhatsappSettings } from "../dataModels/entities/subscriberWhatsapp.entity";
 import { LeadsService } from "../../leads/services/lead.service";
-import { leadSource } from "../../leads/dataModels/enums/lead.enums";
+import { leadSource, leadStatus } from "../../leads/dataModels/enums/lead.enums";
 import { subscriberLeads } from "../../leads/dataModels/entities/convertedLead.entity";
+import { WhatsappMessages } from "../dataModels/types/meta.types";
 
 export const verifyWhatsappWebhook = async (req: any, res: any) => {
     try {
@@ -85,22 +85,28 @@ export const whatsAppWebhook = async (req: any, res: any) => {
 export const whatsAppWebhookV2 = async (req: Request, res: Response) => {
   try {
     console.log("Incoming webhook message:", JSON.stringify(req.body, null, 2));
-    const message = req.body.entry?.[0]?.changes[0]?.value?.messages?.[0];
-    const business_phone_number_id = req.body.entry?.[0].changes?.[0].value?.metadata?.phone_number_id;
+    const payload = req.body;
+    const messageData: WhatsappMessages = payload.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+    const phoneNoId = payload.entry?.[0]?.changes?.[0]?.value?.metadata?.phone_number_id;
 
-    if (message?.type === "text") {
-      if(!message) {
+    if (messageData?.type === "text") {
+      if(!messageData) {
         console.error("Message field is empty!");
         return;
       }
 
-      if(business_phone_number_id) {
+      if(!messageData.from) {
+        console.error("From phone number is missing!");
+        return;
+      }
+
+      if(phoneNoId) {
         console.error("Buisness phone number id is missing!");
         return;
       }
 
-      console.log("message: ", message);
-      console.log("Ph no id: ", business_phone_number_id);
+      console.log("message: ", messageData);
+      console.log("Ph no id: ", phoneNoId);
 
       // find out the user related to the message
       const appDataSource = await getDataSource();
@@ -110,7 +116,7 @@ export const whatsAppWebhookV2 = async (req: Request, res: Response) => {
 
       const subscribersWhatsappSettings = await subscriberWhatsappSettingsQueryBuilder
         .leftJoinAndSelect("subscriberWhatsappSettings.subscriber", "subscriber")
-        .where("subscriberWhatsappSettings.phoneNoId =:id", {id: business_phone_number_id})
+        .where("subscriberWhatsappSettings.phoneNoId =:id", {id: phoneNoId})
         .getOne();
 
       if(!subscribersWhatsappSettings) {
@@ -118,14 +124,36 @@ export const whatsAppWebhookV2 = async (req: Request, res: Response) => {
         return;
       }
 
-      const processedMessage = await processMessages(message, subscribersWhatsappSettings.subscriber.subscriberId);
-      if(processedMessage) {
-        const leadsService = new LeadsService();
-        await leadsService.createSubscribersLeads(processedMessage, leadSource.WHATSAPP);
-
-        // returing success ok acknowledgement
-        res.sendStatus(SUCCESS_GET);
+      const neccesaryData = {
+        name: payload.entry?.[0]?.changes[0]?.value,
+        phoneNumber: messageData.from,
+        message: messageData.text,
+        messageId: messageData.id
       }
+
+      const leadData = {
+        leadText: `Enquiry from ${neccesaryData.name}, Message:${neccesaryData.message}`,
+        status: leadStatus.LEAD,
+        contactEmail: "",
+        contactName: neccesaryData.name,
+        subscriberId: subscribersWhatsappSettings.subscriber.subscriberId,
+        companyName: neccesaryData.name,
+        contactPhone: neccesaryData.phoneNumber,
+        contactCountry: "",
+        contactState: "",
+        contactCity: ""
+      }
+
+      const leadsService = new LeadsService();
+      await leadsService.createSubscribersLeads(leadData, leadSource.WHATSAPP);
+
+      if(subscribersWhatsappSettings.accessToken) {
+        const message = "Hi thanks for your message, we will contact you soon!"
+        await quickReply(subscribersWhatsappSettings.accessToken, phoneNoId, neccesaryData.phoneNumber, neccesaryData.messageId, message)
+      }
+
+      // returing success ok acknowledgement
+      res.sendStatus(SUCCESS_GET);
       
     }
 
