@@ -204,7 +204,7 @@ export const whatsAppBroadcast = async (req: Request, res: Response) => {
           return;
         });
 
-      res.status(SUCCESS_GET).send(CustomError(SUCCESS_GET, "Message sent successfully!"));
+      res.status(SUCCESS_GET).send(Success("Message sent successfully!"));
       return;
     } catch (error) {
         console.error("Error while sending bulk whatsapp message: ", error);

@@ -10,6 +10,7 @@ import { socialMediaType } from '../socialMedia/dataModels/enums/socialMedia.enu
 import { needsRefresh, subscriberFacebookRepo, subscriberSocialMediaRepo } from './common';
 import { leadSource, leadStatus } from '../leads/dataModels/enums/lead.enums';
 import axios from 'axios';
+import { error } from 'console';
 // import { ngrokUrl } from '../server';
 
 // Social Media Utility Constants
@@ -541,6 +542,11 @@ export const sendBulkWhatsappMessage = async (
       throw new Error('Missing required parameters: accessToken or phoneNoId');
     }
 
+    console.log("phoneNumber:",phoneNumbers)
+    console.log("message:",message)
+    console.log("accessToken:",accessToken)
+    console.log("phoneNoId:",phoneNoId)
+
     // Create an array of promises for sending messages
     const messagePromises = phoneNumbers.map((number) => {
       return axios.post(
@@ -572,7 +578,7 @@ export const sendBulkWhatsappMessage = async (
         return { number: phoneNumbers[index], success: true, data: response.value.data };
       } else {
         console.error(`Failed to send message to ${phoneNumbers[index]}.`, response.reason);
-        return { number: phoneNumbers[index], success: false, error: response.reason };
+        throw error;
       }
     });
 
