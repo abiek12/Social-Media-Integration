@@ -223,8 +223,12 @@ export const getWhatsappConfig = async (req: Request, res: Response) => {
     }
 
     const appDataSource = await getDataSource();
-    const SubscriberWhatsappSettingsRepository = appDataSource.getRepository(SubscriberWhatsappSettings);
-    const subscriberWhatsappConfig = await SubscriberWhatsappSettingsRepository.findOneBy({subscriber: existingSubscriber });
+    const subscriberWhatsappSettingsQueryBuilder = appDataSource.getRepository(SubscriberWhatsappSettings).createQueryBuilder("subscriberWhatsapp");
+    const subscriberWhatsappConfig = await subscriberWhatsappSettingsQueryBuilder
+      .leftJoinAndSelect("subscriberWhatsapp.subscriber", "subscriber")
+      .where("subscriber.subscriberId =:id", {id: existingSubscriber.subscriberId})
+      .getOne();
+
     const data = {
       subscriberId: subscriberId,
       id: subscriberWhatsappConfig?.subWhatsappSettingsId,
