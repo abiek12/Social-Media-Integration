@@ -542,27 +542,22 @@ export const sendBulkWhatsappMessage = async (
       throw new Error('Missing required parameters: accessToken or phoneNoId');
     }
 
-    console.log("phoneNumber:",phoneNumbers)
-    console.log("message:",message)
-    console.log("accessToken:",accessToken)
-    console.log("phoneNoId:",phoneNoId)
-
     // Create an array of promises for sending messages
     const messagePromises = phoneNumbers.map((number) => {
       return axios.post(
-        `https://graph.facebook.com/v21.0/${phoneNoId}/messages`,
+        `https://graph.facebook.com/v21.0/109765502147943/messages`,
         {
           messaging_product: 'whatsapp',
           to: number,
           type: 'text',
           text: {
-            body: message,
+            body: 'Hello this is emergency evacuate the office now!! this is an SOS alert!!',
           },
         },
         {
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${accessToken}`, // Use the token passed as a parameter
+            Authorization: `Bearer EAAXKYuGhc0wBO95ZCfylLy1y2PYZB72Np6t8fOsYISqNqYBzHBJswaDZBkesxu3b2PBndGTgZAhHcdJtbNArkARPNVPRfv0BPAXSZAQ2DqoExPTbmZCqkFGrePVB0RVkejyTJFQmFcN88yYkWyZCbZBPROhssOv01kb0iyNf8pLAGkSJ4BWwLdMRuPMzcKUwKLENvszfHl8gJMh5eJzJwxELuD9SoDt3yixVtENY3hZBWJjdoA0XqcoCz`, // Use the token passed as a parameter
           },
         }
       );
