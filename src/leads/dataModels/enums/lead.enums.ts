@@ -11,6 +11,6 @@ export enum leadStatus {
 export enum leadSource {
     FACEBOOK = "facebook",
     INSTAGRAM = "instagram",
-    WHATSAPP = "whatsApp",
+    WHATSAPP = "whatsapp",
     OTHER = "other"
 }
