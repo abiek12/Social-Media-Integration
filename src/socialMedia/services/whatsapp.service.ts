@@ -122,7 +122,7 @@ export const whatsAppWebhookV2 = async (req: Request, res: Response) => {
       }
 
       const neccesaryData = {
-        name: payload.entry?.[0]?.changes[0]?.value,
+        name: payload.entry?.[0]?.changes[0]?.value?.contacts?.[0]?.profile?.name,
         phoneNumber: messageData.from,
         message: messageData.text,
         messageId: messageData.id
