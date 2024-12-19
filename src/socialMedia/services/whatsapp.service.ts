@@ -89,9 +89,6 @@ export const whatsAppWebhookV2 = async (req: Request, res: Response) => {
     const messageData: WhatsappMessages = payload.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
     const phoneNoId = payload.entry?.[0]?.changes?.[0]?.value?.metadata?.phone_number_id;
 
-    console.log("msg", messageData);
-    console.log("phone", phoneNoId);
-
     if (messageData?.type === "text") {
       if(!messageData) {
         console.error("Message field is empty!");
@@ -103,13 +100,10 @@ export const whatsAppWebhookV2 = async (req: Request, res: Response) => {
         return;
       }
 
-      if(phoneNoId) {
+      if(!phoneNoId) {
         console.error("Buisness phone number id is missing!");
         return;
       }
-
-      console.log("message: ", messageData);
-      console.log("Ph no id: ", phoneNoId);
 
       // find out the user related to the message
       const appDataSource = await getDataSource();
