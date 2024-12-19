@@ -1,0 +1,73 @@
+name: CI/CD Pipeline
+
+on:
+    push:
+        branches:
+            - "main"
+
+env:
+    DOCKER_IMAGE_NAME: social_media_integration
+    DOCKER_PORT: 3027
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Set up QEMU
+              uses: docker/setup-qemu-action@v3
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
+
+            - name: Login to GitHub Container Registry
+              uses: docker/login-action@v3
+              with:
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
+                  registry: ghcr.io
+
+            - name: Build and push Docker image
+              uses: docker/build-push-action@v5
+              with:
+                  context: .
+                  push: true
+                  tags: ghcr.io/${{ github.repository }}:${{ github.run_id }}
+
+    deploy:
+        needs: build
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Print variables
+              run: |
+                  echo "DOCKER_IMAGE_NAME: $DOCKER_IMAGE_NAME"
+                  echo "DOCKER_PORT: $DOCKER_PORT"
+                  echo "Github repository: ${{ github.repository }}"
+                  echo "Github run ID: ${{ github.run_id }}"
+
+            - name: Execute SSH commands
+              uses: appleboy/ssh-action@master
+              env:
+                  DOCKER_IMAGE_NAME: social_media_integration
+                  DOCKER_PORT: 3027
+              with:
+                  host: ${{ secrets.HOST_NAME }}
+                  username: root
+                  key: ${{ secrets.SSH_PRIVATE_KEY }}
+                  script: |
+                      echo "DOCKER_IMAGE_NAME: $DOCKER_IMAGE_NAME"
+                      echo "DOCKER_PORT: $DOCKER_PORT"
+                      echo "Github repository: ${{ github.repository }}"
+                      echo "Github run ID: ${{ github.run_id }}"
+                      docker login --password ${{ secrets.GITHUB_TOKEN }} --username ${{ github.actor }} ghcr.io
+                      docker stop social_media_integration && docker rm social_media_integration || true
+                      docker system prune -a -f
+                      docker pull ghcr.io/${{ github.repository }}:${{ github.run_id }}
+                      docker run -d --name social_media_integration \
+                      --restart always \
+                      -p 3027:3027 \
+                      -i ghcr.io/${{ github.repository }}:${{ github.run_id }}

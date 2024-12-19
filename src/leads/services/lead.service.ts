@@ -2,11 +2,12 @@ import { BAD_REQUEST, SUCCESS_GET } from "../../utils/common";
 import { getDataSource } from "../../utils/dataSource";
 import { CustomError, Success } from "../../utils/response";
 import { Leads } from "../dataModels/entities/lead.entity";
+import { leadSource } from "../dataModels/enums/lead.enums";
 import { LeadData } from "../dataModels/types/lead.type";
 import { Request, Response } from "express";
 
 export class LeadsService {
-    createSubscribersLeads = async (data: LeadData) => {
+    createSubscribersLeads = async (data: LeadData, source: string) => {
         try {
             if(data) {
                 const appDataSource = await getDataSource();
@@ -19,6 +20,7 @@ export class LeadsService {
                 leadEnitity.contactEmail = data.contactEmail;
                 leadEnitity.contactPhone = data.contactPhone ?? '';
                 leadEnitity.subscriberId = data.subscriberId;
+                leadEnitity.source = source;
 
                 const response = await leadRepository.save(leadEnitity);
 

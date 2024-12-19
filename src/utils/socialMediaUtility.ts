@@ -8,7 +8,7 @@ import { FacebookWebhookRequest, FetchMessageDetailsResponse, FetchMessageDetail
 import { SubscriberFacebookSettings } from '../socialMedia/dataModels/entities/subscriberFacebook.entity';
 import { socialMediaType } from '../socialMedia/dataModels/enums/socialMedia.enums';
 import { needsRefresh, subscriberFacebookRepo, subscriberSocialMediaRepo } from './common';
-import { leadStatus } from '../leads/dataModels/enums/lead.enums';
+import { leadSource, leadStatus } from '../leads/dataModels/enums/lead.enums';
 import axios from 'axios';
 // import { ngrokUrl } from '../server';
 
@@ -527,3 +527,58 @@ export const fetchMessageDetails = async (messageId: string, pageAccessToken: st
     throw error;
   }
 }
+
+
+export const sendBulkWhatsappMessage = async (
+  phoneNumbers: string[],
+  message: string,
+  accessToken: string,
+  phoneNoId: string
+) => {
+  try {
+    // Validate input parameters
+    if (!accessToken || !phoneNoId) {
+      throw new Error('Missing required parameters: accessToken or phoneNoId');
+    }
+
+    // Create an array of promises for sending messages
+    const messagePromises = phoneNumbers.map((number) => {
+      return axios.post(
+        `https://graph.facebook.com/v21.0/${phoneNoId}/messages`,
+        {
+          messaging_product: 'whatsapp',
+          to: number,
+          type: 'text',
+          text: {
+            body: message,
+          },
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`, // Use the token passed as a parameter
+          },
+        }
+      );
+    });
+
+    // Wait for all messages to be sent
+    const responses = await Promise.allSettled(messagePromises);
+
+    // Log and return results
+    const results = responses.map((response, index) => {
+      if (response.status === 'fulfilled') {
+        console.log(`Message to ${phoneNumbers[index]} sent successfully.`);
+        return { number: phoneNumbers[index], success: true, data: response.value.data };
+      } else {
+        console.error(`Failed to send message to ${phoneNumbers[index]}.`, response.reason);
+        return { number: phoneNumbers[index], success: false, error: response.reason };
+      }
+    });
+
+    return results;
+  } catch (error) {
+    console.error('Error in sending bulk WhatsApp messages:', error);
+    throw error;
+  }
+};

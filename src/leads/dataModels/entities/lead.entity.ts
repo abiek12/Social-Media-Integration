@@ -1,17 +1,25 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { leadStatus } from '../enums/lead.enums';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, PrimaryColumn } from 'typeorm';
+import { leadSource, leadStatus } from '../enums/lead.enums';
 import { subscribers } from '../../../users/subscriber/dataModels/entities/subscriber.entity';
 
-@Entity({ name: 'leads' })
+@Entity({ name: 'social_media_leads' })
 export class Leads {
-  @PrimaryGeneratedColumn({ name: 'lead_id' })
+  @PrimaryGeneratedColumn({ name: 'social_media_lead_id' })
   leadId: number;
+
+  @PrimaryColumn({ type: "int", nullable: false, name: "subscriber_id" })
+  @ManyToOne(() => subscribers)
+  @JoinColumn({ name: "subscriber_id" })
+  subscriberId: number;
 
   @Column({ name: 'lead_text' })
   leadText: string;
 
   @Column({ name: 'status', type: "enum", enum: leadStatus })
   status: string;
+
+  @Column({ name:"source", type: "enum", enum: leadSource })
+  source: string;
 
   @Column({ name: 'contact_phone' })
   contactPhone: string;
@@ -29,10 +37,5 @@ export class Leads {
   updatedAt: Date;
 
   @Column({ type: "boolean", default: false, name: "is_deleted" })
-  isDeleted: boolean;
-
-  @Column({ type: "int", nullable: false, name: "subscriber_id" })
-  @ManyToOne(() => subscribers)
-  @JoinColumn({ name: "subscriber_id" })
-  subscriberId: number; 
+  isDeleted: boolean; 
 }

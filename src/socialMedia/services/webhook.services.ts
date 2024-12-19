@@ -1,3 +1,4 @@
+import { leadSource } from "../../leads/dataModels/enums/lead.enums";
 import { LeadsService } from "../../leads/services/lead.service";
 import { getDataSource } from "../../utils/dataSource";
 import { fetchingLeadDetails, fetchMessageDetails, parseLeadData, processMessages } from "../../utils/socialMediaUtility";
@@ -30,11 +31,11 @@ export const handleLeadgenEvent = async (event: any) => {
         console.log(`No lead data found for the leadgen with ID ${leadgenId}`);
         return;
       }
-
+      let source = leadSource.FACEBOOK;
       const parsedLead = parseLeadData(leadData, subscriberId);
       if (parsedLead) {
           const leadsService = new LeadsService();
-          await leadsService.createSubscribersLeads(parsedLead);
+          await leadsService.createSubscribersLeads(parsedLead, source);
       }
     }
   } catch (error) {
@@ -43,7 +44,7 @@ export const handleLeadgenEvent = async (event: any) => {
   }
 }
 
-export const handleMessagingEvent = async (event: any) => {
+export const handleMessagingEvent = async (event: any, source: string) => {
   try {
     const messageId = event.message.mid;
     const senderId = event.sender.id;
@@ -75,7 +76,7 @@ export const handleMessagingEvent = async (event: any) => {
     }
 
     const subscriberId = subscriberFacebookData.subscriberSocialMedia.subscriber.subscriberId;
-    const pageAccessToken = subscriberFacebookData.pageAccessToken || 'EAAHdP3GumlsBO1nvZBY3KtFaIq9WdhGvH2kNAGuFrTinjeHdRgDuJrfJZAZCjDKz1tLpcauv0YBH673vbx3ETAZBWE8wKk5UXp3jNXCdS5brQgHnK5HqcurJwvZCbnDqY9F6XoEa4xM6u8dGfbc8niDYqNjvwwTaH1dEZCr8XvfH5IqkTHVq5eCUiKoyfmnXAwzkvrHRypvKJmZAQ0CqaCYsMK9v34y37UkGmqdQqIP';
+    const pageAccessToken = subscriberFacebookData.pageAccessToken;
 
     if(!pageAccessToken) {
       console.error("Page access tokekn is missing for the page id!");
@@ -92,7 +93,7 @@ export const handleMessagingEvent = async (event: any) => {
     console.log(processedMessage);
     if(processedMessage) {
       const leadsService = new LeadsService();
-      await leadsService.createSubscribersLeads(processedMessage);
+      await leadsService.createSubscribersLeads(processedMessage, source);
     }
   } catch (error) {
     console.error("Error while handling messaging event");
