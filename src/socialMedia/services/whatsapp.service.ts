@@ -1,7 +1,7 @@
 import axios from "axios";
 import { Request, Response } from "express";
 import { BAD_REQUEST, checkSubscriberExitenceUsingId, ERROR_COMMON_MESSAGE, FORBIDDEN, INTERNAL_ERROR, NOT_AUTHORIZED, NOT_FOUND, SUCCESS_GET } from "../../utils/common";
-import { CustomError } from "../../utils/response";
+import { CustomError, Success } from "../../utils/response";
 import { getDataSource } from "../../utils/dataSource";
 import { Leads } from "../../leads/dataModels/entities/lead.entity";
 import { processMessages, sendBulkWhatsappMessage } from "../../utils/socialMediaUtility";
@@ -233,7 +233,7 @@ export const getWhatsappConfig = async (req: Request, res: Response) => {
       waId: subscriberWhatsappConfig?.waId,
     }
 
-    res.status(SUCCESS_GET).send(CustomError(SUCCESS_GET, data));
+    res.status(SUCCESS_GET).send(Success(data));
     return;
   } catch (error) {
     console.error("Error while getting user whatsapp config: ", error);
@@ -326,7 +326,7 @@ export const updateWhatsappConfig = async (req: Request, res: Response) => {
     subscriberWhatsappConfig.waId = "waId" in req.body ? waId : subscriberWhatsappConfig.waId;
     await SubscriberWhatsappSettingsRepository.save(subscriberWhatsappConfig);
 
-    res.status(SUCCESS_GET).send(CustomError(SUCCESS_GET, "User whatsapp config updated successfully!"));
+    res.status(SUCCESS_GET).send(Success("User whatsapp config updated successfully!"));
     return;
   } catch (error) {
     console.error("Error while updating user whatsapp config: ", error);
@@ -375,7 +375,7 @@ export const deleteWhatsappConfig = async (req: Request, res: Response) => {
       .where("subWhatsappSettingsId = :id", { id: id })
       .execute();
 
-    res.status(SUCCESS_GET).send(CustomError(SUCCESS_GET, "User whatsapp config deleted successfully!"));
+    res.status(SUCCESS_GET).send(Success("User whatsapp config deleted successfully!"));
     return;
   } catch (error) {
     console.error("Error while deleting user whatsapp config: ", error);
