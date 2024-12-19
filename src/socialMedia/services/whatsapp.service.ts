@@ -230,7 +230,7 @@ export const getWhatsappConfig = async (req: Request, res: Response) => {
       .getOne();
 
     const data = {
-      subscriberId: subscriberId,
+      subscriberId: subscriberWhatsappConfig?.subscriber.subscriberId,
       id: subscriberWhatsappConfig?.subWhatsappSettingsId,
       accessToken: subscriberWhatsappConfig?.accessToken,
       phoneNoId: subscriberWhatsappConfig?.phoneNoId,
