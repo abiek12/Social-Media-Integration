@@ -8,6 +8,7 @@ import { processMessages, sendBulkWhatsappMessage } from "../../utils/socialMedi
 import { SubscriberWhatsappSettings } from "../dataModels/entities/subscriberWhatsapp.entity";
 import { LeadsService } from "../../leads/services/lead.service";
 import { leadSource } from "../../leads/dataModels/enums/lead.enums";
+import { subscriberLeads } from "../../leads/dataModels/entities/convertedLead.entity";
 
 export const verifyWhatsappWebhook = async (req: any, res: any) => {
     try {
@@ -161,17 +162,19 @@ export const whatsAppBroadcast = async (req: Request, res: Response) => {
       }
 
       const appDataSource = await getDataSource();
-      const socialMediaLeadRepository = appDataSource.getRepository(Leads);
-      const SubscriberWhatsappSettingsRepository = appDataSource.getRepository(SubscriberWhatsappSettings);
-      const leadData = await socialMediaLeadRepository.findBy({ subscriberId: subscriberId });
+      const convertedLeadRepository = appDataSource.getRepository(subscriberLeads);
+      const convertedLeadQueryBuilder = convertedLeadRepository.createQueryBuilder("leads");
+      const leadData = await convertedLeadQueryBuilder
+        .where("leads.subscriberId =:subscriberId", {subscriberId: subscriberId})
+        .getMany();
 
-      if(leadData.length > 0) {
+      if(leadData.length === 0) {
         console.error("Lead data not found");
         res.status(NOT_FOUND).send(CustomError(NOT_FOUND, "Lead data not found!"));
         return;
       }
 
-      const phoneNumbers = leadData.map(lead => lead.contactPhone);
+      const phoneNumbers = leadData.map(lead => lead.contactPhone).filter(phone => phone);
 
       if(phoneNumbers.length === 0) {
         console.error("No numbers found for leads");
@@ -179,7 +182,12 @@ export const whatsAppBroadcast = async (req: Request, res: Response) => {
         return;
       }
 
-      const subscriberWhatsappConfig = await SubscriberWhatsappSettingsRepository.findOneBy({subscriber: existingSubscriber });
+      const subscriberWhatsappSettingsQueryBuilder = appDataSource.getRepository(SubscriberWhatsappSettings).createQueryBuilder("subscriberWhatsapp");
+      const subscriberWhatsappConfig = await subscriberWhatsappSettingsQueryBuilder
+        .leftJoinAndSelect("subscriberWhatsapp.subscriber", "subscriber")
+        .where("subscriber.subscriberId =:id", {id: existingSubscriber.subscriberId})
+        .getOne();
+
       if(!subscriberWhatsappConfig) {
         console.error("Subscriber whatsapp settings not found");
         res.status(NOT_FOUND).send(CustomError(NOT_FOUND, "Subscriber whatsapp settings not found!"));
