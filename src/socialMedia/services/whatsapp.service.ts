@@ -1,26 +1,28 @@
 import axios from "axios";
 import { Request, Response } from "express";
-import { BAD_REQUEST, checkSubscriberExitenceUsingId, ERROR_COMMON_MESSAGE, INTERNAL_ERROR, NOT_AUTHORIZED, NOT_FOUND, SUCCESS_GET } from "../../utils/common";
+import { BAD_REQUEST, checkSubscriberExitenceUsingId, ERROR_COMMON_MESSAGE, FORBIDDEN, INTERNAL_ERROR, NOT_AUTHORIZED, NOT_FOUND, SUCCESS_GET } from "../../utils/common";
 import { CustomError } from "../../utils/response";
 import { getDataSource } from "../../utils/dataSource";
 import { Leads } from "../../leads/dataModels/entities/lead.entity";
-import { sendBulkWhatsappMessage } from "../../utils/socialMediaUtility";
+import { processMessages, sendBulkWhatsappMessage } from "../../utils/socialMediaUtility";
 import { SubscriberWhatsappSettings } from "../dataModels/entities/subscriberWhatsapp.entity";
+import { LeadsService } from "../../leads/services/lead.service";
+import { leadSource } from "../../leads/dataModels/enums/lead.enums";
 
 export const verifyWhatsappWebhook = async (req: any, res: any) => {
     try {
-        const WEBHOOK_VERIFY_TOKEN = "HAPPY";
+        const WEBHOOK_VERIFY_TOKEN = process.env.META_APP_VERIFY_TOKEN;
         const mode = req.query["hub.mode"];
         const token = req.query["hub.verify_token"];
         const challenge = req.query["hub.challenge"];
         // check the mode and token sent are correct
         if (mode === "subscribe" && token === WEBHOOK_VERIFY_TOKEN) {
           // respond with 200 OK and challenge token from the request
-          res.status(200).send(challenge);
+          res.status(SUCCESS_GET).send(challenge);
           console.log("Webhook verified successfully!");
         } else {
           // respond with '403 Forbidden' if verify tokens do not match
-          res.sendStatus(403);
+          res.sendStatus(FORBIDDEN);
         }
     } catch(error) {
         console.error(error);
@@ -75,6 +77,62 @@ export const whatsAppWebhook = async (req: any, res: any) => {
         console.error(error);
         res.sendStatus(500);
     }
+}
+
+
+// Whatsapp webhook v2
+export const whatsAppWebhookV2 = async (req: Request, res: Response) => {
+  try {
+    console.log("Incoming webhook message:", JSON.stringify(req.body, null, 2));
+    const message = req.body.entry?.[0]?.changes[0]?.value?.messages?.[0];
+    const business_phone_number_id = req.body.entry?.[0].changes?.[0].value?.metadata?.phone_number_id;
+
+    if (message?.type === "text") {
+      if(!message) {
+        console.error("Message field is empty!");
+        return;
+      }
+
+      if(business_phone_number_id) {
+        console.error("Buisness phone number id is missing!");
+        return;
+      }
+
+      console.log("message: ", message);
+      console.log("Ph no id: ", business_phone_number_id);
+
+      // find out the user related to the message
+      const appDataSource = await getDataSource();
+      const subscriberWhatsappSettingsQueryBuilder = appDataSource
+        .getRepository(SubscriberWhatsappSettings)
+        .createQueryBuilder("subscriberWhatsappSettings");
+
+      const subscribersWhatsappSettings = await subscriberWhatsappSettingsQueryBuilder
+        .leftJoinAndSelect("subscriberWhatsappSettings.subscriber", "subscriber")
+        .where("subscriberWhatsappSettings.phoneNoId =:id", {id: business_phone_number_id})
+        .getOne();
+
+      if(!subscribersWhatsappSettings) {
+        console.error("No matching user present with this message!");
+        return;
+      }
+
+      const processedMessage = await processMessages(message, subscribersWhatsappSettings.subscriber.subscriberId);
+      if(processedMessage) {
+        const leadsService = new LeadsService();
+        await leadsService.createSubscribersLeads(processedMessage, leadSource.WHATSAPP);
+
+        // returing success ok acknowledgement
+        res.sendStatus(SUCCESS_GET);
+      }
+      
+    }
+
+  } catch (error) {
+    console.error("Error while sending bulk whatsapp message: ", error);
+    res.status(INTERNAL_ERROR).send(CustomError(INTERNAL_ERROR, ERROR_COMMON_MESSAGE));
+    return;
+  }
 }
 
 // Bulk whatsapp message
