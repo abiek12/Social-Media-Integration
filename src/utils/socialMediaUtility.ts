@@ -609,7 +609,10 @@ export const quickReply = async (
         },
       },
     });
+
+    return;
   } catch (error) {
     console.error("Error while sending quick reply")
+    throw error;
   }
 }

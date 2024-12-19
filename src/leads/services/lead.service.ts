@@ -2,13 +2,13 @@ import { BAD_REQUEST, SUCCESS_GET } from "../../utils/common";
 import { getDataSource } from "../../utils/dataSource";
 import { CustomError, Success } from "../../utils/response";
 import { Leads } from "../dataModels/entities/lead.entity";
-import { leadSource } from "../dataModels/enums/lead.enums";
 import { LeadData } from "../dataModels/types/lead.type";
 import { Request, Response } from "express";
 
 export class LeadsService {
     createSubscribersLeads = async (data: LeadData, source: string) => {
         try {
+            console.log(data);
             if(data) {
                 const appDataSource = await getDataSource();
                 const leadRepository = appDataSource.getRepository(Leads);
