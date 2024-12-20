@@ -162,6 +162,19 @@ export class metaServices {
     fetchPages = async (request: Request, response: Response) => {
         try {
             const subscriberId: number = (request as any).user.userId;
+            if(!subscriberId) {
+              console.error("User id not found");
+              response.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "User id not found"));
+              return;
+            }
+
+            const existingSubscriber = await checkSubscriberExitenceUsingId(subscriberId);
+            if(!existingSubscriber) {
+              console.error("User not found");
+              response.status(NOT_FOUND).send(CustomError(NOT_FOUND, "User not found!"));
+              return;
+            }
+
             const userAceessToken: string | null = await getMetaUserAccessTokenDb(subscriberId);
             if(!userAceessToken) {
                 console.error("User not authenticated to fetch facebook pages!");
@@ -189,6 +202,12 @@ export class metaServices {
                 console.error("Page data not found");
                 response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "Page data not found!"));
                 return;
+            }
+
+            if(!subscriberId) {
+              console.error("User id not found");
+              response.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "User id not found"));
+              return;
             }
 
             const appDataSource = await getDataSource();
@@ -247,14 +266,20 @@ export class metaServices {
        try {
         const subscriberId: number = (request as any).user.userId;
 
+        if(!subscriberId) {
+          console.error("User id not found");
+          response.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "User id not found"));
+          return;
+        }
+
         const appDataSource = await getDataSource();
         const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
         const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
         const existingSubscriber = await checkSubscriberExitenceUsingId(subscriberId);
 
         if(!existingSubscriber) {
-            console.error("Subscriber not found");
-            response.status(CONFLICT).send(false);
+            console.error("User not found");
+            response.status(CONFLICT).send(CustomError(CONFLICT, "User not found!"));
             return;
         }
 
@@ -264,10 +289,10 @@ export class metaServices {
             .andWhere("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
             .getOne();
         if(existingSubscriberSocialMediaData && existingSubscriberSocialMediaData.userAccessToken) {
-            response.status(SUCCESS_GET).send(true);
+            response.status(SUCCESS_GET).send(Success({facebookConfig: true}));
             return;
         } else {
-            response.status(SUCCESS_GET).send(false);
+            response.status(SUCCESS_GET).send(Success({facebookConfig: true}));
             return;
         }
        } catch (error) {
