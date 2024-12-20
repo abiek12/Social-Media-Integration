@@ -21,7 +21,8 @@ const app: Application = express();
 
 // Enable CORS
 const corsOptions = {
-  origin: '*'
+  origin: ['https://bluecremweb.bluecast.host', 'http://localhost:3000'],
+  credentials: true
 }
 app.use(cors(corsOptions));
 
