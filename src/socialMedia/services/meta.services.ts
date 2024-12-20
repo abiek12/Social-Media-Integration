@@ -412,7 +412,6 @@ export class metaServices {
             if(pages.length > 0) {
                 for (const pageData of pages) {
                     const pageExistance = await subscriberFacebookQueryBuilder
-                        .leftJoinAndSelect("subscriberFacebook.subscriber", "subscriber")
                         .where("subscriberFacebook.pageId = :pageId", {pageId: pageData.id})
                         .andWhere("subscriber.subscriberId = :subscriberId", {subscriberId})
                         .getOne();
