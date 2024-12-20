@@ -197,7 +197,7 @@ export class metaServices {
         try {            
             const subscriberId: number = (request as any).user.userId;
             const {pages} = request.body as {pages: pageMetaDataTypes[]};
-            
+            console.log(pages);
             if(pages.length === 0 ) {
                 console.error("Page data not found");
                 response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "Page data not found!"));
