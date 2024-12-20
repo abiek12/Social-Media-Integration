@@ -407,8 +407,13 @@ export const updatePagesInDb = async (subscriberId: number, pageAccessToken: str
   try {
     const appDataSource = await getDataSource();
     const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
-    const subscriberFacebookData = await subscriberFacebookRepo(subscriberId);
-    
+    const subscriberFacebookQueryBuilder = subscriberFacebookRepository.createQueryBuilder("subscriberFacebook");
+    const subscriberFacebookData = await subscriberFacebookQueryBuilder
+      .leftJoinAndSelect("subscriberFacebook.subscriberSocialMedia", "subscriberSocialMedia")
+      .leftJoinAndSelect("subscriberFacebook.subscriber", "subscriber")
+      .where("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
+      .andWhere("subscriber.subscriberId = :subscriberId", { subscriberId })
+      .getOne();
     if (!subscriberFacebookData) {
       console.log(`No social media data found for subscriber with ID ${subscriberId}`);
       return null;
@@ -417,6 +422,8 @@ export const updatePagesInDb = async (subscriberId: number, pageAccessToken: str
     subscriberFacebookData.pageAccessToken = pageAccessToken;
     subscriberFacebookData.pageTokenExpiresAt = new Date(Date.now() + 3600000);
     await subscriberFacebookRepository.save(subscriberFacebookData);
+
+    console.log("Page access token updated!")
   } catch (error) {
     console.log('Error while updating page access token in database', error);
     throw error;

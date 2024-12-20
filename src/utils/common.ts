@@ -169,12 +169,11 @@ export const subscriberFacebookRepo = async (subscriberId: number) => {
     const appDataSource = await getDataSource();
     const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
     const subscriberFacebookQueryBuilder = subscriberFacebookRepository.createQueryBuilder("subscriberFacebook");
-
     const subscriberFacebookData = await subscriberFacebookQueryBuilder
       .leftJoinAndSelect("subscriberFacebook.subscriberSocialMedia", "subscriberSocialMedia")
-      .leftJoinAndSelect("subscriberFacebook.subscriber", "subscriber")
+      .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
       .where("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
-      .andWhere("subscriber.subscriberId = :subscriberId", { subscriberId })
+      .andWhere("subscriberSocialMedia.subscriber = :subscriberId", { subscriberId })
       .getOne();
 
     return subscriberFacebookData;
