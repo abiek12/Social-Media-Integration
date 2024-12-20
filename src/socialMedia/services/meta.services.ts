@@ -197,13 +197,11 @@ export class metaServices {
         try {            
             const subscriberId: number = (request as any).user.userId;
             const pages = request.body as pageMetaDataTypes[]
-            console.log(pages);
             if(pages.length === 0 ) {
                 console.error("Page data not found");
                 response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "Page data not found!"));
                 return;
             }
-
             if(!subscriberId) {
               console.error("User id not found");
               response.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "User id not found"));
@@ -214,9 +212,9 @@ export class metaServices {
             const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
             const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
             const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
+            const subscriberFacebookQueryBuilder = subscriberFacebookRepository.createQueryBuilder("subscriberFacebook");
 
             const existingSubscriber = await checkSubscriberExitenceUsingId(subscriberId);
-
             if(!existingSubscriber) {
                 console.error("Subscriber not found");
                 response.status(NOT_FOUND).send(CustomError(NOT_FOUND, "Subscriber not found!"));
@@ -235,17 +233,26 @@ export class metaServices {
             }
 
             for (const pageData of pages) {
-                const pageExistance = await subscriberFacebookRepository.findOneBy({ pageId: pageData.id });
-                if(!pageExistance) {
-                    const subscriberFacebookEntity = new SubscriberFacebookSettings();
-                    subscriberFacebookEntity.pageId = pageData.id;
-                    subscriberFacebookEntity.pageAccessToken = pageData.access_token;
-                    subscriberFacebookEntity.pageName = pageData.name;
-                    subscriberFacebookEntity.pageTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
-                    subscriberFacebookEntity.subscriberSocialMedia = existingSubscriberSocialMediaData;
-                    subscriberFacebookEntity.subscriber = existingSubscriber;
-                    await subscriberFacebookRepository.save(subscriberFacebookEntity);
+                const pageExistance = await subscriberFacebookQueryBuilder
+                    .where("subscriberFacebook.pageId =: pageId", {pageId: pageData.id})
+                    .getOne();
+                if(pageExistance) {
+                    console.error(`${pageData.name} with page id:${pageData.id} already exists!`)
+                    response.status(CONFLICT).send(CustomError(CONFLICT, `${pageData.name} with page id:${pageData.id} already exists!`))
                 }
+
+                if(!pageData.accessToken || !pageData.id || !pageData.name) {
+                    console.error("Access token, page id or page name is missing!");
+                    response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "Access token, page id or page name is missing!"));
+                }
+                const subscriberFacebookEntity = new SubscriberFacebookSettings();
+                subscriberFacebookEntity.pageId = pageData.id;
+                subscriberFacebookEntity.pageAccessToken = pageData.accessToken;
+                subscriberFacebookEntity.pageName = pageData.name;
+                subscriberFacebookEntity.pageTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+                subscriberFacebookEntity.subscriberSocialMedia = existingSubscriberSocialMediaData;
+                subscriberFacebookEntity.subscriber = existingSubscriber;
+                await subscriberFacebookRepository.save(subscriberFacebookEntity);
             }
 
             // Installing meta app on the subscriber's facebook pages
@@ -399,7 +406,7 @@ export class metaServices {
                     if(!pageExistance) {
                         const subscriberFacebookEntity = new SubscriberFacebookSettings();
                         subscriberFacebookEntity.pageId = pageData.id;
-                        subscriberFacebookEntity.pageAccessToken = pageData.access_token;
+                        subscriberFacebookEntity.pageAccessToken = pageData.accessToken;
                         subscriberFacebookEntity.pageName = pageData.name;
                         subscriberFacebookEntity.pageTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
                         subscriberFacebookEntity.subscriberSocialMedia = existingSubscriberSocialMediaData;

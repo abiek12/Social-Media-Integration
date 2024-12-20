@@ -59,8 +59,8 @@ export interface LeadData {
 export interface pageMetaDataTypes {
     id: string;
     name: string;
-    access_token: string;
-    tasks: ["ADMINISTER", "EDIT_PROFILE", "MODERATE", "CREATE_CONTENT", "VIEW_INSIGHTS"];
+    accessToken: string;
+    tasks?: ["ADMINISTER", "EDIT_PROFILE", "MODERATE", "CREATE_CONTENT", "VIEW_INSIGHTS"];
 }
 
 // Page message response types
