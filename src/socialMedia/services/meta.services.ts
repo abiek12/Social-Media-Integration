@@ -351,5 +351,74 @@ export class metaServices {
 
 
     // update selected facebook pages
+    updatePages = async (request: Request, response: Response) => {
+        try {
+            const subscriberId: number = (request as any).user.userId;
+            const {pages} = request.body as {pages: pageMetaDataTypes[]};
+
+            if(!subscriberId) {
+              console.error("User id not found");
+              response.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "User id not found"));
+              return;
+            }
+
+            const appDataSource = await getDataSource();
+            const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
+            const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
+            const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
+            const subscriberFacebookQueryBuilder = subscriberFacebookRepository.createQueryBuilder("subscriberFacebook");
+
+            const existingSubscriber = await checkSubscriberExitenceUsingId(subscriberId);
+            if(!existingSubscriber) {
+                console.error("Subscriber not found");
+                response.status(NOT_FOUND).send(CustomError(NOT_FOUND, "Subscriber not found!"));
+                return;
+            }
+
+            const existingSubscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
+                .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+                .andWhere("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
+                .where("subscriber.subscriberId = :subscriberId", { subscriberId })
+                .getOne();
+            
+            if(!existingSubscriberSocialMediaData) {
+                console.error("Subscriber not authenticated to fetch facebook pages!");
+                response.status(CONFLICT).send(CustomError(CONFLICT, "Subscriber not authenticated to fetch facebook pages!"));
+                return;
+            }
+
+            await subscriberFacebookQueryBuilder
+                .leftJoinAndSelect("subscriberFacebook.subscriber", "subscriber")
+                .delete()
+                .where("subscriber.subscriberId =: subscriberId", {subscriberId})
+                .execute();
+
+            if(pages.length > 0) {
+                for (const pageData of pages) {
+                    const pageExistance = await subscriberFacebookRepository.findOneBy({ pageId: pageData.id });
+                    if(!pageExistance) {
+                        const subscriberFacebookEntity = new SubscriberFacebookSettings();
+                        subscriberFacebookEntity.pageId = pageData.id;
+                        subscriberFacebookEntity.pageAccessToken = pageData.access_token;
+                        subscriberFacebookEntity.pageName = pageData.name;
+                        subscriberFacebookEntity.pageTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+                        subscriberFacebookEntity.subscriberSocialMedia = existingSubscriberSocialMediaData;
+                        subscriberFacebookEntity.subscriber = existingSubscriber;
+                        await subscriberFacebookRepository.save(subscriberFacebookEntity);
+                    }
+                }
+    
+                // Installing meta app on the subscriber's facebook pages
+                await installMetaApp(subscriberId);
+            }
+
+            console.log("User selected facebook pages updated successfully!");
+            response.status(SUCCESS_GET).send(Success("User selected facebook pages updated successfully!"))
+            return;
+        } catch (error) {
+            console.error("Error while updating selected facebook pages.");
+            throw error;
+        }
+    }
 
 }
