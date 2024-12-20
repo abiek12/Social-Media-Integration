@@ -233,18 +233,20 @@ export class metaServices {
             }
 
             for (const pageData of pages) {
-                const pageExistance = await subscriberFacebookQueryBuilder
-                    .where("subscriberFacebook.pageId =: pageId", {pageId: pageData.id})
-                    .andWhere("subscriber.subscriberId = :subscriberId", {subscriberId})
-                    .getOne();
-                if(pageExistance) {
-                    console.error(`${pageData.name} with page id:${pageData.id} already exists!`)
-                    response.status(CONFLICT).send(CustomError(CONFLICT, `${pageData.name} with page id:${pageData.id} already exists!`))
-                }
-
                 if(!pageData.accessToken || !pageData.id || !pageData.name) {
                     console.error("Access token, page id or page name is missing!");
                     response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "Access token, page id or page name is missing!"));
+                    return;
+                }
+                const pageExistance = await subscriberFacebookQueryBuilder
+                    .leftJoinAndSelect("subscriberFacebook.subscriber", "subscriber")
+                    .where("subscriberFacebook.pageId = :pageId", {pageId: pageData.id})
+                    .andWhere("subscriber.subscriberId = :subscriberId", {subscriberId})
+                    .getOne();
+                if(pageExistance) {
+                    console.error(`Page:'${pageData.name}' with page id:'${pageData.id}' already exists!`)
+                    response.status(CONFLICT).send(CustomError(CONFLICT, `Page:'${pageData.name}' with page id:'${pageData.id}' already exists!`))
+                    return;
                 }
                 const subscriberFacebookEntity = new SubscriberFacebookSettings();
                 subscriberFacebookEntity.pageId = pageData.id;
@@ -410,6 +412,7 @@ export class metaServices {
             if(pages.length > 0) {
                 for (const pageData of pages) {
                     const pageExistance = await subscriberFacebookQueryBuilder
+                        .leftJoinAndSelect("subscriberFacebook.subscriber", "subscriber")
                         .where("subscriberFacebook.pageId = :pageId", {pageId: pageData.id})
                         .andWhere("subscriber.subscriberId = :subscriberId", {subscriberId})
                         .getOne();
