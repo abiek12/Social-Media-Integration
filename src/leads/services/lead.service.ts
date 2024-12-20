@@ -8,7 +8,6 @@ import { Request, Response } from "express";
 export class LeadsService {
     createSubscribersLeads = async (data: LeadData, source: string) => {
         try {
-            console.log(data);
             if(data) {
                 const appDataSource = await getDataSource();
                 const leadRepository = appDataSource.getRepository(Leads);
@@ -35,6 +34,7 @@ export class LeadsService {
     fetchLeadData = async (req: Request, res: Response) => {
         try {
             const subcriberId = (req as any).user.userId;
+            const { source, page, size } = (req as any).query as { source: string, page: number, size: number };
             if(!subcriberId) {
                 console.error("User not authenticated!");
                 res.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "User not authenticated!"));
@@ -42,10 +42,18 @@ export class LeadsService {
 
             const appDataSource = await getDataSource();
             const leadRepository = appDataSource.getRepository(Leads);
-            const leadQueryBuilder = leadRepository.createQueryBuilder("lead");
+            const leadQueryBuilder = leadRepository.createQueryBuilder("lead")
+                .where("lead.source =: source", {source: source})
+                .orderBy("lead.createdAt", 'DESC');
+            
+            if(page && size) {
+                leadQueryBuilder.skip((page - 1) * size).take(size)
+            }
 
-            const response = await leadQueryBuilder.getMany();
-            res.status(SUCCESS_GET).send(Success(response));
+            const totalCount = await leadQueryBuilder.getCount();
+            const data = await leadQueryBuilder.getMany();
+
+            res.status(SUCCESS_GET).send(Success({metaData: { totalCount }, data}));
             return;  
         } catch (error) {
             console.error("Error while fetching lead", error);
