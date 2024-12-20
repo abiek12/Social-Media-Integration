@@ -196,7 +196,7 @@ export class metaServices {
     choosePages = async (request: Request, response: Response) => {
         try {            
             const subscriberId: number = (request as any).user.userId;
-            const {pages} = request.body as {pages: pageMetaDataTypes[]};
+            const pages = request.body as pageMetaDataTypes[]
             console.log(pages);
             if(pages.length === 0 ) {
                 console.error("Page data not found");
