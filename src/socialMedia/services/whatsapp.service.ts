@@ -1,6 +1,6 @@
 import axios from "axios";
 import { Request, Response } from "express";
-import { BAD_REQUEST, checkSubscriberExitenceUsingId, ERROR_COMMON_MESSAGE, FORBIDDEN, INTERNAL_ERROR, NOT_AUTHORIZED, NOT_FOUND, SUCCESS_GET } from "../../utils/common";
+import { BAD_REQUEST, checkExistingWhatsappConfig, checkSubscriberExitenceUsingId, CONFLICT, ERROR_COMMON_MESSAGE, FORBIDDEN, INTERNAL_ERROR, NOT_AUTHORIZED, NOT_FOUND, SUCCESS_GET } from "../../utils/common";
 import { CustomError, Success } from "../../utils/response";
 import { getDataSource } from "../../utils/dataSource";
 import { quickReply, sendBulkWhatsappMessage } from "../../utils/socialMediaUtility";
@@ -304,6 +304,13 @@ export const createWhatsappConfig = async (req: Request, res: Response) => {
       return;
     }
 
+    const existingConfig = await checkExistingWhatsappConfig(subscriberId, phoneNoId);
+    if(existingConfig) {
+      console.error("This whatsapp configuration already exists!");
+      res.status(CONFLICT).send(CustomError(CONFLICT, "This whatsapp configuration already exists!"));
+      return;
+    }
+
     const appDataSource = await getDataSource();
     const SubscriberWhatsappSettingsRepository = appDataSource.getRepository(SubscriberWhatsappSettings);
     const whatsappSettingsEntity =  new SubscriberWhatsappSettings()
@@ -360,6 +367,13 @@ export const updateWhatsappConfig = async (req: Request, res: Response) => {
     if(!subscriberWhatsappConfig) {
       console.error("Subscriber whatsapp config not found");
       res.status(NOT_FOUND).send(CustomError(NOT_FOUND, "Subscriber whatsapp config not found!"));
+      return;
+    }
+
+    const existingConfig = await checkExistingWhatsappConfig(subscriberId, phoneNoId, id);
+    if(existingConfig) {
+      console.error("This whatsapp configuration already exists!");
+      res.status(CONFLICT).send(CustomError(CONFLICT, "This whatsapp configuration already exists!"));
       return;
     }
 

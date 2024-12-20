@@ -1,5 +1,6 @@
 import { SubscriberFacebookSettings } from "../socialMedia/dataModels/entities/subscriberFacebook.entity";
 import { subscriberSocialMedia } from "../socialMedia/dataModels/entities/subscriberSocialMedia.entity";
+import { SubscriberWhatsappSettings } from "../socialMedia/dataModels/entities/subscriberWhatsapp.entity";
 import { socialMediaType } from "../socialMedia/dataModels/enums/socialMedia.enums";
 import { admins } from "../users/admin/dataModels/entities/admin.entity";
 import { subscribers } from "../users/subscriber/dataModels/entities/subscriber.entity";
@@ -158,7 +159,7 @@ export const subscriberSocialMediaRepo = async (subscriberId: number) => {
       .getOne();
     return subscriberSocialMediaData;
   } catch (error) {
-    console.log("Error while fetching subscriber social media repo");
+    console.log("Error while fetching subscriber social media repo", error);
     throw error;
   }
 }
@@ -178,7 +179,31 @@ export const subscriberFacebookRepo = async (subscriberId: number) => {
 
     return subscriberFacebookData;
   } catch (error) {
-    console.log("Error while fetching subscriber social media repo");
+    console.log("Error while fetching subscriber social media repo", error);
+    throw error;
+  }
+}
+
+export const checkExistingWhatsappConfig = async (userId: number, phoneNoId: string, configId?: number) => {
+  try {
+    const appDataSource = await getDataSource();
+    const SubscriberWhatsappSettingsRepository = appDataSource.getRepository(SubscriberWhatsappSettings);
+    const subscriberWhatsappSettingsQueryBuilder = SubscriberWhatsappSettingsRepository.createQueryBuilder("subscriberWhatsapp");
+    subscriberWhatsappSettingsQueryBuilder
+      .leftJoinAndSelect("subscriberWhatsapp.subscriber", "subscriber")
+      .where("subscriber.subscriberId =:subscriberId", {subscriberId: userId})
+      .andWhere("subscriberWhatsapp.phoneNoId = :phoneNoId", {phoneNoId});
+    
+    if(configId) {
+      subscriberWhatsappSettingsQueryBuilder.andWhere("subscriberWhatsapp.subWhatsappSettingsId != :id", {id: configId})
+    }
+    const subscriberWhatsappConfig = await subscriberWhatsappSettingsQueryBuilder.getOne();
+
+    if(subscriberWhatsappConfig) return true;
+    else return false;
+      
+  } catch (error) {
+    console.error("Error while checking for existing user whatsapp config!", error)
     throw error;
   }
 }
