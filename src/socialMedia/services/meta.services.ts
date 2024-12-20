@@ -235,6 +235,7 @@ export class metaServices {
             for (const pageData of pages) {
                 const pageExistance = await subscriberFacebookQueryBuilder
                     .where("subscriberFacebook.pageId =: pageId", {pageId: pageData.id})
+                    .andWhere("subscriber.subscriberId = :subscriberId", {subscriberId})
                     .getOne();
                 if(pageExistance) {
                     console.error(`${pageData.name} with page id:${pageData.id} already exists!`)
@@ -272,7 +273,6 @@ export class metaServices {
     checkFacebookStatus = async (request: Request, response: Response) => {
        try {
         const subscriberId: number = (request as any).user.userId;
-
         if(!subscriberId) {
           console.error("User id not found");
           response.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "User id not found"));
@@ -346,6 +346,14 @@ export class metaServices {
             const subscribersFacebookPages = await subscriberFacebookQueryBuilder
                 .leftJoinAndSelect("subscriberFacebook.subscriber", "subscriber")
                 .where("subscriber.subscriberId = :subscriberId", {subscriberId})
+                .select([
+                    "subscriberFacebook.subFacebookSettingsId",
+                    "subscriberFacebook.pageId",
+                    "subscriberFacebook.pageName",
+                    "subscriberFacebook.pageAccessToken",
+                    "subscriber.subscriberId",
+                    "subscriber.userName"
+                ])
                 .getMany();
 
             console.log("User selected facebook pages fetched successfully!");
@@ -361,8 +369,7 @@ export class metaServices {
     updatePages = async (request: Request, response: Response) => {
         try {
             const subscriberId: number = (request as any).user.userId;
-            const {pages} = request.body as {pages: pageMetaDataTypes[]};
-
+            const pages = request.body as pageMetaDataTypes[];
             if(!subscriberId) {
               console.error("User id not found");
               response.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "User id not found"));
@@ -397,12 +404,15 @@ export class metaServices {
             await subscriberFacebookQueryBuilder
                 .leftJoinAndSelect("subscriberFacebook.subscriber", "subscriber")
                 .delete()
-                .where("subscriber.subscriberId =: subscriberId", {subscriberId})
+                .where("subscriber.subscriberId = :subscriberId", {subscriberId})
                 .execute();
 
             if(pages.length > 0) {
                 for (const pageData of pages) {
-                    const pageExistance = await subscriberFacebookRepository.findOneBy({ pageId: pageData.id });
+                    const pageExistance = await subscriberFacebookQueryBuilder
+                        .where("subscriberFacebook.pageId = :pageId", {pageId: pageData.id})
+                        .andWhere("subscriber.subscriberId = :subscriberId", {subscriberId})
+                        .getOne();
                     if(!pageExistance) {
                         const subscriberFacebookEntity = new SubscriberFacebookSettings();
                         subscriberFacebookEntity.pageId = pageData.id;
