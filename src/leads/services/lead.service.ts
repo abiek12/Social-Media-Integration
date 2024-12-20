@@ -28,6 +28,7 @@ export class LeadsService {
             }
         } catch (error) {
             console.error("Error while adding lead data from soical medias", error);
+            throw error;
         }
     }
 
@@ -43,8 +44,11 @@ export class LeadsService {
             const appDataSource = await getDataSource();
             const leadRepository = appDataSource.getRepository(Leads);
             const leadQueryBuilder = leadRepository.createQueryBuilder("lead")
-                .where("lead.source =: source", {source: source})
                 .orderBy("lead.createdAt", 'DESC');
+
+            if(source) {
+                leadQueryBuilder.where("lead.source = :source", {source: source})
+            }
             
             if(page && size) {
                 leadQueryBuilder.skip((page - 1) * size).take(size)
@@ -53,10 +57,11 @@ export class LeadsService {
             const totalCount = await leadQueryBuilder.getCount();
             const data = await leadQueryBuilder.getMany();
 
-            res.status(SUCCESS_GET).send(Success({metaData: { totalCount }, data}));
+            res.status(SUCCESS_GET).send(Success({totalCount, data}));
             return;  
         } catch (error) {
             console.error("Error while fetching lead", error);
+            throw error;
         }
     }
 }
