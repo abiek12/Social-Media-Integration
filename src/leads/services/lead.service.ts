@@ -128,8 +128,8 @@ export class LeadsService {
             const leadRepository = appDataSource.getRepository(Leads);
             const leadData = await leadRepository.createQueryBuilder("lead")
                 .where("lead.leadId =:id", {id})
-                .leftJoinAndSelect("lead.subscriberId","subscriber")
-                .andWhere("subscriber.subcriberId =:subcriberId", {subcriberId})
+                .leftJoinAndSelect("lead.subscriber","subscriber")
+                .andWhere("subscriber.subscriber_id =:subcriberId", {subcriberId})
                 .getOne();
             if(!leadData) {
                 console.error("No lead data is matching with this id!");
@@ -161,9 +161,10 @@ export class LeadsService {
             const leadRepository = appDataSource.getRepository(Leads);
             const leadQueryBuilder = leadRepository.createQueryBuilder("lead");
             
-            const leadData = await leadQueryBuilder
-                .where("lead.leadId = :id", {id})
-                .andWhere("lead.subscriberId = :subscriberId", {subcriberId})
+            const leadData = await leadRepository.createQueryBuilder("lead")
+                .where("lead.leadId =:id", {id})
+                .leftJoinAndSelect("lead.subscriber","subscriber")
+                .andWhere("subscriber.subscriber_id =:subcriberId", {subcriberId})
                 .getOne();
             if(!leadData) {
                 console.error("No lead data is matching with this id!");
@@ -199,9 +200,10 @@ export class LeadsService {
             const leadRepository = appDataSource.getRepository(Leads);
             const leadQueryBuilder = leadRepository.createQueryBuilder("lead");
             
-            const leadData = await leadQueryBuilder
-                .where("lead.leadId = :id", {id})
-                .andWhere("lead.subscriberId = :subscriberId", {subcriberId})
+            const leadData = await leadRepository.createQueryBuilder("lead")
+                .where("lead.leadId =:id", {id})
+                .leftJoinAndSelect("lead.subscriber","subscriber")
+                .andWhere("subscriber.subscriber_id =:subcriberId", {subcriberId})
                 .getOne();
             if(!leadData) {
                 console.error("No lead data is matching with this id!");
@@ -236,8 +238,9 @@ export class LeadsService {
             const leadQueryBuilder = leadRepository.createQueryBuilder("lead");
             
             const leadData = await leadQueryBuilder
-                .where("lead.leadId = :id", {id})
-                .andWhere("lead.subscriberId = :subscriberId", {subcriberId})
+                .where("lead.leadId =:id", {id})
+                .leftJoinAndSelect("lead.subscriber","subscriber")
+                .andWhere("subscriber.subscriber_id =:subcriberId", {subcriberId})
                 .getOne();
             if(!leadData) {
                 console.error("No lead data is matching with this id!");
