@@ -26,6 +26,7 @@ export const TOKEN_EXPIRY = 360000;
 export const REFRESH_TOKEN_EXPIRY = 86400000;
 export const ACTIVATION_KEY_EXPIRY_DAYS = 1;
 export const OTP_EXPIRY_TIME = 10;
+export const TOKEN_REFRESH_THRESHOLD = 15 * 60 * 1000; // 15 min before
 
 export const createAdminUser = async (data?: any) => {
   const _authUtility = new authUtility();
@@ -138,8 +139,14 @@ export const generateTokens = async (userRole: string, userId: number) => {
 
 // Helper function to check if token needs refreshing
 export const needsRefresh = (expiryDate: string | Date) => {
-  const refreshThreshold = 7 * 24 * 60 * 60 * 1000; // e.g., 7 days before expiry
-  const expiryTimestamp = new Date(expiryDate).getTime();
+  const refreshThreshold = TOKEN_REFRESH_THRESHOLD
+
+  const expiry = new Date(expiryDate);
+  if (isNaN(expiry.getTime())) {
+    console.error("Error while refreshing token, Invalid expiry date")
+    throw new Error('Invalid expiry date');
+  }
+  const expiryTimestamp = expiry.getTime();
   const currentTimestamp = Date.now();
   
   // Check if the time remaining before expiry is less than the threshold
