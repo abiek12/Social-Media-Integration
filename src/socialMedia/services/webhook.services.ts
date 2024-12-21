@@ -90,7 +90,6 @@ export const handleMessagingEvent = async (event: any, source: string) => {
     }
     console.log(msgDetails);
     const processedMessage = await processMessages(msgDetails, subscriberId);
-    console.log(processedMessage);
     if(processedMessage) {
       const leadsService = new LeadsService();
       await leadsService.createSubscribersLeads(processedMessage, source);
