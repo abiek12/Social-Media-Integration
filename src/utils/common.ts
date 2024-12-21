@@ -27,6 +27,8 @@ export const REFRESH_TOKEN_EXPIRY = 86400000;
 export const ACTIVATION_KEY_EXPIRY_DAYS = 1;
 export const OTP_EXPIRY_TIME = 10;
 export const TOKEN_REFRESH_THRESHOLD = 15 * 60 * 1000; // 15 min before
+export const EXTERNAL_WEBHOOK_ENDPOINT_URL = "https://bluecremapi.bluecast.host/lead/webhook";
+export const WEBHOOK_SHARED_SECRET = "bcast@7376"
 
 export const createAdminUser = async (data?: any) => {
   const _authUtility = new authUtility();

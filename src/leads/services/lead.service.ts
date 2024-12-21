@@ -1,4 +1,4 @@
-import { BAD_REQUEST, checkSubscriberExitenceUsingId, ERROR_COMMON_MESSAGE, INTERNAL_ERROR, NOT_AUTHORIZED, NOT_FOUND, SUCCESS_GET } from "../../utils/common";
+import { BAD_REQUEST, checkSubscriberExitenceUsingId, ERROR_COMMON_MESSAGE, EXTERNAL_WEBHOOK_ENDPOINT_URL, INTERNAL_ERROR, NOT_AUTHORIZED, NOT_FOUND, SUCCESS_GET, WEBHOOK_SHARED_SECRET } from "../../utils/common";
 import { getDataSource } from "../../utils/dataSource";
 import { CustomError, Success } from "../../utils/response";
 import { sendLeadDataToWebhookEndpoint } from "../../utils/webhookUtility";
@@ -247,9 +247,28 @@ export class LeadsService {
                 return;
             }
 
-            const result = await sendLeadDataToWebhookEndpoint(leadData);
-            console.log("Converted into lead successfully!");
-            res.status(SUCCESS_GET).send(Success("Converted into lead successfully!"))
+            const externalUrl = EXTERNAL_WEBHOOK_ENDPOINT_URL;
+            const webhookSharedSecret = WEBHOOK_SHARED_SECRET;
+
+            if(!externalUrl) {
+                console.error("Webhook endpoint url is missing!");
+                throw new Error("Webhook endpoint url is missing!");
+            }
+            if(!webhookSharedSecret) {
+                console.error("Webhook shared secret missing!");
+                throw new Error("Webhook shared secret missing!");
+            }
+
+            const result = await sendLeadDataToWebhookEndpoint(leadData, externalUrl, webhookSharedSecret);
+            if(result.status) {
+                console.log("Successfully send webhook data and Converted into lead!");
+                res.status(SUCCESS_GET).send(Success("Successfully send webhook data and Converted into lead!"));
+                return;
+            } else {
+                console.log(result);
+                res.status(INTERNAL_ERROR).send(CustomError(INTERNAL_ERROR, "Failed to send webhook data! Please try again."));
+                return;
+            }
 
         } catch (error) {
             console.error("Error while converting social media lead", error);

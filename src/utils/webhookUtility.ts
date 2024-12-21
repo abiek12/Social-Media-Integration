@@ -1,9 +1,12 @@
+import * as crypto from 'crypto'; // Correct
 import { leadSource } from "../leads/dataModels/enums/lead.enums";
 import { LeadsService } from "../leads/services/lead.service";
 import { SubscriberFacebookSettings } from "../socialMedia/dataModels/entities/subscriberFacebook.entity";
 import { FetchMessageDetailsResponse, LeadData } from "../socialMedia/dataModels/types/meta.types";
+import { EXTERNAL_WEBHOOK_ENDPOINT_URL, WEBHOOK_SHARED_SECRET } from "./common";
 import { getDataSource } from "./dataSource";
 import { fetchingLeadDetails, fetchMessageDetails, parseLeadData, processMessages } from "./socialMediaUtility";
+import axios from 'axios';
 
 
 export const handleLeadgenEvent = async (event: any) => {
@@ -101,10 +104,48 @@ export const handleMessagingEvent = async (event: any, source: string) => {
   }
 };
 
-export const sendLeadDataToWebhookEndpoint = async (leadData: any) => {
+
+export const sendLeadDataToWebhookEndpoint = async (payload: any, externalUrl: string, webhookSharedSecret: string) => {
   try {
-    
+        // Generate HMAC signature
+        let signature;
+        try {
+            signature = crypto.createHmac('sha256', webhookSharedSecret)
+                .update(JSON.stringify(payload))
+                .digest('hex');
+        } catch (error) {
+            console.error("Error while generating HMAC Signature!");
+            throw error;
+        }
+
+        // Send POST request to external server
+        try {
+            const response = await axios.post(
+                externalUrl,
+                { payload },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Hook-Signature': signature, // Add signature for authentication
+                    },
+                    timeout: 5000 // Set timeout of 5 seconds
+                }
+            );
+
+            // Check if the response status indicates success
+            if (response.status >= 200 && response.status < 300) {
+                console.error(response);
+                return { success: true, data: response.data, status: response.status };
+            } else {
+                console.error(response);
+                return { success: false, error: `Unexpected status code: ${response.status}`, status: response.status };
+            }
+        } catch (error) {
+            console.error("Error while sending webhook data!");
+            throw error;
+        }
   } catch (error) {
-    
+    console.error("Error while sending data to the webhook endpoint!");
+    throw error;
   }
 }
