@@ -1,10 +1,10 @@
 import { Strategy as FacebookStrategy } from "passport-facebook";
-import { facebookStrategyConfig, findUserByProfileId, getLongLivedUserToken } from "../../utils/socialMediaUtility";
+import { facebookStrategyConfig, findUserByProfileId, getLongLivedUserToken } from "./socialMediaUtility";
 import passport from "passport";
-import { subscriberSocialMedia } from "../dataModels/entities/subscriberSocialMedia.entity";
-import { getDataSource } from "../../utils/dataSource";
-import { checkSubscriberExitenceUsingId, getSubscriberSocialMediaData } from "../../utils/common";
-import { socialMediaType } from "../dataModels/enums/socialMedia.enums";
+import { subscriberSocialMedia } from "../socialMedia/dataModels/entities/subscriberSocialMedia.entity";
+import { getDataSource } from "./dataSource";
+import { checkSubscriberExitenceUsingId, getSubscriberSocialMediaData } from "./common";
+import { socialMediaType } from "../socialMedia/dataModels/enums/socialMedia.enums";
 
 
 // Serialize user ID to store in the session

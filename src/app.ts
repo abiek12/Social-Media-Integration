@@ -1,6 +1,6 @@
 import express, { Application, Request, Response } from 'express';
 import passport from 'passport';
-import './socialMedia/services/passport.setup'
+import './utils/passport.setup'
 import session from 'express-session';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
