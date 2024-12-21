@@ -383,7 +383,7 @@ export const getPageAccessToken = async (pageId: string, userAccessToken: string
 }
 
 // Updating user access token in database
-export const updateUserAccessTokenInDb = async (subscriberId: number, userAccessToken: string) => {
+export const updateUserAccessTokenInDb = async (subscriberId: number, userAccessToken: string, expiryDate: Date) => {
   try {
     const appDataSource = await getDataSource();
     const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
@@ -394,8 +394,10 @@ export const updateUserAccessTokenInDb = async (subscriberId: number, userAccess
     }
 
     subscriberSocialMediaData.userAccessToken = userAccessToken;
-    subscriberSocialMediaData.userTokenExpiresAt = new Date(Date.now() + 3600000);
+    subscriberSocialMediaData.userTokenExpiresAt = new Date(expiryDate);
     await subscriberSocialMediaRepository.save(subscriberSocialMediaData);
+
+    console.log("User access token updated with long lived token!")
   } catch (error) {
     console.log('Error while updating user access token in database', error);
     throw error;
@@ -403,7 +405,7 @@ export const updateUserAccessTokenInDb = async (subscriberId: number, userAccess
 }
 
 // Updating page access token in database
-export const updatePagesInDb = async (subscriberId: number, pageAccessToken: string) => {
+export const updatePagesInDb = async (subscriberId: number, pageAccessToken: string, expiryDate: Date) => {
   try {
     const appDataSource = await getDataSource();
     const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
@@ -420,7 +422,7 @@ export const updatePagesInDb = async (subscriberId: number, pageAccessToken: str
     }
 
     subscriberFacebookData.pageAccessToken = pageAccessToken;
-    subscriberFacebookData.pageTokenExpiresAt = new Date(Date.now() + 3600000);
+    subscriberFacebookData.pageTokenExpiresAt = new Date(expiryDate);
     await subscriberFacebookRepository.save(subscriberFacebookData);
 
     console.log("Page access token updated!")
@@ -439,7 +441,8 @@ export const refreshAllTokens = async (subscriberId: number) => {
         // Refresh user token if it's close to expiry
         if (subscriber.subscriberSocialMedia.userAccessToken && needsRefresh(subscriber.subscriberSocialMedia.userTokenExpiresAt)) {
           const newUserToken = await getLongLivedUserToken(subscriber.subscriberSocialMedia.userAccessToken);
-          await updateUserAccessTokenInDb(subscriber.subscriberSocialMedia.subscriber.subscriberId, newUserToken);
+          const expiryDateForLongLivedToken =  new Date(Date.now() + 60 * 24 * 60 * 60 * 1000); // Setting 60 days of expiry for long lived access token
+          await updateUserAccessTokenInDb(subscriber.subscriberSocialMedia.subscriber.subscriberId, newUserToken, expiryDateForLongLivedToken);
         }
       } catch (error) {
         console.error("Error while refreshing user token:", error);
@@ -447,9 +450,10 @@ export const refreshAllTokens = async (subscriberId: number) => {
   
       try {
         // Refresh page tokens if the user token was updated or nearing expiry
-        if (subscriber.pageTokenExpiresAt && needsRefresh(subscriber.pageTokenExpiresAt)) {          
-          const newPageTokens = await getPageAccessToken(subscriber.pageId, subscriber.subscriberSocialMedia.userAccessToken);
-          await updatePagesInDb(subscriber.subscriberSocialMedia.subscriber.subscriberId, newPageTokens);
+        if (subscriber.pageTokenExpiresAt && needsRefresh(subscriber.pageTokenExpiresAt)) {       
+          const newLongLivedPageTokens = await getPageAccessToken(subscriber.pageId, subscriber.subscriberSocialMedia.userAccessToken);
+          const expiryDateForLongLivedToken =  new Date(Date.now() + 60 * 24 * 60 * 60 * 1000); // Setting 60 days of expiry for long lived access token
+          await updatePagesInDb(subscriber.subscriberSocialMedia.subscriber.subscriberId, newLongLivedPageTokens, expiryDateForLongLivedToken);
         }
       } catch (error) {
         console.error("Error while refreshing page tokens:", error);
