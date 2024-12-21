@@ -64,6 +64,28 @@ export const fetchingLeadDetails = async (pageAccessToken: string, leadgenId: st
     }
 }
 
+
+// Check Admin Facebook Config Status
+export const checkAdminMetaConnection = async() => {
+  try {
+    const appDataSource = await getDataSource();
+    const adminSocialMediaRepository = appDataSource.getRepository(adminSocialMedia);
+    const adminSocialMediaData = await adminSocialMediaRepository.createQueryBuilder("adminSocialMedia")
+        .leftJoinAndSelect("adminSocialMedia.admin", "admin")
+        .leftJoinAndSelect("adminSocialMedia.facebook", "facebook")
+        .getOne();
+    if(adminSocialMediaData && adminSocialMediaData.facebook) {
+      if(adminSocialMediaData.facebook.appAccessToken) return true;
+      else return false;
+    } else {
+      await getAppAccessToken();
+    }
+  } catch (error) {
+    console.error("Error while checking admin meta configuration status!")
+    throw error;
+  }
+}
+
 // Get App Access Token
 export const getAppAccessToken = async () => {
   try {
