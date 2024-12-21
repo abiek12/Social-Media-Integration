@@ -164,7 +164,7 @@ export class LeadsService {
         try {
             const subcriberId = (req as any).user.userId;
             const id = (req as any).params.id;
-            const {email, phone, text, remarks} = req.body as SocialMediaLeadUpdateData
+            const {name, email, phone, text, remarks} = req.body as SocialMediaLeadUpdateData
             
             // All neccessery validations
             await this.socialMediaLeadServiceValidations(req, res);
@@ -184,6 +184,7 @@ export class LeadsService {
                 return;
             }
 
+            leadData.contactName = name ?? leadData.contactName;
             leadData.contactEmail = email ?? leadData.contactEmail;
             leadData.contactPhone = phone ?? leadData.contactPhone;
             leadData.leadText = text ?? leadData.leadText;

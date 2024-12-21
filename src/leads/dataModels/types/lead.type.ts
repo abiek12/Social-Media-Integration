@@ -15,6 +15,7 @@ export interface LeadData {
 }
 
 export interface SocialMediaLeadUpdateData {
+  name: string,
   email: string, 
   phone: string, 
   text: string, 
