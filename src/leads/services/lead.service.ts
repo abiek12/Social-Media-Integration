@@ -52,7 +52,7 @@ export class LeadsService {
             }
 
             const subscriber = await checkSubscriberExitenceUsingId(subcriberId);
-            if(subscriber) {
+            if(!subscriber) {
                 console.error("User not found!");
                 res.status(NOT_FOUND).send(CustomError(NOT_FOUND, "User not found!"));
                 return;
@@ -80,7 +80,7 @@ export class LeadsService {
             }
 
             const subscriber = await checkSubscriberExitenceUsingId(subcriberId);
-            if(subscriber) {
+            if(!subscriber) {
                 console.error("User not found!");
                 res.status(NOT_FOUND).send(CustomError(NOT_FOUND, "User not found!"));
                 return;
