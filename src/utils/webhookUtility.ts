@@ -104,7 +104,7 @@ export const handleMessagingEvent = async (event: any, source: string) => {
   }
 };
 
-
+// Convert to lead Webhook
 export const sendLeadDataToWebhookEndpoint = async (payload: any, externalUrl: string, webhookSharedSecret: string) => {
   try {
         // Generate HMAC signature
