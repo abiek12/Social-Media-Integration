@@ -74,11 +74,9 @@ export const checkAdminMetaConnection = async() => {
         .leftJoinAndSelect("adminSocialMedia.admin", "admin")
         .leftJoinAndSelect("adminSocialMedia.facebook", "facebook")
         .getOne();
-    if(adminSocialMediaData && adminSocialMediaData.facebook) {
+    if(adminSocialMediaData) {
       if(adminSocialMediaData.facebook.appAccessToken) return true;
       else return false;
-    } else {
-      await getAppAccessToken();
     }
   } catch (error) {
     console.error("Error while checking admin meta configuration status!")
