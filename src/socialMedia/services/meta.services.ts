@@ -7,8 +7,8 @@ import { CustomError, Success } from "../../utils/response";
 import { BAD_REQUEST, checkSubscriberExitenceUsingId, CONFLICT, ERROR_COMMON_MESSAGE, FORBIDDEN, INTERNAL_ERROR, NOT_AUTHORIZED, NOT_FOUND, SUCCESS_GET } from "../../utils/common";
 import { fetchFacebookPages, getMetaUserAccessTokenDb, installMetaApp, verifySignature } from "../../utils/socialMediaUtility";
 import { socialMediaType } from "../dataModels/enums/socialMedia.enums";
-import { handleLeadgenEvent, handleMessagingEvent } from "./webhook.services";
 import { leadSource } from "../../leads/dataModels/enums/lead.enums";
+import { handleLeadgenEvent, handleMessagingEvent } from "../../utils/webhookUtility";
 
 export class metaServices {
     // Meta Webhook Verification Endpoint
