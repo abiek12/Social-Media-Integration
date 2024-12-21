@@ -1,3 +1,4 @@
+import { subscribers } from "../../users/subscriber/dataModels/entities/subscriber.entity";
 import { BAD_REQUEST, checkSubscriberExitenceUsingId, ERROR_COMMON_MESSAGE, EXTERNAL_WEBHOOK_ENDPOINT_URL, INTERNAL_ERROR, NOT_AUTHORIZED, NOT_FOUND, SUCCESS_GET, WEBHOOK_SHARED_SECRET } from "../../utils/common";
 import { getDataSource } from "../../utils/dataSource";
 import { CustomError, Success } from "../../utils/response";
@@ -11,22 +12,25 @@ export class LeadsService {
     createSubscribersLeads = async (data: LeadData, source: string) => {
         try {
             if(data) {
-                const appDataSource = await getDataSource();
-                const leadRepository = appDataSource.getRepository(Leads);
-
-                const leadEnitity = new Leads();
-                leadEnitity.leadText = data.leadText;
-                leadEnitity.status = data.status;
-                leadEnitity.contactName = data.contactName;
-                leadEnitity.contactEmail = data.contactEmail;
-                leadEnitity.contactPhone = data.contactPhone ?? '';
-                leadEnitity.subscriberId = data.subscriberId;
-                leadEnitity.source = source;
-
-                const response = await leadRepository.save(leadEnitity);
-
-                console.log("Lead data saved successfully!");
-                return response;
+                const subscriber = await checkSubscriberExitenceUsingId(data.subscriberId);
+                if(subscriber) {
+                    const appDataSource = await getDataSource();
+                    const leadRepository = appDataSource.getRepository(Leads);
+                    
+                    const leadEnitity = new Leads();
+                    leadEnitity.leadText = data.leadText;
+                    leadEnitity.status = data.status;
+                    leadEnitity.contactName = data.contactName;
+                    leadEnitity.contactEmail = data.contactEmail;
+                    leadEnitity.contactPhone = data.contactPhone ?? '';
+                    leadEnitity.subscriberId = subscriber;
+                    leadEnitity.source = source;
+                    
+                    const response = await leadRepository.save(leadEnitity);
+                    
+                    console.log("Lead data saved successfully!");
+                    return response;
+                }
             }
         } catch (error) {
             console.error("Error while adding lead data from soical medias", error);
@@ -57,7 +61,6 @@ export class LeadsService {
                 res.status(NOT_FOUND).send(CustomError(NOT_FOUND, "User not found!"));
                 return;
             }
-            return;
         } catch (error) {
             console.error("Error while social media lead service validations", error);
             res.status(INTERNAL_ERROR).send(CustomError(INTERNAL_ERROR, ERROR_COMMON_MESSAGE));
@@ -124,8 +127,8 @@ export class LeadsService {
             const appDataSource = await getDataSource();
             const leadRepository = appDataSource.getRepository(Leads);
             const leadData = await leadRepository.createQueryBuilder("lead")
-                .where("lead.leadId = :id", {id})
-                .andWhere("lead.subscriberId = :subscriberId", {subcriberId})
+                .where("lead.leadId =:id", {id})
+                .andWhere("lead.subcriberId =:subcriberId", {subcriberId})
                 .getOne();
             if(!leadData) {
                 console.error("No lead data is matching with this id!");
