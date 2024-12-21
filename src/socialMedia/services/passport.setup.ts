@@ -1,5 +1,5 @@
 import { Strategy as FacebookStrategy } from "passport-facebook";
-import { facebookStrategyConfig, findUserByProfileId } from "../../utils/socialMediaUtility";
+import { facebookStrategyConfig, findUserByProfileId, getLongLivedUserToken } from "../../utils/socialMediaUtility";
 import passport from "passport";
 import { subscriberSocialMedia } from "../dataModels/entities/subscriberSocialMedia.entity";
 import { getDataSource } from "../../utils/dataSource";
@@ -35,17 +35,18 @@ passport.use(new FacebookStrategy( (facebookStrategyConfig as any),
     const appDataSource = await getDataSource();
     const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
     const subscriberSocialMediaData = await getSubscriberSocialMediaData(existingSubscriber.subscriberId, profile);
+    const longLivedUserAccessToken = await getLongLivedUserToken(accessToken);
 
     if (subscriberSocialMediaData) {
-      subscriberSocialMediaData.userAccessToken = accessToken;
-      subscriberSocialMediaData.userTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      subscriberSocialMediaData.userAccessToken = longLivedUserAccessToken;
+      subscriberSocialMediaData.userTokenExpiresAt = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000); // Setting 60 days of expiry for long lived access token
       subscriberSocialMediaRepository.save(subscriberSocialMediaData);
       return done(null, profile);
 
     } else {
       const subscriberSocialMediaEntity = new subscriberSocialMedia();
-      subscriberSocialMediaEntity.userAccessToken = accessToken;
-      subscriberSocialMediaEntity.userTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      subscriberSocialMediaEntity.userAccessToken = longLivedUserAccessToken;
+      subscriberSocialMediaEntity.userTokenExpiresAt = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000); // Setting 60 days of expiry for long lived access token
       subscriberSocialMediaEntity.socialMedia = socialMediaType.FACEBOOK;
       subscriberSocialMediaEntity.profileId = profile.id;
       subscriberSocialMediaEntity.subscriber = existingSubscriber;
