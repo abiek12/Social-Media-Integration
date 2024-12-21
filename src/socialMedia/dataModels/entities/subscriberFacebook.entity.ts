@@ -26,7 +26,7 @@ export class SubscriberFacebookSettings {
     @Column({ type: "text", nullable: true, name: "page_access_token" })
     pageAccessToken: string;
 
-    @Column({ type: "date", nullable: true, name: "page_token_expires_at" })
+    @Column({ type: "timestamp", nullable: true, name: "page_token_expires_at" })
     pageTokenExpiresAt: Date;
 
     @CreateDateColumn({name: "created_at"})

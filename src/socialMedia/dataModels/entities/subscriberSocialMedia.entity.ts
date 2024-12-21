@@ -20,7 +20,7 @@ export class subscriberSocialMedia {
     @Column({ type: "text", nullable: true, name: "user_access_token" })
     userAccessToken: string;
 
-    @Column({ type: "date", nullable: true, name: "user_token_expires_at" })
+    @Column({ type: "timestamp", nullable: true, name: "user_token_expires_at" })
     userTokenExpiresAt: Date;
 
     @CreateDateColumn({name: "created_at"})
