@@ -10,7 +10,7 @@ export class Leads {
   @PrimaryColumn({ type: "int", nullable: false, name: "subscriber_id" })
   @ManyToOne(() => subscribers)
   @JoinColumn({ name: "subscriber_id" })
-  subscriberId: subscribers;
+  subscriber: subscribers;
 
   @Column({ name: 'lead_text' })
   leadText: string;

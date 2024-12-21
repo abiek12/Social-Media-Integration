@@ -23,7 +23,7 @@ export class LeadsService {
                     leadEnitity.contactName = data.contactName;
                     leadEnitity.contactEmail = data.contactEmail;
                     leadEnitity.contactPhone = data.contactPhone ?? '';
-                    leadEnitity.subscriberId = subscriber;
+                    leadEnitity.subscriber = subscriber;
                     leadEnitity.source = source;
 
                     const response = await leadRepository.save(leadEnitity);
