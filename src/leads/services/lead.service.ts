@@ -127,9 +127,21 @@ export class LeadsService {
             const appDataSource = await getDataSource();
             const leadRepository = appDataSource.getRepository(Leads);
             const leadData = await leadRepository.createQueryBuilder("lead")
-                .where("lead.leadId =:id", {id})
                 .leftJoinAndSelect("lead.subscriber","subscriber")
+                .where("lead.leadId =:id", {id})
                 .andWhere("subscriber.subscriber_id =:subcriberId", {subcriberId})
+                .select([
+                    "lead.leadId",
+                    "lead.leadText",
+                    "lead.status",
+                    "lead.source",
+                    "lead.contactPhone",
+                    "lead.contactName",
+                    "lead.contactEmail",
+                    "lead.contactEmail",
+                    "lead.createdAt",
+                    "lead.updatedAt"
+                ])
                 .getOne();
             if(!leadData) {
                 console.error("No lead data is matching with this id!");
@@ -161,7 +173,7 @@ export class LeadsService {
             const leadRepository = appDataSource.getRepository(Leads);
             const leadQueryBuilder = leadRepository.createQueryBuilder("lead");
             
-            const leadData = await leadRepository.createQueryBuilder("lead")
+            const leadData = await leadQueryBuilder
                 .where("lead.leadId =:id", {id})
                 .leftJoinAndSelect("lead.subscriber","subscriber")
                 .andWhere("subscriber.subscriber_id =:subcriberId", {subcriberId})
@@ -198,7 +210,6 @@ export class LeadsService {
 
             const appDataSource = await getDataSource();
             const leadRepository = appDataSource.getRepository(Leads);
-            const leadQueryBuilder = leadRepository.createQueryBuilder("lead");
             
             const leadData = await leadRepository.createQueryBuilder("lead")
                 .where("lead.leadId =:id", {id})
@@ -211,7 +222,8 @@ export class LeadsService {
                 return;
             }
 
-            await leadQueryBuilder.delete()
+            await leadRepository.createQueryBuilder("lead")
+                .delete()
                 .where("lead.leadId = :id", {id})
                 .execute();
             console.log("Social media lead deleted successfully!");
