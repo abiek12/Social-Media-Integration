@@ -174,8 +174,8 @@ export class LeadsService {
             const leadQueryBuilder = leadRepository.createQueryBuilder("lead");
             
             const leadData = await leadQueryBuilder
-                .where("lead.leadId =:id", {id})
                 .leftJoinAndSelect("lead.subscriber","subscriber")
+                .where("lead.leadId =:id", {id})
                 .andWhere("subscriber.subscriber_id =:subcriberId", {subcriberId})
                 .getOne();
             if(!leadData) {
@@ -213,8 +213,8 @@ export class LeadsService {
             const leadRepository = appDataSource.getRepository(Leads);
             
             const leadData = await leadRepository.createQueryBuilder("lead")
-                .where("lead.leadId =:id", {id})
                 .leftJoinAndSelect("lead.subscriber","subscriber")
+                .where("lead.leadId =:id", {id})
                 .andWhere("subscriber.subscriber_id =:subcriberId", {subcriberId})
                 .getOne();
             if(!leadData) {
@@ -223,9 +223,9 @@ export class LeadsService {
                 return;
             }
 
-            await leadRepository.createQueryBuilder("lead")
+            await leadRepository.createQueryBuilder()
                 .delete()
-                .where("lead.leadId = :id", {id})
+                .where("leadId = :id", {id})
                 .execute();
             console.log("Social media lead deleted successfully!");
             res.status(SUCCESS_GET).send(Success("Social media lead deleted successfully!"))
