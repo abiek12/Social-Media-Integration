@@ -16,7 +16,7 @@ export class LeadsService {
                 if(subscriber) {
                     const appDataSource = await getDataSource();
                     const leadRepository = appDataSource.getRepository(Leads);
-                    
+
                     const leadEnitity = new Leads();
                     leadEnitity.leadText = data.leadText;
                     leadEnitity.status = data.status;
@@ -25,9 +25,9 @@ export class LeadsService {
                     leadEnitity.contactPhone = data.contactPhone ?? '';
                     leadEnitity.subscriberId = subscriber;
                     leadEnitity.source = source;
-                    
+
                     const response = await leadRepository.save(leadEnitity);
-                    
+
                     console.log("Lead data saved successfully!");
                     return response;
                 }
@@ -128,7 +128,8 @@ export class LeadsService {
             const leadRepository = appDataSource.getRepository(Leads);
             const leadData = await leadRepository.createQueryBuilder("lead")
                 .where("lead.leadId =:id", {id})
-                .andWhere("lead.subcriberId =:subcriberId", {subcriberId})
+                .leftJoinAndSelect("lead.subscriberId","subscriber")
+                .andWhere("subscriber.subcriberId =:subcriberId", {subcriberId})
                 .getOne();
             if(!leadData) {
                 console.error("No lead data is matching with this id!");
