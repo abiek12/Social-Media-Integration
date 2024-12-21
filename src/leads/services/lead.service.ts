@@ -180,4 +180,43 @@ export class LeadsService {
             return;
         }
     }
+
+    // Delete
+    deleteSocialMediaLead = async (req: Request, res: Response) => {
+        try {
+            const subcriberId = (req as any).user.userId;
+            const id = (req as any).params.id;
+
+            // All neccessery validations
+            await this.socialMediaLeadServiceValidations(req, res);
+
+            const appDataSource = await getDataSource();
+            const leadRepository = appDataSource.getRepository(Leads);
+            const leadQueryBuilder = leadRepository.createQueryBuilder("lead");
+            
+            const leadData = await leadQueryBuilder
+                .where("lead.leadId = :id", {id})
+                .andWhere("lead.subscriberId = :subscriberId", {subcriberId})
+                .getOne();
+            if(!leadData) {
+                console.error("No lead data is matching with this id!");
+                res.status(NOT_FOUND).send(CustomError(NOT_FOUND, "No lead data is matching with this id!"));
+                return;
+            }
+
+            await leadQueryBuilder.delete()
+                .where("lead.leadId = :id", {id})
+                .execute();
+            console.log("Social media lead deleted successfully!");
+            res.status(SUCCESS_GET).send(Success("Social media lead deleted successfully!"))
+            return;
+        } catch (error) {
+            console.error("Error while deleting social media lead", error);
+            res.status(INTERNAL_ERROR).send(CustomError(INTERNAL_ERROR, ERROR_COMMON_MESSAGE))
+            return;
+        }
+    }
+
+    // 
+
 }
