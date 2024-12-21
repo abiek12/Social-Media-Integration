@@ -1,6 +1,7 @@
 import { BAD_REQUEST, checkSubscriberExitenceUsingId, ERROR_COMMON_MESSAGE, INTERNAL_ERROR, NOT_AUTHORIZED, NOT_FOUND, SUCCESS_GET } from "../../utils/common";
 import { getDataSource } from "../../utils/dataSource";
 import { CustomError, Success } from "../../utils/response";
+import { sendLeadDataToWebhookEndpoint } from "../../utils/webhookUtility";
 import { Leads } from "../dataModels/entities/lead.entity";
 import { LeadData, SocialMediaLeadUpdateData } from "../dataModels/types/lead.type";
 import { Request, Response } from "express";
@@ -217,6 +218,44 @@ export class LeadsService {
         }
     }
 
-    // 
+    // Convert to lead
+    convertToLead = async (req: Request, res: Response) => {
+        try {
+            const subcriberId = (req as any).user.userId;
+            const id = (req as any).params.id;
+
+            // All neccessery validations
+            await this.socialMediaLeadServiceValidations(req, res);
+
+            const appDataSource = await getDataSource();
+            const leadRepository = appDataSource.getRepository(Leads);
+            const leadQueryBuilder = leadRepository.createQueryBuilder("lead");
+            
+            const leadData = await leadQueryBuilder
+                .where("lead.leadId = :id", {id})
+                .andWhere("lead.subscriberId = :subscriberId", {subcriberId})
+                .getOne();
+            if(!leadData) {
+                console.error("No lead data is matching with this id!");
+                res.status(NOT_FOUND).send(CustomError(NOT_FOUND, "No lead data is matching with this id!"));
+                return;
+            }
+
+            if(!leadData.contactEmail || !leadData.contactPhone) {
+                console.error("Either contact phone or email require to convert to lead!");
+                res.status(NOT_FOUND).send(CustomError(NOT_FOUND, "Either contact phone or email require to convert to lead!"));
+                return;
+            }
+
+            const result = await sendLeadDataToWebhookEndpoint(leadData);
+            console.log("Converted into lead successfully!");
+            res.status(SUCCESS_GET).send(Success("Converted into lead successfully!"))
+
+        } catch (error) {
+            console.error("Error while converting social media lead", error);
+            res.status(INTERNAL_ERROR).send(CustomError(INTERNAL_ERROR, ERROR_COMMON_MESSAGE))
+            return;
+        }
+    }
 
 }

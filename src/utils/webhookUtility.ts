@@ -1,9 +1,10 @@
-import { leadSource } from "../../leads/dataModels/enums/lead.enums";
-import { LeadsService } from "../../leads/services/lead.service";
-import { getDataSource } from "../../utils/dataSource";
-import { fetchingLeadDetails, fetchMessageDetails, parseLeadData, processMessages } from "../../utils/socialMediaUtility";
-import { SubscriberFacebookSettings } from "../dataModels/entities/subscriberFacebook.entity";
-import { FetchMessageDetailsResponse, LeadData } from "../dataModels/types/meta.types";
+import { leadSource } from "../leads/dataModels/enums/lead.enums";
+import { LeadsService } from "../leads/services/lead.service";
+import { SubscriberFacebookSettings } from "../socialMedia/dataModels/entities/subscriberFacebook.entity";
+import { FetchMessageDetailsResponse, LeadData } from "../socialMedia/dataModels/types/meta.types";
+import { getDataSource } from "./dataSource";
+import { fetchingLeadDetails, fetchMessageDetails, parseLeadData, processMessages } from "./socialMediaUtility";
+
 
 export const handleLeadgenEvent = async (event: any) => {
   try {
@@ -99,4 +100,11 @@ export const handleMessagingEvent = async (event: any, source: string) => {
     throw error;
   }
 };
-  
+
+export const sendLeadDataToWebhookEndpoint = async (leadData: any) => {
+  try {
+    
+  } catch (error) {
+    
+  }
+}
