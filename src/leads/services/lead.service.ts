@@ -279,7 +279,16 @@ export class LeadsService {
                 throw new Error("Webhook shared secret missing!");
             }
 
-            const result = await sendLeadDataToWebhookEndpoint(leadData, externalUrl, webhookSharedSecret);
+            const payload = {
+                leadText: leadData.leadText,
+                contactEmail: leadData.contactEmail,
+                contactName: leadData.contactName,
+                contactPhone: leadData.contactPhone,
+                leadSource: leadData.source,
+                subscriberId: subcriberId
+            }
+
+            const result = await sendLeadDataToWebhookEndpoint(payload, externalUrl, webhookSharedSecret);
             if(result.status) {
                 console.log("Successfully send webhook data and Converted into lead!");
                 res.status(SUCCESS_GET).send(Success("Successfully send webhook data and Converted into lead!"));

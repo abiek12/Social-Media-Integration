@@ -1,9 +1,8 @@
-import * as crypto from 'crypto'; // Correct
+import * as crypto from 'crypto';
 import { leadSource } from "../leads/dataModels/enums/lead.enums";
 import { LeadsService } from "../leads/services/lead.service";
 import { SubscriberFacebookSettings } from "../socialMedia/dataModels/entities/subscriberFacebook.entity";
 import { FetchMessageDetailsResponse, LeadData } from "../socialMedia/dataModels/types/meta.types";
-import { EXTERNAL_WEBHOOK_ENDPOINT_URL, WEBHOOK_SHARED_SECRET } from "./common";
 import { getDataSource } from "./dataSource";
 import { fetchingLeadDetails, fetchMessageDetails, parseLeadData, processMessages } from "./socialMediaUtility";
 import axios from 'axios';
