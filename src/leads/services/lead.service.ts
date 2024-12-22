@@ -3,7 +3,7 @@ import { getDataSource } from "../../utils/dataSource";
 import { CustomError, Success } from "../../utils/response";
 import { sendLeadDataToWebhookEndpoint } from "../../utils/webhookUtility";
 import { SocialMediaLeads } from "../dataModels/entities/socialMediaLeads.entity";
-import { LeadData, SocialMediaLeadUpdateData } from "../dataModels/types/lead.type";
+import { LeadData, SocialMediaLeadFilters, SocialMediaLeadUpdateData } from "../dataModels/types/lead.type";
 import { Request, Response } from "express";
 
 export class LeadsService {
@@ -24,6 +24,7 @@ export class LeadsService {
                     leadEnitity.contactPhone = data.contactPhone ?? '';
                     leadEnitity.subscriber = subscriber;
                     leadEnitity.source = source;
+                    leadEnitity.remarks = ""
 
                     const response = await leadRepository.save(leadEnitity);
 
@@ -74,7 +75,7 @@ export class LeadsService {
     fetchLeadData = async (req: Request, res: Response) => {
         try {
             const subcriberId = (req as any).user.userId;
-            const { source, page, size } = (req as any).query as { source: string, page: number, size: number };
+            const { source, page, size, isConverted } = (req as any).query as SocialMediaLeadFilters;
             if(!subcriberId) {
                 console.error("User not authenticated!");
                 res.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "User not authenticated!"));
@@ -96,6 +97,10 @@ export class LeadsService {
 
             if(source) {
                 leadQueryBuilder.where("lead.source = :source", {source: source})
+            }
+
+            if(isConverted) {
+                leadQueryBuilder.where("lead.isConverted =:isConverted", {isConverted})
             }
             
             if(page && size) {
@@ -138,6 +143,8 @@ export class LeadsService {
                     "lead.contactName",
                     "lead.contactEmail",
                     "lead.contactEmail",
+                    "lead.remarks",
+                    "lead.isConverted",
                     "lead.createdAt",
                     "lead.updatedAt"
                 ])
@@ -186,6 +193,7 @@ export class LeadsService {
             leadData.contactName = name ?? leadData.contactName;
             leadData.contactEmail = email ?? leadData.contactEmail;
             leadData.contactPhone = phone ?? leadData.contactPhone;
+            leadData.remarks = remarks ?? leadData.remarks;
             leadData.leadText = text ?? leadData.leadText;
             await leadRepository.save(leadData);
 
@@ -284,11 +292,15 @@ export class LeadsService {
                 contactName: leadData.contactName,
                 contactPhone: leadData.contactPhone,
                 source: leadData.source,
-                subscriberId: subcriberId
+                subscriberId: subcriberId,
+                remarks: leadData.remarks
             }
 
             const result = await sendLeadDataToWebhookEndpoint(payload, externalUrl, webhookSharedSecret);
             if(result.status) {
+                leadData.isConverted = true;
+                await leadRepository.save(leadData);
+
                 console.log("Successfully send webhook data and Converted into lead!");
                 res.status(SUCCESS_GET).send(Success("Successfully send webhook data and Converted into lead!"));
                 return;

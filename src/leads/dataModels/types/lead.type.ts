@@ -22,4 +22,11 @@ export interface SocialMediaLeadUpdateData {
   remarks: string
 }
 
+export interface SocialMediaLeadFilters {
+  source: string, 
+  page: number, 
+  size: number, 
+  isConverted: boolean
+}
+
   
