@@ -30,6 +30,9 @@ export class SocialMediaLeads {
   @Column({ name: 'contact_email'})
   contactEmail: string;
 
+  @Column({ name: 'remarks'})
+  remarks: string;
+
   @CreateDateColumn({ name: "created_at" })
   createdAt: Date;
 
@@ -38,4 +41,7 @@ export class SocialMediaLeads {
 
   @Column({ type: "boolean", default: false, name: "is_deleted" })
   isDeleted: boolean; 
+
+  @Column({ type: "boolean", default: false, name: "is_converted" })
+  isConverted: boolean; 
 }
