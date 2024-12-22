@@ -118,30 +118,23 @@ export const sendLeadDataToWebhookEndpoint = async (payload: any, externalUrl: s
         }
 
         // Send POST request to external server
-        try {
-            const response = await axios.post(
-                externalUrl,
-                { payload },
-                {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Hook-Signature': signature, // Add signature for authentication
-                    },
-                    timeout: 5000 // Set timeout of 5 seconds
+        const response = await axios.post(
+            externalUrl,
+            payload,
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Hook-Signature': signature, // Add signature for authentication
                 }
-            );
-
-            // Check if the response status indicates success
-            if (response.status >= 200 && response.status < 300) {
-                console.error(response);
-                return { success: true, data: response.data, status: response.status };
-            } else {
-                console.error(response);
-                return { success: false, error: `Unexpected status code: ${response.status}`, status: response.status };
             }
-        } catch (error) {
-            console.error("Error while sending webhook data!");
-            throw error;
+        );
+
+        // Check if the response status indicates success
+        if (response.status >= 200 && response.status < 300) {
+            return { success: true, data: response.data, status: response.status };
+        } else {
+            console.error(response);
+            return { success: false, error: `Unexpected status code: ${response.status}`, status: response.status };
         }
   } catch (error) {
     console.error("Error while sending data to the webhook endpoint!");

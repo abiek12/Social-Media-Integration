@@ -261,7 +261,7 @@ export class LeadsService {
                 return;
             }
 
-            if(!leadData.contactEmail || !leadData.contactPhone) {
+            if(!leadData.contactEmail && !leadData.contactPhone) {
                 console.error("Either contact phone or email require to convert to lead!");
                 res.status(NOT_FOUND).send(CustomError(NOT_FOUND, "Either contact phone or email require to convert to lead!"));
                 return;
@@ -284,7 +284,7 @@ export class LeadsService {
                 contactEmail: leadData.contactEmail,
                 contactName: leadData.contactName,
                 contactPhone: leadData.contactPhone,
-                leadSource: leadData.source,
+                source: leadData.source,
                 subscriberId: subcriberId
             }
 
