@@ -3,7 +3,7 @@ import { leadSource, leadStatus } from '../enums/lead.enums';
 import { subscribers } from '../../../users/subscriber/dataModels/entities/subscriber.entity';
 
 @Entity({ name: 'social_media_leads' })
-export class Leads {
+export class SocialMediaLeads {
   @PrimaryGeneratedColumn({ name: 'social_media_lead_id' })
   leadId: number;
 

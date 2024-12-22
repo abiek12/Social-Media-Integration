@@ -1,9 +1,8 @@
-import { subscribers } from "../../users/subscriber/dataModels/entities/subscriber.entity";
 import { BAD_REQUEST, checkSubscriberExitenceUsingId, ERROR_COMMON_MESSAGE, EXTERNAL_WEBHOOK_ENDPOINT_URL, INTERNAL_ERROR, NOT_AUTHORIZED, NOT_FOUND, SUCCESS_GET, WEBHOOK_SHARED_SECRET } from "../../utils/common";
 import { getDataSource } from "../../utils/dataSource";
 import { CustomError, Success } from "../../utils/response";
 import { sendLeadDataToWebhookEndpoint } from "../../utils/webhookUtility";
-import { Leads } from "../dataModels/entities/lead.entity";
+import { SocialMediaLeads } from "../dataModels/entities/socialMediaLeads.entity";
 import { LeadData, SocialMediaLeadUpdateData } from "../dataModels/types/lead.type";
 import { Request, Response } from "express";
 
@@ -15,9 +14,9 @@ export class LeadsService {
                 const subscriber = await checkSubscriberExitenceUsingId(data.subscriberId);
                 if(subscriber) {
                     const appDataSource = await getDataSource();
-                    const leadRepository = appDataSource.getRepository(Leads);
+                    const leadRepository = appDataSource.getRepository(SocialMediaLeads);
 
-                    const leadEnitity = new Leads();
+                    const leadEnitity = new SocialMediaLeads();
                     leadEnitity.leadText = data.leadText;
                     leadEnitity.status = data.status;
                     leadEnitity.contactName = data.contactName;
@@ -90,7 +89,7 @@ export class LeadsService {
             }
 
             const appDataSource = await getDataSource();
-            const leadRepository = appDataSource.getRepository(Leads);
+            const leadRepository = appDataSource.getRepository(SocialMediaLeads);
             const leadQueryBuilder = leadRepository.createQueryBuilder("lead")
                 .where("lead.subscriberId = :subscriberId", {subcriberId})
                 .orderBy("lead.createdAt", 'DESC');
@@ -125,7 +124,7 @@ export class LeadsService {
             await this.socialMediaLeadServiceValidations(req, res);
 
             const appDataSource = await getDataSource();
-            const leadRepository = appDataSource.getRepository(Leads);
+            const leadRepository = appDataSource.getRepository(SocialMediaLeads);
             const leadData = await leadRepository.createQueryBuilder("lead")
                 .leftJoinAndSelect("lead.subscriber","subscriber")
                 .where("lead.leadId =:id", {id})
@@ -170,7 +169,7 @@ export class LeadsService {
             await this.socialMediaLeadServiceValidations(req, res);
 
             const appDataSource = await getDataSource();
-            const leadRepository = appDataSource.getRepository(Leads);
+            const leadRepository = appDataSource.getRepository(SocialMediaLeads);
             const leadQueryBuilder = leadRepository.createQueryBuilder("lead");
             
             const leadData = await leadQueryBuilder
@@ -210,7 +209,7 @@ export class LeadsService {
             await this.socialMediaLeadServiceValidations(req, res);
 
             const appDataSource = await getDataSource();
-            const leadRepository = appDataSource.getRepository(Leads);
+            const leadRepository = appDataSource.getRepository(SocialMediaLeads);
             
             const leadData = await leadRepository.createQueryBuilder("lead")
                 .leftJoinAndSelect("lead.subscriber","subscriber")
@@ -247,7 +246,7 @@ export class LeadsService {
             await this.socialMediaLeadServiceValidations(req, res);
 
             const appDataSource = await getDataSource();
-            const leadRepository = appDataSource.getRepository(Leads);
+            const leadRepository = appDataSource.getRepository(SocialMediaLeads);
             const leadQueryBuilder = leadRepository.createQueryBuilder("lead");
             
             const leadData = await leadQueryBuilder
