@@ -89,6 +89,9 @@ export const whatsAppWebhookV2 = async (req: Request, res: Response) => {
     const messageData: WhatsappMessages = payload.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
     const phoneNoId = payload.entry?.[0]?.changes?.[0]?.value?.metadata?.phone_number_id;
 
+    console.log("Msg: ", messageData);
+    console.log("Phone no id: ", phoneNoId);
+
     if (messageData?.type === "text") {
       if(!messageData) {
         console.error("Message field is empty!");
