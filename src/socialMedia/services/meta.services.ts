@@ -265,7 +265,7 @@ export class metaServices {
             response.status(SUCCESS_GET).send(Success("Pages added successfully!"));
             return;
         } catch (error) {
-            console.error("Error in fetching facebook pages", error);
+            console.error("Error selecting facebook pages", error);
             response.status(INTERNAL_ERROR).send(CustomError(INTERNAL_ERROR, ERROR_COMMON_MESSAGE));
             return;
         }
