@@ -301,7 +301,7 @@ export class metaServices {
             response.status(SUCCESS_GET).send(Success({facebookConfig: true}));
             return;
         } else {
-            response.status(SUCCESS_GET).send(Success({facebookConfig: true}));
+            response.status(SUCCESS_GET).send(Success({facebookConfig: false}));
             return;
         }
        } catch (error) {
