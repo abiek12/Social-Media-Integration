@@ -84,7 +84,7 @@ export const whatsAppWebhook = async (req: any, res: any) => {
 // Whatsapp webhook v2
 export const whatsAppWebhookV2 = async (req: Request, res: Response) => {
   try {
-    console.log("Incoming webhook message:", JSON.stringify(req.body, null, 2));
+    console.log("Whatsapp webhook event received!");
     const payload = req.body;
     const messageData: WhatsappMessages = payload.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
     const phoneNoId = payload.entry?.[0]?.changes?.[0]?.value?.metadata?.phone_number_id;
