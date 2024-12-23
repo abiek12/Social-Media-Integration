@@ -268,7 +268,7 @@ export const getWhatsappConfig = async (req: Request, res: Response) => {
       accessToken: subscriberWhatsappConfig?.accessToken,
       phoneNoId: subscriberWhatsappConfig?.phoneNoId,
       waId: subscriberWhatsappConfig?.waId,
-      webhookEndpoint: subscriberWhatsappConfig ? `${process.env.BACKEND_URL}/api/v1/whatsapp/webhook` : null
+      webhookEndpoint: subscriberWhatsappConfig ?? `${process.env.BACKEND_URL}/api/v1/whatsapp/webhook`
     }
 
     res.status(SUCCESS_GET).send(Success(data));
