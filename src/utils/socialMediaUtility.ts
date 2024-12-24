@@ -215,7 +215,8 @@ export const installMetaApp = async (subscriberId: number) => {
 
     const subscriberFacebookDatas = await subscriberFacebookQueryBuilder
       .leftJoinAndSelect("subscriberFacebook.subscriberSocialMedia", "subscriberSocialMedia")
-      .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+      .leftJoinAndSelect("subscriberFacebook.subscriber", "subscriber")
+      .where("subscriber.subscriberId = :subscriberId", { subscriberId })
       .getMany();
 
     if (subscriberFacebookDatas.length > 0) {
@@ -236,7 +237,7 @@ export const installMetaApp = async (subscriberId: number) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            subscribed_fields: ['leadgen'],
+            subscribed_fields: ['messages', 'leadgen'],
             access_token: pageAccessToken,
           }),
         });
@@ -246,10 +247,10 @@ export const installMetaApp = async (subscriberId: number) => {
           const errorData = await response.json();
           console.log('Error subscribing to Meta App:', errorData);
         } else {
-          console.log('Successfully subscribed:', responseData);
+          console.log('Successfully subscribed to Meta App:', responseData);
         }
       }
-      return console.log('Successfully Installed Meta App:');
+      return console.log('Meta App successfully installed in all pages');
     } else {
       return console.log(`No social media data found for subscriber with ID ${subscriberId}`);
     }
