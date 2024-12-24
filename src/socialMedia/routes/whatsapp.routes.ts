@@ -15,7 +15,7 @@ router.delete("/config/:id", _authUtility.verifyToken, _authUtility.isSubscriber
 router.get("/webhook", verifyWhatsappWebhook);
 router.post("/webhook", whatsAppWebhookV2);
 
-// Broadcast message
+// Bulk message
 router.post("/", _authUtility.verifyToken, _authUtility.isSubscriber, whatsAppBroadcast);
 
 export default router;

@@ -165,7 +165,7 @@ export const whatsAppWebhookV2 = async (req: Request, res: Response) => {
 export const whatsAppBroadcast = async (req: Request, res: Response) => {
     try {
       const subscriberId: number = (req as any).user.userId;
-      const {message} = req.body as { message: string };
+      const {message, leadIds } = req.body as { message: string, leadIds: number[] };
       
       if(!subscriberId) {
         console.error("User id not found");
@@ -191,6 +191,7 @@ export const whatsAppBroadcast = async (req: Request, res: Response) => {
       const convertedLeadQueryBuilder = convertedLeadRepository.createQueryBuilder("leads");
       const leadData = await convertedLeadQueryBuilder
         .where("leads.subscriberId =:subscriberId", {subscriberId: subscriberId})
+        .andWhere("leads.leadId IN (:...ids)", {ids: leadIds})
         .andWhere("leads.isDeleted = :isDeleted", {isDeleted: false})
         .getMany();
 
@@ -201,7 +202,6 @@ export const whatsAppBroadcast = async (req: Request, res: Response) => {
       }
 
       const phoneNumbers = leadData.map(lead => lead.contactPhone).filter(phone => phone);
-
       if(phoneNumbers.length === 0) {
         console.error("No numbers found for leads");
         res.status(NOT_FOUND).send(CustomError(NOT_FOUND, "No numbers found for leads!"));
