@@ -194,6 +194,7 @@ export const whatsAppBroadcast = async (req: Request, res: Response) => {
       const convertedLeadQueryBuilder = convertedLeadRepository.createQueryBuilder("leads");
       const leadData = await convertedLeadQueryBuilder
         .where("leads.subscriberId =:subscriberId", {subscriberId: subscriberId})
+        .andWhere("leads.isDeleted = :isDeleted", {isDeleted: false})
         .getMany();
 
       if(leadData.length === 0) {
