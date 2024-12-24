@@ -40,10 +40,10 @@ export class LeadsService {
 
     socialMediaLeadServiceValidations = async (req: Request, res: Response) => {
         try {
-            const subcriberId = (req as any).user.userId;
+            const subscriberId = (req as any).user.userId;
             const id = (req as any).params.id;
 
-            if(!subcriberId) {
+            if(!subscriberId) {
                 console.error("User not authenticated!");
                 res.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "User not authenticated!"));
                 return;
@@ -55,7 +55,7 @@ export class LeadsService {
                 return;
             }
 
-            const subscriber = await checkSubscriberExitenceUsingId(subcriberId);
+            const subscriber = await checkSubscriberExitenceUsingId(subscriberId);
             if(!subscriber) {
                 console.error("User not found!");
                 res.status(NOT_FOUND).send(CustomError(NOT_FOUND, "User not found!"));
@@ -74,15 +74,15 @@ export class LeadsService {
     // Fetch social media leads 
     fetchLeadData = async (req: Request, res: Response) => {
         try {
-            const subcriberId = (req as any).user.userId;
+            const subscriberId = (req as any).user.userId;
             const { source, page, size, isConverted } = (req as any).query as SocialMediaLeadFilters;
-            if(!subcriberId) {
+            if(!subscriberId) {
                 console.error("User not authenticated!");
                 res.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "User not authenticated!"));
                 return;
             }
 
-            const subscriber = await checkSubscriberExitenceUsingId(subcriberId);
+            const subscriber = await checkSubscriberExitenceUsingId(subscriberId);
             if(!subscriber) {
                 console.error("User not found!");
                 res.status(NOT_FOUND).send(CustomError(NOT_FOUND, "User not found!"));
@@ -92,15 +92,15 @@ export class LeadsService {
             const appDataSource = await getDataSource();
             const leadRepository = appDataSource.getRepository(SocialMediaLeads);
             const leadQueryBuilder = leadRepository.createQueryBuilder("lead")
-                .where("lead.subscriberId = :subscriberId", {subcriberId})
+                .where("lead.subscriberId = :subscriberId", {subscriberId})
                 .orderBy("lead.createdAt", 'DESC');
 
             if(source) {
-                leadQueryBuilder.where("lead.source = :source", {source: source})
+                leadQueryBuilder.andWhere("lead.source = :source", {source: source})
             }
 
             if(isConverted) {
-                leadQueryBuilder.where("lead.isConverted =:isConverted", {isConverted})
+                leadQueryBuilder.andWhere("lead.isConverted =:isConverted", {isConverted})
             }
             
             if(page && size) {
@@ -122,7 +122,7 @@ export class LeadsService {
     // Get social media lead by id
     getSocialMediaLeadById = async (req: Request, res: Response) => {
         try {
-            const subcriberId = (req as any).user.userId;
+            const subscriberId = (req as any).user.userId;
             const id = (req as any).params.id;
             
             // All neccessery validations
@@ -133,7 +133,7 @@ export class LeadsService {
             const leadData = await leadRepository.createQueryBuilder("lead")
                 .leftJoinAndSelect("lead.subscriber","subscriber")
                 .where("lead.leadId =:id", {id})
-                .andWhere("subscriber.subscriber_id =:subcriberId", {subcriberId})
+                .andWhere("subscriber.subscriber_id =:subscriberId", {subscriberId})
                 .select([
                     "lead.leadId",
                     "lead.leadText",
@@ -168,7 +168,7 @@ export class LeadsService {
     // Update
     updateSocialMediaLead = async (req: Request ,res: Response) => {
         try {
-            const subcriberId = (req as any).user.userId;
+            const subscriberId = (req as any).user.userId;
             const id = (req as any).params.id;
             const {name, email, phone, text, remarks} = req.body as SocialMediaLeadUpdateData
             
@@ -182,7 +182,7 @@ export class LeadsService {
             const leadData = await leadQueryBuilder
                 .leftJoinAndSelect("lead.subscriber","subscriber")
                 .where("lead.leadId =:id", {id})
-                .andWhere("subscriber.subscriber_id =:subcriberId", {subcriberId})
+                .andWhere("subscriber.subscriber_id =:subscriberId", {subscriberId})
                 .getOne();
             if(!leadData) {
                 console.error("No lead data is matching with this id!");
@@ -210,7 +210,7 @@ export class LeadsService {
     // Delete
     deleteSocialMediaLead = async (req: Request, res: Response) => {
         try {
-            const subcriberId = (req as any).user.userId;
+            const subscriberId = (req as any).user.userId;
             const id = (req as any).params.id;
 
             // All neccessery validations
@@ -222,7 +222,7 @@ export class LeadsService {
             const leadData = await leadRepository.createQueryBuilder("lead")
                 .leftJoinAndSelect("lead.subscriber","subscriber")
                 .where("lead.leadId =:id", {id})
-                .andWhere("subscriber.subscriber_id =:subcriberId", {subcriberId})
+                .andWhere("subscriber.subscriber_id =:subscriberId", {subscriberId})
                 .getOne();
             if(!leadData) {
                 console.error("No lead data is matching with this id!");
@@ -247,7 +247,7 @@ export class LeadsService {
     // Convert to lead
     convertToLead = async (req: Request, res: Response) => {
         try {
-            const subcriberId = (req as any).user.userId;
+            const subscriberId = (req as any).user.userId;
             const id = (req as any).params.id;
 
             // All neccessery validations
@@ -258,9 +258,9 @@ export class LeadsService {
             const leadQueryBuilder = leadRepository.createQueryBuilder("lead");
             
             const leadData = await leadQueryBuilder
-                .where("lead.leadId =:id", {id})
                 .leftJoinAndSelect("lead.subscriber","subscriber")
-                .andWhere("subscriber.subscriber_id =:subcriberId", {subcriberId})
+                .where("lead.leadId =:id", {id})
+                .andWhere("subscriber.subscriber_id =:subscriberId", {subscriberId})
                 .getOne();
             if(!leadData) {
                 console.error("No lead data is matching with this id!");
@@ -292,7 +292,7 @@ export class LeadsService {
                 contactName: leadData.contactName,
                 contactPhone: leadData.contactPhone,
                 source: leadData.source,
-                subscriberId: subcriberId,
+                subscriberId: subscriberId,
                 remarks: leadData.remarks
             }
 
