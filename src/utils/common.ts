@@ -192,15 +192,14 @@ export const subscriberFacebookRepo = async (subscriberId: number) => {
   }
 }
 
-export const checkExistingWhatsappConfig = async (userId: number, phoneNoId: string, configId?: number) => {
+export const checkExistingWhatsappConfig = async (phoneNoId: string, configId?: number) => {
   try {
     const appDataSource = await getDataSource();
     const SubscriberWhatsappSettingsRepository = appDataSource.getRepository(SubscriberWhatsappSettings);
     const subscriberWhatsappSettingsQueryBuilder = SubscriberWhatsappSettingsRepository.createQueryBuilder("subscriberWhatsapp");
     subscriberWhatsappSettingsQueryBuilder
       .leftJoinAndSelect("subscriberWhatsapp.subscriber", "subscriber")
-      .where("subscriber.subscriberId =:subscriberId", {subscriberId: userId})
-      .andWhere("subscriberWhatsapp.phoneNoId = :phoneNoId", {phoneNoId});
+      .where("subscriberWhatsapp.phoneNoId = :phoneNoId", {phoneNoId});
     
     if(configId) {
       subscriberWhatsappSettingsQueryBuilder.andWhere("subscriberWhatsapp.subWhatsappSettingsId != :id", {id: configId})

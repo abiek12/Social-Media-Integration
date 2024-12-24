@@ -86,11 +86,9 @@ export const whatsAppWebhookV2 = async (req: Request, res: Response) => {
   try {
     console.log("Whatsapp webhook event received!");
     const payload = req.body;
+    console.log(payload);
     const messageData: WhatsappMessages = payload.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
     const phoneNoId = payload.entry?.[0]?.changes?.[0]?.value?.metadata?.phone_number_id;
-
-    console.log("Msg: ", messageData);
-    console.log("Phone no id: ", phoneNoId);
 
     if (messageData?.type === "text") {
       if(!messageData) {
@@ -154,7 +152,6 @@ export const whatsAppWebhookV2 = async (req: Request, res: Response) => {
 
       // returing success ok acknowledgement
       res.sendStatus(SUCCESS_GET);
-      
     }
 
   } catch (error) {
@@ -309,7 +306,7 @@ export const createWhatsappConfig = async (req: Request, res: Response) => {
       return;
     }
 
-    const existingConfig = await checkExistingWhatsappConfig(subscriberId, phoneNoId);
+    const existingConfig = await checkExistingWhatsappConfig(phoneNoId);
     if(existingConfig) {
       console.error("This whatsapp configuration already exists!");
       res.status(CONFLICT).send(CustomError(CONFLICT, "This whatsapp configuration already exists!"));
@@ -375,7 +372,7 @@ export const updateWhatsappConfig = async (req: Request, res: Response) => {
       return;
     }
 
-    const existingConfig = await checkExistingWhatsappConfig(subscriberId, phoneNoId, id);
+    const existingConfig = await checkExistingWhatsappConfig(phoneNoId, id);
     if(existingConfig) {
       console.error("This whatsapp configuration already exists!");
       res.status(CONFLICT).send(CustomError(CONFLICT, "This whatsapp configuration already exists!"));
