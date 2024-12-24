@@ -92,7 +92,8 @@ export class LeadsService {
             const appDataSource = await getDataSource();
             const leadRepository = appDataSource.getRepository(SocialMediaLeads);
             const leadQueryBuilder = leadRepository.createQueryBuilder("lead")
-                .where("lead.subscriberId = :subscriberId", {subscriberId})
+                .leftJoinAndSelect("lead.subscriber","subscriber")
+                .where("lead.subscriber_id = :subscriberId", {subscriberId})
                 .orderBy("lead.createdAt", 'DESC');
 
             if(source) {
