@@ -221,7 +221,8 @@ export class metaServices {
                 return;
             }
             const existingSubscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
-                .where("subscriberSocialMedia.subscriber_id = :subscriberId", { subscriberId })
+                .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+                .where("subscriber.subscriberId = :subscriberId", { subscriberId })
                 .andWhere("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
                 .getOne();
             
@@ -232,11 +233,6 @@ export class metaServices {
             }
 
             console.log(existingSubscriberSocialMediaData);
-
-            console.log("Existing Social Media Data:", {
-                id: existingSubscriberSocialMediaData.subscriberSocialMediaId,
-                subscriberId: subscriberId
-            });
 
             for (const pageData of pages) {
                 if(!pageData.accessToken || !pageData.id || !pageData.name) {
@@ -260,7 +256,7 @@ export class metaServices {
                 subscriberFacebookEntity.pageName = pageData.name;
                 subscriberFacebookEntity.pageTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
                 subscriberFacebookEntity.subscriberSocialMedia = existingSubscriberSocialMediaData;
-                subscriberFacebookEntity.subscriber = existingSubscriber;
+                subscriberFacebookEntity.subscriber = existingSubscriberSocialMediaData.subscriber;
 
                 console.log("Facebook Entity Before Save:", {
                     socialMediaId: subscriberFacebookEntity.subscriberSocialMedia?.subscriberSocialMediaId,
