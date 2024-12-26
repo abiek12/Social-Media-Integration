@@ -13,6 +13,8 @@ export class SubscriberFacebookSettings {
     subscriber: subscribers;
 
     @Column({ type: "int", name: "social_media_id" })
+    socialMediaId: number;
+
     @ManyToOne(() => subscriberSocialMedia)
     @JoinColumn({ name: "social_media_id" })
     subscriberSocialMedia: subscriberSocialMedia;
