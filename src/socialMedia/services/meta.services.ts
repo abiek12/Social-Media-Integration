@@ -226,13 +226,16 @@ export class metaServices {
                 .where("subscriber.subscriberId = :subscriberId", { subscriberId })
                 .getOne();
             
-            console.log(existingSubscriberSocialMediaData);
-            
             if(!existingSubscriberSocialMediaData) {
                 console.error("Subscriber not authenticated to fetch facebook pages!");
                 response.status(CONFLICT).send(CustomError(CONFLICT, "Subscriber not authenticated to fetch facebook pages!"));
                 return;
             }
+
+            console.log("Existing Social Media Data:", {
+                id: existingSubscriberSocialMediaData.subscriberSocialMediaId,
+                subscriberId: subscriberId
+            });
 
             for (const pageData of pages) {
                 if(!pageData.accessToken || !pageData.id || !pageData.name) {
@@ -257,7 +260,19 @@ export class metaServices {
                 subscriberFacebookEntity.pageTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
                 subscriberFacebookEntity.subscriberSocialMedia = existingSubscriberSocialMediaData;
                 subscriberFacebookEntity.subscriber = existingSubscriber;
+
+                console.log("Facebook Entity Before Save:", {
+                    socialMediaId: subscriberFacebookEntity.subscriberSocialMedia?.subscriberSocialMediaId,
+                    subscriberId: subscriberFacebookEntity.subscriber?.subscriberId,
+                    pageId: subscriberFacebookEntity.pageId
+                });
+
                 await subscriberFacebookRepository.save(subscriberFacebookEntity);
+
+                console.log("Query:", subscriberFacebookRepository.createQueryBuilder()
+                .insert()
+                .into(SubscriberFacebookSettings)
+                .getQuery());
             }
 
             // Installing meta app on the subscriber's facebook pages
