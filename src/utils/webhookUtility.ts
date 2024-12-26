@@ -21,7 +21,7 @@ export const handleLeadgenEvent = async (event: any) => {
           .leftJoinAndSelect("subscriberFacebook.subscriberSocialMedia", "subscriberSocialMedia")
           .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
           .where("subscriberFacebook.pageId = :pageId", { pageId })
-          .getOne();
+          .getOne() as any;
       if(!subscriberFacebookData) {
         console.log(`No social media data found for the page with ID ${pageId}`);
         return;
@@ -71,7 +71,7 @@ export const handleMessagingEvent = async (event: any, source: string) => {
         .leftJoinAndSelect("subscriberFacebook.subscriberSocialMedia", "subscriberSocialMedia")
         .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
         .where("subscriberFacebook.pageId = :pageId", { pageId })
-        .getOne();
+        .getOne() as any;
 
     if(!subscriberFacebookData) {
       console.log(`No social media data found for the page with ID ${pageId}`);

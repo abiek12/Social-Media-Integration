@@ -455,7 +455,7 @@ export const updatePagesInDb = async (subscriberId: number, pageAccessToken: str
 
 // Refreshing facebook user and page access token
 export const refreshAllTokens = async (subscriberId: number) => {
-  const subscriber = await getSubscribersWithExpiringTokens(subscriberId);
+  const subscriber = await getSubscribersWithExpiringTokens(subscriberId) as any;
   if (subscriber) {
     try {
       try {

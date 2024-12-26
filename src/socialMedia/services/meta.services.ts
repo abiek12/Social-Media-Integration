@@ -256,15 +256,11 @@ export class metaServices {
                 subscriberFacebookEntity.pageAccessToken = pageData.accessToken;
                 subscriberFacebookEntity.pageName = pageData.name;
                 subscriberFacebookEntity.pageTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
-                subscriberFacebookEntity.subscriberSocialMedia = {
-                    subscriberSocialMediaId: existingSubscriberSocialMediaData.subscriberSocialMediaId
-                } as subscriberSocialMedia;
-                subscriberFacebookEntity.subscriber = {subscriberId: existingSubscriber.subscriberId} as subscribers;
-                // subscriberFacebookEntity.subscriberSocialMedia = existingSubscriberSocialMediaData;
-                // subscriberFacebookEntity.subscriber = existingSubscriberSocialMediaData.subscriber;
+                subscriberFacebookEntity.subscriberSocialMedia = existingSubscriberSocialMediaData.subscriberSocialMediaId;
+                subscriberFacebookEntity.subscriber = existingSubscriberSocialMediaData.subscriber;
 
                 console.log("Facebook Entity Before Save:", {
-                    socialMediaId: subscriberFacebookEntity.subscriberSocialMedia?.subscriberSocialMediaId,
+                    socialMediaId: subscriberFacebookEntity.subscriberSocialMedia,
                     subscriberId: subscriberFacebookEntity.subscriber?.subscriberId,
                     pageId: subscriberFacebookEntity.pageId
                 });
@@ -442,7 +438,7 @@ export class metaServices {
                         subscriberFacebookEntity.pageAccessToken = pageData.accessToken;
                         subscriberFacebookEntity.pageName = pageData.name;
                         subscriberFacebookEntity.pageTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
-                        subscriberFacebookEntity.subscriberSocialMedia = existingSubscriberSocialMediaData;
+                        subscriberFacebookEntity.subscriberSocialMedia = existingSubscriberSocialMediaData.subscriberSocialMediaId;
                         subscriberFacebookEntity.subscriber = existingSubscriber;
                         await subscriberFacebookRepository.save(subscriberFacebookEntity);
                     }
