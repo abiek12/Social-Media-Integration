@@ -293,7 +293,8 @@ export class LeadsService {
                 contactPhone: leadData.contactPhone,
                 source: leadData.source,
                 subscriberId: subscriberId,
-                remarks: leadData.remarks
+                remarks: leadData.remarks,
+                clientName: leadData.contactName
             }
 
             const result = await sendLeadDataToWebhookEndpoint(payload, externalUrl, webhookSharedSecret);
