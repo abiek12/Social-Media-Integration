@@ -74,7 +74,6 @@ export class metaServices {
                             for (const change of pageEntry.changes || []) {
                                 if (change.field === 'leadgen') {
                                     console.log("Leadgen Event Received");
-                                    console.log(change);
                                     await handleLeadgenEvent(change);
                                 }
                             }

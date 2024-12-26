@@ -33,6 +33,7 @@ export const handleLeadgenEvent = async (event: any) => {
         console.log(`No lead data found for the leadgen with ID ${leadgenId}`);
         return;
       }
+      console.log(leadData);
       let source = leadSource.FACEBOOK;
       const parsedLead = parseLeadData(leadData, subscriberId);
       if (parsedLead) {

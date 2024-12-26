@@ -519,7 +519,7 @@ export const parseLeadData = (leadData: LeadData, subscriberId: number) => {
       contactName: leadData.field_data?.find((f: any) => f.name === "full_name")?.values[0],
       subscriberId,
       companyName: leadData.field_data?.find((f: any) => f.name === "company_name")?.values[0] || null,
-      contactPhone: leadData.field_data?.find((f: any) => f.name === "phone")?.values[0] || null,
+      contactPhone: leadData.field_data?.find((f: any) => f.name === "phone_number")?.values[0] || null,
       contactCountry: leadData.field_data?.find((f: any) => f.name === "country")?.values[0] || null,
       contactState: leadData.field_data?.find((f: any) => f.name === "state")?.values[0] || null,
       contactCity: leadData.field_data?.find((f: any) => f.name === "city")?.values[0] || null,
