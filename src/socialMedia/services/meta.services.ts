@@ -232,6 +232,8 @@ export class metaServices {
                 return;
             }
 
+            console.log(existingSubscriberSocialMediaData);
+
             console.log("Existing Social Media Data:", {
                 id: existingSubscriberSocialMediaData.subscriberSocialMediaId,
                 subscriberId: subscriberId
@@ -258,7 +260,6 @@ export class metaServices {
                 subscriberFacebookEntity.pageAccessToken = pageData.accessToken;
                 subscriberFacebookEntity.pageName = pageData.name;
                 subscriberFacebookEntity.pageTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
-                subscriberFacebookEntity.socialMediaId = existingSubscriberSocialMediaData.subscriberSocialMediaId;
                 subscriberFacebookEntity.subscriberSocialMedia = existingSubscriberSocialMediaData;
                 subscriberFacebookEntity.subscriber = existingSubscriber;
 
@@ -441,7 +442,6 @@ export class metaServices {
                         subscriberFacebookEntity.pageAccessToken = pageData.accessToken;
                         subscriberFacebookEntity.pageName = pageData.name;
                         subscriberFacebookEntity.pageTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
-                        subscriberFacebookEntity.socialMediaId = existingSubscriberSocialMediaData.subscriberSocialMediaId;
                         subscriberFacebookEntity.subscriberSocialMedia = existingSubscriberSocialMediaData;
                         subscriberFacebookEntity.subscriber = existingSubscriber;
                         await subscriberFacebookRepository.save(subscriberFacebookEntity);
