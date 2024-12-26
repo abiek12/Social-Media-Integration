@@ -10,6 +10,7 @@ import { socialMediaType } from "../dataModels/enums/socialMedia.enums";
 import { leadSource } from "../../leads/dataModels/enums/lead.enums";
 import { handleLeadgenEvent, handleMessagingEvent } from "../../utils/webhookUtility";
 import { subscribers } from "../../users/subscriber/dataModels/entities/subscriber.entity";
+import { QueryRunner, Transaction } from "typeorm";
 
 export class metaServices {
     // Meta Webhook Verification Endpoint
@@ -450,68 +451,95 @@ export class metaServices {
 
     // Delete facebook configuration
     unlinkFacebook = async (request: Request, response: Response) => {
+        const queryRunner = (await getDataSource()).createQueryRunner();
+    
         try {
+            await queryRunner.connect(); // Establish connection
+            await queryRunner.startTransaction(); // Begin transaction
+    
             const subscriberId: number = (request as any).user.userId;
-            if(!subscriberId) {
-              console.error("User id not found");
-              response.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "User id not found"));
-              return;
+            if (!subscriberId) {
+                return this.handleError(response, NOT_AUTHORIZED, "User ID not found");
             }
-
-            const existingSubscriber = await checkSubscriberExitenceUsingId(subscriberId);
-            if(!existingSubscriber) {
-                console.error("Subscriber not found");
-                response.status(NOT_FOUND).send(CustomError(NOT_FOUND, "Subscriber not found!"));
-                return;
+    
+            const existingSubscriber = await this.fetchSubscriber(subscriberId);
+            if (!existingSubscriber) {
+                return this.handleError(response, NOT_FOUND, "User not found!");
             }
-
-            const appDataSource = await getDataSource();
-            const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
-            const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
-            const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
-
-            const existingSubscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
-                .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-                .andWhere("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
-                .where("subscriber.subscriberId = :subscriberId", { subscriberId })
-                .getOne();
-            if(!existingSubscriberSocialMediaData) {
-                console.error("Subscriber Facebook configuration not found");
-                response.status(NOT_FOUND).send(CustomError(NOT_FOUND, "Subscriber Facebook configuration not found"));
-                return;
+    
+            const socialMediaData = await this.fetchSocialMediaData(queryRunner, subscriberId, socialMediaType.FACEBOOK);
+            if (!socialMediaData) {
+                return this.handleError(response, NOT_FOUND, "Subscriber Facebook configuration not found");
             }
-
-            const subscriberFacebookQueryBuilder = subscriberFacebookRepository.createQueryBuilder("subscriberFacebook");
-            const existingFacebookData = await subscriberFacebookQueryBuilder
-                .leftJoinAndSelect("subscriberFacebook.subscriber", "subscriber")
-                .where("subscriber.subscriberId = :subscriberId", {subscriberId})
-                .getMany();
-
-            if(existingFacebookData.length > 0) {
-                await subscriberFacebookQueryBuilder
-                    .leftJoinAndSelect("subscriberFacebook.subscriber", "subscriber")
-                    .delete()
-                    .where("subscriber.subscriberId = :subscriberId", {subscriberId})
-                    .execute();
-                console.log("Selected facebook pages deleted successfully!");
+    
+            const facebookPages = await this.fetchFacebookPages(queryRunner, subscriberId);
+            if (facebookPages.length > 0) {
+                await this.deleteFacebookPages(queryRunner, subscriberId);
+                console.log("Selected Facebook pages deleted successfully!");
             }
-
-            await subscriberSocialMediaQueryBuilder
-                .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-                .delete()
-                .where("subscriber.subscriberId = :subscriberId", {subscriberId})
-                .andWhere("subscriberSocialMedia.socialMedia = :socialMedia", {socialMedia: socialMediaType.FACEBOOK})
-                .execute();
-
+    
+            await this.deleteSocialMediaConfig(queryRunner, subscriberId, socialMediaType.FACEBOOK);
             console.log("Facebook configuration deleted successfully!");
+    
+            await queryRunner.commitTransaction(); // Commit transaction
             response.status(SUCCESS_GET).send(Success("Facebook configuration deleted successfully!"));
-            return;
-
         } catch (error) {
-            console.error("Error while unlinking facebook configuration",error);
+            console.error("Error while unlinking Facebook configuration", error);
+            await queryRunner.rollbackTransaction(); // Rollback on error
             response.status(INTERNAL_ERROR).send(CustomError(INTERNAL_ERROR, ERROR_COMMON_MESSAGE));
-            return;
+        } finally {
+            await queryRunner.release(); // Release query runner
         }
+    };
+
+
+
+    // Utility Functions
+    private handleError(response: Response, status: number, message: string) {
+        console.error(message);
+        response.status(status).send(CustomError(status, message));
+    }
+    
+    private async fetchSubscriber(subscriberId: number) {
+        return await checkSubscriberExitenceUsingId(subscriberId);
+    }
+    
+    private async fetchSocialMediaData(queryRunner: QueryRunner, subscriberId: number, socialMedia: string) {
+        return await queryRunner.manager
+            .getRepository(subscriberSocialMedia)
+            .createQueryBuilder("subscriberSocialMedia")
+            .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+            .where("subscriber.subscriberId = :subscriberId", { subscriberId })
+            .andWhere("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia })
+            .getOne();
+    }
+    
+    private async fetchFacebookPages(queryRunner: QueryRunner, subscriberId: number) {
+        return await queryRunner.manager
+            .getRepository(SubscriberFacebookSettings)
+            .createQueryBuilder("subscriberFacebook")
+            .leftJoinAndSelect("subscriberFacebook.subscriber", "subscriber")
+            .where("subscriber.subscriberId = :subscriberId", { subscriberId })
+            .getMany();
+    }
+    
+    private async deleteFacebookPages(queryRunner: QueryRunner, subscriberId: number) {
+        await queryRunner.manager
+            .getRepository(SubscriberFacebookSettings)
+            .createQueryBuilder()
+            .delete()
+            .where("subscriber_id = :subscriberId", { subscriberId })
+            .execute();
+    }
+    
+    private async deleteSocialMediaConfig(queryRunner: QueryRunner, subscriberId: number, socialMedia: string) {
+        await queryRunner.manager
+            .getRepository(subscriberSocialMedia)
+            .createQueryBuilder()
+            .delete()
+            .where("subscriber_id = :subscriberId", { subscriberId })
+            .andWhere("social_media_name = :socialMedia", { socialMedia })
+            .execute();
     }
 
 }
