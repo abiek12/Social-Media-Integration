@@ -259,18 +259,7 @@ export class metaServices {
                 subscriberFacebookEntity.subscriberSocialMedia = existingSubscriberSocialMediaData.subscriberSocialMediaId;
                 subscriberFacebookEntity.subscriber = existingSubscriberSocialMediaData.subscriber;
 
-                console.log("Facebook Entity Before Save:", {
-                    socialMediaId: subscriberFacebookEntity.subscriberSocialMedia,
-                    subscriberId: subscriberFacebookEntity.subscriber?.subscriberId,
-                    pageId: subscriberFacebookEntity.pageId
-                });
-
                 await subscriberFacebookRepository.save(subscriberFacebookEntity);
-
-                console.log("Query:", subscriberFacebookRepository.createQueryBuilder()
-                .insert()
-                .into(SubscriberFacebookSettings)
-                .getQuery());
             }
 
             // Installing meta app on the subscriber's facebook pages
