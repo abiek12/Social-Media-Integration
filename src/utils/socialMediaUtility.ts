@@ -214,7 +214,6 @@ export const installMetaApp = async (subscriberId: number) => {
     const subscriberFacebookQueryBuilder = subscriberFacebookRepository.createQueryBuilder("subscriberFacebook");
 
     const subscriberFacebookDatas = await subscriberFacebookQueryBuilder
-      .leftJoinAndSelect("subscriberFacebook.subscriberSocialMedia", "subscriberSocialMedia")
       .leftJoinAndSelect("subscriberFacebook.subscriber", "subscriber")
       .where("subscriber.subscriberId = :subscriberId", { subscriberId })
       .getMany();
@@ -342,17 +341,6 @@ export const checkForSubscribersMetaConnection = async (subscriberId: number): P
   }
 }
 
-export const getSubscribersWithExpiringTokens = async (subscriberId: number) => {
-  try {
-    const subscriberSocialMediaData = await subscriberFacebookRepo(subscriberId);
-    if(!subscriberSocialMediaData) return null;
-    return subscriberSocialMediaData;
-  } catch (error) {
-    console.log('Error while fetching subscriber social media details', error);
-    throw error;
-  }
-}
-
 // Convert short-lived token to long-lived token
 export const getLongLivedUserToken = async (shortLivedToken: string) => {
   try {
@@ -432,9 +420,7 @@ export const updatePagesInDb = async (subscriberId: number, pageAccessToken: str
     const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
     const subscriberFacebookQueryBuilder = subscriberFacebookRepository.createQueryBuilder("subscriberFacebook");
     const subscriberFacebookData = await subscriberFacebookQueryBuilder
-      .leftJoinAndSelect("subscriberFacebook.subscriberSocialMedia", "subscriberSocialMedia")
       .leftJoinAndSelect("subscriberFacebook.subscriber", "subscriber")
-      .where("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
       .andWhere("subscriber.subscriberId = :subscriberId", { subscriberId })
       .getOne();
     if (!subscriberFacebookData) {
@@ -455,33 +441,51 @@ export const updatePagesInDb = async (subscriberId: number, pageAccessToken: str
 
 // Refreshing facebook user and page access token
 export const refreshAllTokens = async (subscriberId: number) => {
-  const subscriber = await getSubscribersWithExpiringTokens(subscriberId) as any;
-  if (subscriber) {
+  try {
+    const facebookPageDatas = await subscriberFacebookRepo(subscriberId);
+    const facebookUserData = await subscriberSocialMediaRepo(subscriberId);
+
+    if(!facebookUserData) {
+      console.error("No facebook user data for refresh the token!");
+      return;
+    }
+
     try {
-      try {
-        // Refresh user token if it's close to expiry
-        if (subscriber.subscriberSocialMedia.userAccessToken && needsRefresh(subscriber.subscriberSocialMedia.userTokenExpiresAt)) {
-          const newUserToken = await getLongLivedUserToken(subscriber.subscriberSocialMedia.userAccessToken);
-          const expiryDateForLongLivedToken =  new Date(Date.now() + 60 * 24 * 60 * 60 * 1000); // Setting 60 days of expiry for long lived access token
-          await updateUserAccessTokenInDb(subscriber.subscriberSocialMedia.subscriber.subscriberId, newUserToken, expiryDateForLongLivedToken);
-        }
-      } catch (error) {
-        console.error("Error while refreshing user token:", error);
-      }
-  
-      try {
-        // Refresh page tokens if the user token was updated or nearing expiry
-        if (subscriber.pageTokenExpiresAt && needsRefresh(subscriber.pageTokenExpiresAt)) {       
-          const newLongLivedPageTokens = await getPageAccessToken(subscriber.pageId, subscriber.subscriberSocialMedia.userAccessToken);
-          const expiryDateForLongLivedToken =  new Date(Date.now() + 60 * 24 * 60 * 60 * 1000); // Setting 60 days of expiry for long lived access token
-          await updatePagesInDb(subscriber.subscriberSocialMedia.subscriber.subscriberId, newLongLivedPageTokens, expiryDateForLongLivedToken);
-        }
-      } catch (error) {
-        console.error("Error while refreshing page tokens:", error);
+      // Refresh user token if it's close to expiry
+      if (facebookUserData.userAccessToken && needsRefresh(facebookUserData.userTokenExpiresAt)) {
+        const newUserToken = await getLongLivedUserToken(facebookUserData.userAccessToken);
+        const expiryDateForLongLivedToken =  new Date(Date.now() + 60 * 24 * 60 * 60 * 1000); // Setting 60 days of expiry for long lived access token
+        await updateUserAccessTokenInDb(facebookUserData.subscriber.subscriberId, newUserToken, expiryDateForLongLivedToken);
+
+        console.log(`Facebook User token refreshed for user with ID ${subscriberId}`); 
       }
     } catch (error) {
-      console.error(`Error refreshing tokens for subscriber ${subscriber.subscriberSocialMedia.subscriber.subscriberId}:`, error);
+      console.error("Error while refreshing user token:", error);
+      throw error;
     }
+
+    try {
+      if(facebookPageDatas.length === 0) {
+        console.error("No facebook pages selected for refresh access token!");
+        return;
+      }
+
+      for (const pageData of facebookPageDatas) {
+        // Refresh page tokens if the user token was updated or nearing expiry
+        if (pageData.pageTokenExpiresAt && needsRefresh(pageData.pageTokenExpiresAt)) {       
+          const newLongLivedPageTokens = await getPageAccessToken(pageData.pageId, facebookUserData.userAccessToken);
+          const expiryDateForLongLivedToken =  new Date(Date.now() + 60 * 24 * 60 * 60 * 1000); // Setting 60 days of expiry for long lived access token
+          await updatePagesInDb(pageData.subscriber.subscriberId, newLongLivedPageTokens, expiryDateForLongLivedToken);
+          console.log(`Facebook page token refreshed for user with ID ${subscriberId}`)
+        }
+      }
+    } catch (error) {
+      console.error("Error while refreshing page tokens:", error);
+      throw error;
+    }
+  } catch (error) {
+    console.error(`Error refreshing tokens for subscriber ${subscriberId}:`, error);
+    throw error;
   }
 };
 

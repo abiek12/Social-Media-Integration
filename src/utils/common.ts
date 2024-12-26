@@ -179,12 +179,14 @@ export const subscriberFacebookRepo = async (subscriberId: number) => {
     const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
     const subscriberFacebookQueryBuilder = subscriberFacebookRepository.createQueryBuilder("subscriberFacebook");
     const subscriberFacebookData = await subscriberFacebookQueryBuilder
-      .leftJoinAndSelect("subscriberFacebook.subscriberSocialMedia", "subscriberSocialMedia")
-      .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-      .where("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
-      .andWhere("subscriberSocialMedia.subscriber = :subscriberId", { subscriberId })
-      .getOne();
+      .leftJoinAndSelect("subscriberFacebook.subscriber", "subscriber")
+      .andWhere("subscriber.subscriberId = :subscriberId", { subscriberId })
+      .getMany();
 
+    if(subscriberFacebookData.length === 0) {
+      console.error("No subscriber facebook data found");
+      return [];
+    }
     return subscriberFacebookData;
   } catch (error) {
     console.log("Error while fetching subscriber social media repo", error);

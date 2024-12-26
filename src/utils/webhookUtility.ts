@@ -18,15 +18,14 @@ export const handleLeadgenEvent = async (event: any) => {
       const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
       const subscriberFacebookQueryBuilder = subscriberFacebookRepository.createQueryBuilder("subscriberFacebook");
       const subscriberFacebookData = await subscriberFacebookQueryBuilder
-          .leftJoinAndSelect("subscriberFacebook.subscriberSocialMedia", "subscriberSocialMedia")
-          .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+          .leftJoinAndSelect("subscriberFacebook.subscriber", "subscriber")
           .where("subscriberFacebook.pageId = :pageId", { pageId })
-          .getOne() as any;
+          .getOne();
       if(!subscriberFacebookData) {
         console.log(`No social media data found for the page with ID ${pageId}`);
         return;
       }
-      const subscriberId = subscriberFacebookData.subscriberSocialMedia.subscriber.subscriberId;
+      const subscriberId = subscriberFacebookData.subscriber.subscriberId;
       const pageAccessToken = subscriberFacebookData.pageAccessToken;
 
       const leadData: LeadData = await fetchingLeadDetails(pageAccessToken, leadgenId);
@@ -68,17 +67,16 @@ export const handleMessagingEvent = async (event: any, source: string) => {
     const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
     const subscriberFacebookQueryBuilder = subscriberFacebookRepository.createQueryBuilder("subscriberFacebook");
     const subscriberFacebookData = await subscriberFacebookQueryBuilder
-        .leftJoinAndSelect("subscriberFacebook.subscriberSocialMedia", "subscriberSocialMedia")
-        .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+        .leftJoinAndSelect("subscriberFacebook.subscriber", "subscriber")
         .where("subscriberFacebook.pageId = :pageId", { pageId })
-        .getOne() as any;
+        .getOne();
 
     if(!subscriberFacebookData) {
       console.log(`No social media data found for the page with ID ${pageId}`);
       return;
     }
 
-    const subscriberId = subscriberFacebookData.subscriberSocialMedia.subscriber.subscriberId;
+    const subscriberId = subscriberFacebookData.subscriber.subscriberId;
     const pageAccessToken = subscriberFacebookData.pageAccessToken;
 
     if(!pageAccessToken) {
