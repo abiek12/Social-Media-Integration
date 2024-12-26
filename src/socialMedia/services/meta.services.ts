@@ -9,6 +9,7 @@ import { fetchFacebookPages, getMetaUserAccessTokenDb, installMetaApp, verifySig
 import { socialMediaType } from "../dataModels/enums/socialMedia.enums";
 import { leadSource } from "../../leads/dataModels/enums/lead.enums";
 import { handleLeadgenEvent, handleMessagingEvent } from "../../utils/webhookUtility";
+import { subscribers } from "../../users/subscriber/dataModels/entities/subscriber.entity";
 
 export class metaServices {
     // Meta Webhook Verification Endpoint
@@ -255,8 +256,12 @@ export class metaServices {
                 subscriberFacebookEntity.pageAccessToken = pageData.accessToken;
                 subscriberFacebookEntity.pageName = pageData.name;
                 subscriberFacebookEntity.pageTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
-                subscriberFacebookEntity.subscriberSocialMedia = existingSubscriberSocialMediaData;
-                subscriberFacebookEntity.subscriber = existingSubscriberSocialMediaData.subscriber;
+                subscriberFacebookEntity.subscriberSocialMedia = {
+                    subscriberSocialMediaId: existingSubscriberSocialMediaData.subscriberSocialMediaId
+                } as subscriberSocialMedia;
+                subscriberFacebookEntity.subscriber = {subscriberId: existingSubscriber.subscriberId} as subscribers;
+                // subscriberFacebookEntity.subscriberSocialMedia = existingSubscriberSocialMediaData;
+                // subscriberFacebookEntity.subscriber = existingSubscriberSocialMediaData.subscriber;
 
                 console.log("Facebook Entity Before Save:", {
                     socialMediaId: subscriberFacebookEntity.subscriberSocialMedia?.subscriberSocialMediaId,

@@ -7,15 +7,15 @@ export class SubscriberFacebookSettings {
     @PrimaryGeneratedColumn({ name: "sub_fb_settings_id" })
     subFacebookSettingsId: number;
 
-    @Column({ type: "int", name: "social_media_id" })
-    @ManyToOne(() => subscriberSocialMedia)
-    @JoinColumn({ name: "social_media_id" })
-    subscriberSocialMedia: subscriberSocialMedia;
-
     @PrimaryColumn({ type: "int", nullable: false, name: "subscriber_id" })
     @ManyToOne(() => subscribers)
     @JoinColumn({ name: "subscriber_id" })
     subscriber: subscribers;
+
+    @Column({ type: "int", name: "social_media_id" })
+    @ManyToOne(() => subscriberSocialMedia)
+    @JoinColumn({ name: "social_media_id" })
+    subscriberSocialMedia: subscriberSocialMedia;
 
     @Column({ type: "varchar", length: 255, nullable: true, name: "page_id" })
     pageId: string;
