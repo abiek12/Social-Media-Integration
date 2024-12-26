@@ -221,9 +221,8 @@ export class metaServices {
                 return;
             }
             const existingSubscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
-                .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+                .where("subscriberSocialMedia.subscriber_id = :subscriberId", { subscriberId })
                 .andWhere("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
-                .where("subscriber.subscriberId = :subscriberId", { subscriberId })
                 .getOne();
             
             if(!existingSubscriberSocialMediaData) {
