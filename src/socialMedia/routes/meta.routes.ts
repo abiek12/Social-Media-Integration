@@ -15,7 +15,10 @@ router.post('/facebook/selectPages', _authUtility.verifyToken, _authUtility.isSu
 router.get('/facebook', _authUtility.verifyToken, _authUtility.isSubscriber, _metaServices.getSelectedPages);
 router.patch('/facebook/updatePages', _authUtility.verifyToken, _authUtility.isSubscriber, _metaServices.updatePages);
 
-// check is the user is authenticated with facebook
+// Unlink facebook config
+router.delete('/facebook/unlink', _authUtility.verifyToken, _authUtility.isSubscriber, _metaServices.unlinkFacebook);
+
+// Check is the user is authenticated with facebook
 router.get('/facebook-status', _authUtility.verifyToken, _authUtility.isSubscriber, _metaServices.checkFacebookStatus);
 
 export default router;

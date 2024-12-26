@@ -226,6 +226,8 @@ export class metaServices {
                 .where("subscriber.subscriberId = :subscriberId", { subscriberId })
                 .getOne();
             
+            console.log(existingSubscriberSocialMediaData);
+            
             if(!existingSubscriberSocialMediaData) {
                 console.error("Subscriber not authenticated to fetch facebook pages!");
                 response.status(CONFLICT).send(CustomError(CONFLICT, "Subscriber not authenticated to fetch facebook pages!"));
@@ -305,8 +307,9 @@ export class metaServices {
             return;
         }
        } catch (error) {
-        console.error("Error while check if the user is connected with facebook.");
-        throw error;
+        console.error("Error while check if the user is connected with facebook.", error);
+        response.status(INTERNAL_ERROR).send(CustomError(INTERNAL_ERROR, ERROR_COMMON_MESSAGE));
+        return;
        }
     }
 
@@ -361,8 +364,9 @@ export class metaServices {
             console.log("User selected facebook pages fetched successfully!");
             response.status(SUCCESS_GET).send(Success(subscribersFacebookPages))
         } catch (error) {
-            console.error("Error while fetching selected facebook pages.");
-            throw error;
+            console.error("Error while fetching selected facebook pages.", error);
+            response.status(INTERNAL_ERROR).send(CustomError(INTERNAL_ERROR, ERROR_COMMON_MESSAGE));
+            return;
         }
     }
 
@@ -435,8 +439,76 @@ export class metaServices {
             response.status(SUCCESS_GET).send(Success("User selected facebook pages updated successfully!"))
             return;
         } catch (error) {
-            console.error("Error while updating selected facebook pages.");
-            throw error;
+            console.error("Error while updating selected facebook pages.",error);
+            response.status(INTERNAL_ERROR).send(CustomError(INTERNAL_ERROR, ERROR_COMMON_MESSAGE));
+            return;
+        }
+    }
+
+
+    // Delete facebook configuration
+    unlinkFacebook = async (request: Request, response: Response) => {
+        try {
+            const subscriberId: number = (request as any).user.userId;
+            if(!subscriberId) {
+              console.error("User id not found");
+              response.status(NOT_AUTHORIZED).send(CustomError(NOT_AUTHORIZED, "User id not found"));
+              return;
+            }
+
+            const existingSubscriber = await checkSubscriberExitenceUsingId(subscriberId);
+            if(!existingSubscriber) {
+                console.error("Subscriber not found");
+                response.status(NOT_FOUND).send(CustomError(NOT_FOUND, "Subscriber not found!"));
+                return;
+            }
+
+            const appDataSource = await getDataSource();
+            const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
+            const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
+            const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
+
+            const existingSubscriberSocialMediaData = await subscriberSocialMediaQueryBuilder
+                .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+                .andWhere("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
+                .where("subscriber.subscriberId = :subscriberId", { subscriberId })
+                .getOne();
+            if(!existingSubscriberSocialMediaData) {
+                console.error("Subscriber Facebook configuration not found");
+                response.status(NOT_FOUND).send(CustomError(NOT_FOUND, "Subscriber Facebook configuration not found"));
+                return;
+            }
+
+            const subscriberFacebookQueryBuilder = subscriberFacebookRepository.createQueryBuilder("subscriberFacebook");
+            const existingFacebookData = await subscriberFacebookQueryBuilder
+                .leftJoinAndSelect("subscriberFacebook.subscriber", "subscriber")
+                .where("subscriber.subscriberId = :subscriberId", {subscriberId})
+                .getMany();
+
+            if(existingFacebookData.length > 0) {
+                await subscriberFacebookQueryBuilder
+                    .leftJoinAndSelect("subscriberFacebook.subscriber", "subscriber")
+                    .delete()
+                    .where("subscriber.subscriberId = :subscriberId", {subscriberId})
+                    .execute();
+                console.log("Selected facebook pages deleted successfully!");
+            }
+
+            await subscriberSocialMediaQueryBuilder
+                .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+                .delete()
+                .where("subscriber.subscriberId = :subscriberId", {subscriberId})
+                .andWhere("subscriberSocialMedia.socialMedia = :socialMedia", {socialMedia: socialMediaType.FACEBOOK})
+                .execute();
+
+            console.log("Facebook configuration deleted successfully!");
+            response.status(SUCCESS_GET).send(Success("Facebook configuration deleted successfully!"));
+            return;
+
+        } catch (error) {
+            console.error("Error while unlinking facebook configuration",error);
+            response.status(INTERNAL_ERROR).send(CustomError(INTERNAL_ERROR, ERROR_COMMON_MESSAGE));
+            return;
         }
     }
 
