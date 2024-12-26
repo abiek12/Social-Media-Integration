@@ -213,7 +213,6 @@ export class metaServices {
             const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
             const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
             const subscriberSocialMediaQueryBuilder = subscriberSocialMediaRepository.createQueryBuilder("subscriberSocialMedia");
-            const subscriberFacebookQueryBuilder = subscriberFacebookRepository.createQueryBuilder("subscriberFacebook");
 
             const existingSubscriber = await checkSubscriberExitenceUsingId(subscriberId);
             if(!existingSubscriber) {
@@ -233,9 +232,9 @@ export class metaServices {
                 return;
             }
 
-            console.log(existingSubscriberSocialMediaData);
-
             for (const pageData of pages) {
+                const subscriberFacebookQueryBuilder = subscriberFacebookRepository.createQueryBuilder("subscriberFacebook");
+
                 if(!pageData.accessToken || !pageData.id || !pageData.name) {
                     console.error("Access token, page id or page name is missing!");
                     response.status(BAD_REQUEST).send(CustomError(BAD_REQUEST, "Access token, page id or page name is missing!"));
