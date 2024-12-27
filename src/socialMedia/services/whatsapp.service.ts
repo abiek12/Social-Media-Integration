@@ -269,7 +269,10 @@ export const getWhatsappConfig = async (req: Request, res: Response) => {
       accessToken: subscriberWhatsappConfig?.accessToken,
       phoneNoId: subscriberWhatsappConfig?.phoneNoId,
       waId: subscriberWhatsappConfig?.waId,
-      ...(subscriberWhatsappConfig && { webhookEndpoint: `${process.env.BACKEND_URL}/api/v1/whatsapp/webhook` })
+      ...(subscriberWhatsappConfig && { 
+        webhookEndpoint: `${process.env.BACKEND_URL}/api/v1/whatsapp/webhook`,
+        verifyToken: `${process.env.META_APP_VERIFY_TOKEN}`
+      })
     }
 
     res.status(SUCCESS_GET).send(Success(data));
