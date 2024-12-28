@@ -1,6 +1,6 @@
 import express, { Application, Request, Response } from 'express';
 import passport from 'passport';
-import './socialMedia/services/passport.setup'
+import './utils/passport.setup'
 import session from 'express-session';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
@@ -21,8 +21,7 @@ const app: Application = express();
 
 // Enable CORS
 const corsOptions = {
-  origin: process.env.FRONTEND_URL,
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  origin: ['https://bluecremweb.bluecast.host', 'http://localhost:3000'],
   credentials: true
 }
 app.use(cors(corsOptions));

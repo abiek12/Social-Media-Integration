@@ -1,12 +1,9 @@
 import {
     Entity,
     PrimaryGeneratedColumn,
-    Column,
-    CreateDateColumn,
-    UpdateDateColumn,
+    Column
   } from "typeorm";
 import { userRoles } from "../enums/userRoles.enums";
-import { kycVerification } from "../enums/subscriber.enums";
   
   @Entity("subscribers")
   export class subscribers {

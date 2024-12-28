@@ -2,32 +2,29 @@ import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn,
 import { subscriberSocialMedia } from "./subscriberSocialMedia.entity";
 import { subscribers } from "../../../users/subscriber/dataModels/entities/subscriber.entity";
 
-@Entity("sub_facebook_settings")
-export class SubscriberFacebookSettings {
-    @PrimaryGeneratedColumn({ name: "sub_fb_settings_id" })
-    subFacebookSettingsId: number;
+@Entity("sub_whatsapp_settings")
+export class SubscriberWhatsappSettings {
+    @PrimaryGeneratedColumn({ name: "sub_whatsapp_settings_id" })
+    subWhatsappSettingsId: number;
 
     @PrimaryColumn({ type: "int", nullable: false, name: "subscriber_id" })
     @ManyToOne(() => subscribers)
     @JoinColumn({ name: "subscriber_id" })
     subscriber: subscribers;
 
-    @Column({ type: "int", name: "social_media_id" })
+    @Column({ type: "int",  name: "social_media_id" })
     @ManyToOne(() => subscriberSocialMedia)
     @JoinColumn({ name: "social_media_id" })
-    subscriberSocialMedia: number;
+    subscriberSocialMedia: subscriberSocialMedia;
 
-    @Column({ type: "varchar", length: 255, nullable: true, name: "page_id" })
-    pageId: string;
+    @Column({ type: "varchar", length: 255, nullable: false, name: "phone_no_id" })
+    phoneNoId: string;
 
-    @Column({ type: "varchar", length: 255, nullable: true, name: "page_name" })
-    pageName: string;
+    @Column({ type: "varchar", length: 255, nullable: false, name: "access_token" })
+    accessToken: string;
 
-    @Column({ type: "text", nullable: true, name: "page_access_token" })
-    pageAccessToken: string;
-
-    @Column({ type: "timestamp", nullable: true, name: "page_token_expires_at" })
-    pageTokenExpiresAt: Date;
+    @Column({ type: "varchar", length: 255, nullable: true, name: "wa_id" })
+    waId: string;
 
     @CreateDateColumn({name: "created_at"})
     createdAt: Date;

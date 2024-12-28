@@ -1,5 +1,6 @@
 import { SubscriberFacebookSettings } from "../socialMedia/dataModels/entities/subscriberFacebook.entity";
 import { subscriberSocialMedia } from "../socialMedia/dataModels/entities/subscriberSocialMedia.entity";
+import { SubscriberWhatsappSettings } from "../socialMedia/dataModels/entities/subscriberWhatsapp.entity";
 import { socialMediaType } from "../socialMedia/dataModels/enums/socialMedia.enums";
 import { admins } from "../users/admin/dataModels/entities/admin.entity";
 import { subscribers } from "../users/subscriber/dataModels/entities/subscriber.entity";
@@ -25,6 +26,9 @@ export const TOKEN_EXPIRY = 360000;
 export const REFRESH_TOKEN_EXPIRY = 86400000;
 export const ACTIVATION_KEY_EXPIRY_DAYS = 1;
 export const OTP_EXPIRY_TIME = 10;
+export const TOKEN_REFRESH_THRESHOLD = 15 * 60 * 1000; // 15 min before
+export const EXTERNAL_WEBHOOK_ENDPOINT_URL = "https://bluecremapi.bluecast.host/api/subscriberleads/webhook";
+export const WEBHOOK_SHARED_SECRET = "bcast@7376"
 
 export const createAdminUser = async (data?: any) => {
   const _authUtility = new authUtility();
@@ -137,8 +141,14 @@ export const generateTokens = async (userRole: string, userId: number) => {
 
 // Helper function to check if token needs refreshing
 export const needsRefresh = (expiryDate: string | Date) => {
-  const refreshThreshold = 7 * 24 * 60 * 60 * 1000; // e.g., 7 days before expiry
-  const expiryTimestamp = new Date(expiryDate).getTime();
+  const refreshThreshold = TOKEN_REFRESH_THRESHOLD
+
+  const expiry = new Date(expiryDate);
+  if (isNaN(expiry.getTime())) {
+    console.error("Error while refreshing token, Invalid expiry date")
+    throw new Error('Invalid expiry date');
+  }
+  const expiryTimestamp = expiry.getTime();
   const currentTimestamp = Date.now();
   
   // Check if the time remaining before expiry is less than the threshold
@@ -158,7 +168,7 @@ export const subscriberSocialMediaRepo = async (subscriberId: number) => {
       .getOne();
     return subscriberSocialMediaData;
   } catch (error) {
-    console.log("Error while fetching subscriber social media repo");
+    console.log("Error while fetching subscriber social media repo", error);
     throw error;
   }
 }
@@ -168,17 +178,41 @@ export const subscriberFacebookRepo = async (subscriberId: number) => {
     const appDataSource = await getDataSource();
     const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
     const subscriberFacebookQueryBuilder = subscriberFacebookRepository.createQueryBuilder("subscriberFacebook");
-
     const subscriberFacebookData = await subscriberFacebookQueryBuilder
-      .leftJoinAndSelect("subscriberFacebook.subscriberSocialMedia", "subscriberSocialMedia")
-      .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
-      .where("subscriberSocialMedia.socialMedia = :socialMedia", { socialMedia: socialMediaType.FACEBOOK })
-      .andWhere("subscriberSocialMedia.subscriber = :subscriberId", { subscriberId })
-      .getOne();
+      .leftJoinAndSelect("subscriberFacebook.subscriber", "subscriber")
+      .andWhere("subscriber.subscriberId = :subscriberId", { subscriberId })
+      .getMany();
 
+    if(subscriberFacebookData.length === 0) {
+      console.error("No subscriber facebook data found");
+      return [];
+    }
     return subscriberFacebookData;
   } catch (error) {
-    console.log("Error while fetching subscriber social media repo");
+    console.log("Error while fetching subscriber social media repo", error);
+    throw error;
+  }
+}
+
+export const checkExistingWhatsappConfig = async (phoneNoId: string, configId?: number) => {
+  try {
+    const appDataSource = await getDataSource();
+    const SubscriberWhatsappSettingsRepository = appDataSource.getRepository(SubscriberWhatsappSettings);
+    const subscriberWhatsappSettingsQueryBuilder = SubscriberWhatsappSettingsRepository.createQueryBuilder("subscriberWhatsapp");
+    subscriberWhatsappSettingsQueryBuilder
+      .leftJoinAndSelect("subscriberWhatsapp.subscriber", "subscriber")
+      .where("subscriberWhatsapp.phoneNoId = :phoneNoId", {phoneNoId});
+    
+    if(configId) {
+      subscriberWhatsappSettingsQueryBuilder.andWhere("subscriberWhatsapp.subWhatsappSettingsId != :id", {id: configId})
+    }
+    const subscriberWhatsappConfig = await subscriberWhatsappSettingsQueryBuilder.getOne();
+
+    if(subscriberWhatsappConfig) return true;
+    else return false;
+      
+  } catch (error) {
+    console.error("Error while checking for existing user whatsapp config!", error)
     throw error;
   }
 }

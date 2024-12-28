@@ -1,6 +1,6 @@
 import { CronJob } from "cron";
 import { getAllSubscribers } from "./common";
-import { checkForSubscribersMetaConnection, checkWebhookSubscription, getAppAccessToken, refreshAllTokens, subscribeWebhook } from "./socialMediaUtility";
+import { checkAdminMetaConnection, checkForSubscribersMetaConnection, checkWebhookSubscription, getAppAccessToken, refreshAllTokens, subscribeWebhook } from "./socialMediaUtility";
 
 export const cronJob = new CronJob("*/1 * * * *", async () => {
     console.log("Cron job running");
@@ -9,14 +9,16 @@ export const cronJob = new CronJob("*/1 * * * *", async () => {
     if(subscribers.length > 0) {
         for (const subscriber of subscribers) { 
             if(await checkForSubscribersMetaConnection(subscriber.subscriberId)) {
-              // Refresh user and page token if it's close to expiry
-              refreshAllTokens(subscriber.subscriberId);
+                // Refresh user and page token if it's close to expiry
+                refreshAllTokens(subscriber.subscriberId);
             }
         }
     }
-
-    // Admin Meta app access token fetching.
-    await getAppAccessToken();
+    
+    if(!await checkAdminMetaConnection()) {
+        // Admin Meta app access token fetching.
+        await getAppAccessToken();
+    }
     
     // Admin Meta webhook subscription if not subscribed.
     if(!await checkWebhookSubscription()) {

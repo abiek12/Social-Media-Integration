@@ -4,12 +4,13 @@ import { subscriberSocialMedia } from '../socialMedia/dataModels/entities/subscr
 import { AdminFacebookSettings } from '../socialMedia/dataModels/entities/adminFacebook.entity';
 import { admins } from '../users/admin/dataModels/entities/admin.entity';
 import { getDataSource } from './dataSource';
-import { FacebookWebhookRequest, FetchMessageDetailsResponse, FetchMessageDetailsSuccessResponse, LeadData } from '../socialMedia/dataModels/types/meta.types';
+import { FacebookWebhookRequest, FetchMessageDetailsResponse, FetchMessageDetailsSuccessResponse, LeadData, quickReplyData } from '../socialMedia/dataModels/types/meta.types';
 import { SubscriberFacebookSettings } from '../socialMedia/dataModels/entities/subscriberFacebook.entity';
 import { socialMediaType } from '../socialMedia/dataModels/enums/socialMedia.enums';
 import { needsRefresh, subscriberFacebookRepo, subscriberSocialMediaRepo } from './common';
-import { leadStatus } from '../leads/dataModels/enums/lead.enums';
+import { leadSource, leadStatus } from '../leads/dataModels/enums/lead.enums';
 import axios from 'axios';
+import { error } from 'console';
 // import { ngrokUrl } from '../server';
 
 // Social Media Utility Constants
@@ -61,6 +62,26 @@ export const fetchingLeadDetails = async (pageAccessToken: string, leadgenId: st
       console.error('Error fetching lead data:', error);
       return null;
     }
+}
+
+
+// Check Admin Facebook Config Status
+export const checkAdminMetaConnection = async() => {
+  try {
+    const appDataSource = await getDataSource();
+    const adminSocialMediaRepository = appDataSource.getRepository(adminSocialMedia);
+    const adminSocialMediaData = await adminSocialMediaRepository.createQueryBuilder("adminSocialMedia")
+        .leftJoinAndSelect("adminSocialMedia.admin", "admin")
+        .leftJoinAndSelect("adminSocialMedia.facebook", "facebook")
+        .getOne();
+    if(adminSocialMediaData) {
+      if(adminSocialMediaData.facebook.appAccessToken) return true;
+      else return false;
+    }
+  } catch (error) {
+    console.error("Error while checking admin meta configuration status!")
+    throw error;
+  }
 }
 
 // Get App Access Token
@@ -193,8 +214,8 @@ export const installMetaApp = async (subscriberId: number) => {
     const subscriberFacebookQueryBuilder = subscriberFacebookRepository.createQueryBuilder("subscriberFacebook");
 
     const subscriberFacebookDatas = await subscriberFacebookQueryBuilder
-      .leftJoinAndSelect("subscriberFacebook.subscriberSocialMedia", "subscriberSocialMedia")
-      .leftJoinAndSelect("subscriberSocialMedia.subscriber", "subscriber")
+      .leftJoinAndSelect("subscriberFacebook.subscriber", "subscriber")
+      .where("subscriber.subscriberId = :subscriberId", { subscriberId })
       .getMany();
 
     if (subscriberFacebookDatas.length > 0) {
@@ -215,7 +236,7 @@ export const installMetaApp = async (subscriberId: number) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            subscribed_fields: ['leadgen'],
+            subscribed_fields: ['messages', 'leadgen'],
             access_token: pageAccessToken,
           }),
         });
@@ -225,10 +246,10 @@ export const installMetaApp = async (subscriberId: number) => {
           const errorData = await response.json();
           console.log('Error subscribing to Meta App:', errorData);
         } else {
-          console.log('Successfully subscribed:', responseData);
+          console.log('Successfully subscribed to Meta App:', responseData);
         }
       }
-      return console.log('Successfully Installed Meta App:');
+      return console.log('Meta App successfully installed in all pages');
     } else {
       return console.log(`No social media data found for subscriber with ID ${subscriberId}`);
     }
@@ -320,17 +341,6 @@ export const checkForSubscribersMetaConnection = async (subscriberId: number): P
   }
 }
 
-export const getSubscribersWithExpiringTokens = async (subscriberId: number) => {
-  try {
-    const subscriberSocialMediaData = await subscriberFacebookRepo(subscriberId);
-    if(!subscriberSocialMediaData) return null;
-    return subscriberSocialMediaData;
-  } catch (error) {
-    console.log('Error while fetching subscriber social media details', error);
-    throw error;
-  }
-}
-
 // Convert short-lived token to long-lived token
 export const getLongLivedUserToken = async (shortLivedToken: string) => {
   try {
@@ -382,7 +392,7 @@ export const getPageAccessToken = async (pageId: string, userAccessToken: string
 }
 
 // Updating user access token in database
-export const updateUserAccessTokenInDb = async (subscriberId: number, userAccessToken: string) => {
+export const updateUserAccessTokenInDb = async (subscriberId: number, userAccessToken: string, expiryDate: Date) => {
   try {
     const appDataSource = await getDataSource();
     const subscriberSocialMediaRepository = appDataSource.getRepository(subscriberSocialMedia);
@@ -393,8 +403,10 @@ export const updateUserAccessTokenInDb = async (subscriberId: number, userAccess
     }
 
     subscriberSocialMediaData.userAccessToken = userAccessToken;
-    subscriberSocialMediaData.userTokenExpiresAt = new Date(Date.now() + 3600000);
+    subscriberSocialMediaData.userTokenExpiresAt = new Date(expiryDate);
     await subscriberSocialMediaRepository.save(subscriberSocialMediaData);
+
+    console.log("User access token updated with long lived token!")
   } catch (error) {
     console.log('Error while updating user access token in database', error);
     throw error;
@@ -402,20 +414,25 @@ export const updateUserAccessTokenInDb = async (subscriberId: number, userAccess
 }
 
 // Updating page access token in database
-export const updatePagesInDb = async (subscriberId: number, pageAccessToken: string) => {
+export const updatePagesInDb = async (subscriberId: number, pageAccessToken: string, expiryDate: Date) => {
   try {
     const appDataSource = await getDataSource();
     const subscriberFacebookRepository = appDataSource.getRepository(SubscriberFacebookSettings);
-    const subscriberFacebookData = await subscriberFacebookRepo(subscriberId);
-    
+    const subscriberFacebookQueryBuilder = subscriberFacebookRepository.createQueryBuilder("subscriberFacebook");
+    const subscriberFacebookData = await subscriberFacebookQueryBuilder
+      .leftJoinAndSelect("subscriberFacebook.subscriber", "subscriber")
+      .andWhere("subscriber.subscriberId = :subscriberId", { subscriberId })
+      .getOne();
     if (!subscriberFacebookData) {
       console.log(`No social media data found for subscriber with ID ${subscriberId}`);
       return null;
     }
 
     subscriberFacebookData.pageAccessToken = pageAccessToken;
-    subscriberFacebookData.pageTokenExpiresAt = new Date(Date.now() + 3600000);
+    subscriberFacebookData.pageTokenExpiresAt = new Date(expiryDate);
     await subscriberFacebookRepository.save(subscriberFacebookData);
+
+    console.log("Page access token updated!")
   } catch (error) {
     console.log('Error while updating page access token in database', error);
     throw error;
@@ -424,31 +441,51 @@ export const updatePagesInDb = async (subscriberId: number, pageAccessToken: str
 
 // Refreshing facebook user and page access token
 export const refreshAllTokens = async (subscriberId: number) => {
-  const subscriber = await getSubscribersWithExpiringTokens(subscriberId);
-  if (subscriber) {
+  try {
+    const facebookPageDatas = await subscriberFacebookRepo(subscriberId);
+    const facebookUserData = await subscriberSocialMediaRepo(subscriberId);
+
+    if(!facebookUserData) {
+      console.error("No facebook user data for refresh the token!");
+      return;
+    }
+
     try {
-      try {
-        // Refresh user token if it's close to expiry
-        if (subscriber.subscriberSocialMedia.userAccessToken && needsRefresh(subscriber.subscriberSocialMedia.userTokenExpiresAt)) {
-          const newUserToken = await getLongLivedUserToken(subscriber.subscriberSocialMedia.userAccessToken);
-          await updateUserAccessTokenInDb(subscriber.subscriberSocialMedia.subscriber.subscriberId, newUserToken);
-        }
-      } catch (error) {
-        console.error("Error while refreshing user token:", error);
-      }
-  
-      try {
-        // Refresh page tokens if the user token was updated or nearing expiry
-        if (subscriber.pageTokenExpiresAt && needsRefresh(subscriber.pageTokenExpiresAt)) {          
-          const newPageTokens = await getPageAccessToken(subscriber.pageId, subscriber.subscriberSocialMedia.userAccessToken);
-          await updatePagesInDb(subscriber.subscriberSocialMedia.subscriber.subscriberId, newPageTokens);
-        }
-      } catch (error) {
-        console.error("Error while refreshing page tokens:", error);
+      // Refresh user token if it's close to expiry
+      if (facebookUserData.userAccessToken && needsRefresh(facebookUserData.userTokenExpiresAt)) {
+        const newUserToken = await getLongLivedUserToken(facebookUserData.userAccessToken);
+        const expiryDateForLongLivedToken =  new Date(Date.now() + 60 * 24 * 60 * 60 * 1000); // Setting 60 days of expiry for long lived access token
+        await updateUserAccessTokenInDb(facebookUserData.subscriber.subscriberId, newUserToken, expiryDateForLongLivedToken);
+
+        console.log(`Facebook User token refreshed for user with ID ${subscriberId}`); 
       }
     } catch (error) {
-      console.error(`Error refreshing tokens for subscriber ${subscriber.subscriberSocialMedia.subscriber.subscriberId}:`, error);
+      console.error("Error while refreshing user token:", error);
+      throw error;
     }
+
+    try {
+      if(facebookPageDatas.length === 0) {
+        console.error("No facebook pages selected for refresh access token!");
+        return;
+      }
+
+      for (const pageData of facebookPageDatas) {
+        // Refresh page tokens if the user token was updated or nearing expiry
+        if (pageData.pageTokenExpiresAt && needsRefresh(pageData.pageTokenExpiresAt)) {       
+          const newLongLivedPageTokens = await getPageAccessToken(pageData.pageId, facebookUserData.userAccessToken);
+          const expiryDateForLongLivedToken =  new Date(Date.now() + 60 * 24 * 60 * 60 * 1000); // Setting 60 days of expiry for long lived access token
+          await updatePagesInDb(pageData.subscriber.subscriberId, newLongLivedPageTokens, expiryDateForLongLivedToken);
+          console.log(`Facebook page token refreshed for user with ID ${subscriberId}`)
+        }
+      }
+    } catch (error) {
+      console.error("Error while refreshing page tokens:", error);
+      throw error;
+    }
+  } catch (error) {
+    console.error(`Error refreshing tokens for subscriber ${subscriberId}:`, error);
+    throw error;
   }
 };
 
@@ -482,7 +519,7 @@ export const parseLeadData = (leadData: LeadData, subscriberId: number) => {
       contactName: leadData.field_data?.find((f: any) => f.name === "full_name")?.values[0],
       subscriberId,
       companyName: leadData.field_data?.find((f: any) => f.name === "company_name")?.values[0] || null,
-      contactPhone: leadData.field_data?.find((f: any) => f.name === "phone")?.values[0] || null,
+      contactPhone: leadData.field_data?.find((f: any) => f.name === "phone_number")?.values[0] || null,
       contactCountry: leadData.field_data?.find((f: any) => f.name === "country")?.values[0] || null,
       contactState: leadData.field_data?.find((f: any) => f.name === "state")?.values[0] || null,
       contactCity: leadData.field_data?.find((f: any) => f.name === "city")?.values[0] || null,
@@ -524,6 +561,94 @@ export const fetchMessageDetails = async (messageId: string, pageAccessToken: st
     return response.data;
   } catch (error) {
     console.error("Error while fetching sender details!");
+    throw error;
+  }
+}
+
+
+export const sendBulkWhatsappMessage = async (
+  phoneNumbers: string[],
+  message: string,
+  accessToken: string,
+  phoneNoId: string
+) => {
+  try {
+    // Validate input parameters
+    if (!accessToken || !phoneNoId) {
+      throw new Error('Missing required parameters: accessToken or phoneNoId');
+    }
+
+    // Create an array of promises for sending messages
+    const messagePromises = phoneNumbers.map((number) => {
+      return axios.post(
+        `https://graph.facebook.com/v21.0/${phoneNoId}/messages`,
+        {
+          messaging_product: 'whatsapp',
+          to: number,
+          type: 'text',
+          text: {
+            body: message,
+          },
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`, // Use the token passed as a parameter
+          },
+        }
+      );
+    });
+
+    // Wait for all messages to be sent
+    const responses = await Promise.allSettled(messagePromises);
+
+    // Log and return results
+    const results = responses.map((response, index) => {
+      if (response.status === 'fulfilled') {
+        console.log(`Message to ${phoneNumbers[index]} sent successfully.`);
+        return { number: phoneNumbers[index], success: true, data: response.value.data };
+      } else {
+        console.error(`Failed to send message to ${phoneNumbers[index]}.`, response.reason);
+        throw error;
+      }
+    });
+
+    return results;
+  } catch (error) {
+    console.error('Error in sending bulk WhatsApp messages:', error);
+    throw error;
+  }
+};
+
+
+// send response messages
+export const quickReply = async (
+  accessToken: string,
+  phoneNoId: string,
+  phoneNumber: string,
+  messageId: string,
+  message: string
+) => {
+  try {
+    await axios({
+      method: "POST",
+      url: `https://graph.facebook.com/v18.0/${phoneNoId}/messages`,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      data: {
+        messaging_product: "whatsapp",
+        to: phoneNumber,
+        text: { body: message },
+        context: {
+          message_id: messageId, // shows the message as a reply to the original user message
+        },
+      },
+    });
+
+    return;
+  } catch (error) {
+    console.error("Error while sending quick reply")
     throw error;
   }
 }

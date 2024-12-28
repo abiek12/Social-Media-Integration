@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { BAD_REQUEST, generateTokens, SUCCESS_GET, validateEmail } from "../../../utils/common";
+import { BAD_REQUEST, ERROR_COMMON_MESSAGE, generateTokens, INTERNAL_ERROR, SUCCESS_GET, validateEmail } from "../../../utils/common";
 import { getDataSource } from "../../../utils/dataSource";
 import { userRoles } from "../../subscriber/dataModels/enums/userRoles.enums";
 import { admins } from "../../admin/dataModels/entities/admin.entity";
@@ -71,7 +71,7 @@ export class AuthService {
           return;
         } catch (error) {
             console.error("Error while user login", error);
-            throw error;
+            response.status(INTERNAL_ERROR).send(ERROR_COMMON_MESSAGE)
         }
     }
 }
